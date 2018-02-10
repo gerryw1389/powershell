@@ -6,6 +6,7 @@ To install the modules, download my modules, extract it, and run the "install-mo
 ..*Copy the import-module command to your clipboard
 ..*Pull up your Powershell profile and assume that you will paste in my modules (save and close notepad).
 ..*Launch Powershell.
+
 At this point you may want to run `Get-Command -Mod gw*` to see what all imported.
 
 You may be wondering, *"What is with all these 'gw' prefixes?"*
