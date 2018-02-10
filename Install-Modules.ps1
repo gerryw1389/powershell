@@ -30,7 +30,7 @@ This function will copy all folders in this script's folder to a users $PSModule
         $UserModules = Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath WindowsPowerShell\Modules
         Copy-Item -Path $psscriptroot\* -Destination $UserModules -Recurse -Verbose
         Stop-Script
-        $Text = "Modules have been added to your PSModulePath.`n`nPlease add the following to your profile:`n`nImport-Module -Name gwActiveDirectory, gwApplications, gwConfiguration, gwFilesystem, gwMisc, gwNetworking, gwSecurity -Prefix gw"
+        $Text = "Modules have been added to your PSModulePath.`n`nPlease add the following to your profile:`n`nImport-Module -Name ActiveDirectory, Applications, Configuration, Filesystem, Misc, Networking, Security -Prefix gw"
         [void] [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.VisualBasic")
         [Microsoft.VisualBasic.Interaction]::MsgBox($Text, "OKOnly,SystemModal,Information", "Message")
         
@@ -38,7 +38,7 @@ This function will copy all folders in this script's folder to a users $PSModule
         [void] [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.VisualBasic")
         [Microsoft.VisualBasic.Interaction]::MsgBox($Text, "OKOnly,SystemModal,Information", "Message")
         
-        $Clip = "Import-Module -Name gwActiveDirectory, gwApplications, gwConfiguration, gwFilesystem, gwMisc, gwNetworking, gwSecurity -Prefix gw" | Clip.exe
+        $Clip = "Import-Module -Name ActiveDirectory, Applications, Configuration, Filesystem, Misc, Networking, Security -Prefix gw" | Clip.exe
         Start-Process "$env:windir\system32\notepad.exe" -ArgumentList $Profile
         
         Stop-Script
