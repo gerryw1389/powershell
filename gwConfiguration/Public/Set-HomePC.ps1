@@ -74,6 +74,10 @@ Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
 		$user = "$username"
 		$rootFolder.RegisterTaskDefinition($TaskName, $taskdef, 6, $user, $null, 3)
         
+        Log "Allowing Run As Different User Option"
+        # GPO: User Configuration\Administrative Template\Start Menu and Taskbar\Show "Run as Different user Command on Start" = Enabled
+        SetReg -Path "HKCU:\Software\Policies\Microsoft\Windows\Explorer" -Name "ShowRunasDifferentuserinStart" -Value "1"
+
         Log "Showing Task Manager details"
         If (!(Test-Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager"))
         {

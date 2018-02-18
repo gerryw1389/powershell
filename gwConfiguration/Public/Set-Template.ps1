@@ -399,7 +399,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Log "Stop MS shoehorning apps quietly into your profile"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SilentInstalledAppsEnabled" -Value "0"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "ContentDeliveryAllowed" -Value "0"
-
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SubscribedContentEnabled" -Value "0"
             
         Log "Removing Ads in File Explorer"
@@ -481,6 +480,9 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         Log "Disabling AeroShake"
         SetReg -Path "HKCU:\Software\Policies\Microsoft\Windows\Explorer" -Name "NoWindowMinimizingShortcuts" -Value "1"
+
+        Log "Disabling Jump List"
+        SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Start_TrackDocs" -Value "0"
 
         Log "Hiding Cortana"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Value "0"
