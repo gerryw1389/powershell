@@ -16,19 +16,21 @@ This function will copy all folders in this script's folder to a users $PSModule
     Begin
     {       
 
-		Function Stop-Script 
+        Function Stop-Script 
         {
             Write-Output "Press Any Key To Continue ..."
             $X = $Host.Ui.Rawui.Readkey("Noecho,Includekeydown")
         }
 		
         $VerbosePreference = "Continue"
+        $Files = "$psscriptroot\*"
     }
     
     Process
     {   
-        $UserModules = Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath WindowsPowerShell\Modules
-        Copy-Item -Path $psscriptroot\* -Destination $UserModules -Recurse -Verbose
+        $UserModules = Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath "WindowsPowerShell\Modules"
+        Get-Childitem -Path $Files -Recurse | Unblock-File
+        Copy-Item -Path $Files -Destination $UserModules -Recurse -Verbose
         Stop-Script
         $Text = "Modules have been added to your PSModulePath.`n`nPlease add the following to your profile:`n`nImport-Module -Name gwActiveDirectory, gwApplications, gwConfiguration, gwFilesystem, gwMisc, gwNetworking, gwSecurity -Prefix gw"
         [void] [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.VisualBasic")
@@ -48,7 +50,7 @@ This function will copy all folders in this script's folder to a users $PSModule
     
     End
     {
-    Get-Childitem -Path $UserModules -Recurse | Unblock-File
+        
     }
 
 }
