@@ -1,4 +1,4 @@
-# Powershell Repo
+# Powershell
 This is my "prod" for Powershell scripts.
 
 To install the modules, download my modules, extract it, and run the "install-modules.bat" file. This script will:
