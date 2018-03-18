@@ -226,49 +226,44 @@ Function Set-RegEntry
 {
     <#
         .Synopsis
-        Writes a registry entry. Very similar to New-ItemTypeProperty except it always uses force and will create the path to the entry automatically.
+        Writes a registry entry.
         .Description
-        Writes a registry entry. Very similar to New-ItemTypeProperty except it always uses force and will create the path to the entry automatically.
+        Writes a registry entry by checking if it exists first.
         .Parameter Path
-        This is the path to a key.
+        This is the path to the container for a key.
         .Parameter Name
-        This is the name of the entry.
+        This is the name of the key.
         .Parameter Value
-        This is the value of the entry.
-        .Parameter PropertyType
-        This is the type of entry the function is to write. Default is "Dword", but also accepts all the others, including "Binary.
-        Note on Binary:
+        This is the value of the key.
+        .Parameter Type
+        This is the type of key the function is to write. Default is "Dword", but also accepts "String", "Multistring", and "ExpandString".
         Have only tested with Dword and String
-        You will need to export the key you are about to change first (from a machine that has it how you want it) and then copy and paste the results into the $Value variable.
+        .Parameter Binary
+        You will need to export the key you are about to change first (from a machine that has it how you want it) and then copy and paste the results into the read-host part.
         For example, if I want OneDrive to not run on startup I would export the keys from [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run]
-        on a machine that I already have OneDrive disabled on startup and then copy the $Value as "03,00,00,00,cd,9a,36,38,64,0b,d2,01". I would then place:
-        $Params = @{}
-        $Params.Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
-        $Params.Name = "OneDrive"
-        $Params.Value = "03,00,00,00,cd,9a,36,38,64,0b,d2,01"
-        $Params.PropertyType = "Binary"
-        Set-Regentry @Params
-        $Params = $Null
+        on a machine that I already have OneDrive disabled on startup and then copy the key "03,00,00,00,cd,9a,36,38,64,0b,d2,01" into the read-host prompt.
     #>
     
     Param
     (
-        [Parameter(Position = 0, Mandatory = $True)]
+        [Parameter(Position = 0, Mandatory = $true)]
         [String]$Path,
     
-        [Parameter(Position = 1, Mandatory = $True)]
+        [Parameter(Position = 1, Mandatory = $true)]
         [String]$Name,
     
-        [Parameter(Position = 2, Mandatory = $True)]
+        [Parameter(Position = 2, Mandatory = $true)]
         [String]$Value,
 
-        [Parameter(Position = 3, Mandatory = $False)]
-        [ValidateSet('String', 'Expandstring', 'Binary', 'DWord', 'MultiString', 'Qword', 'Unknown')]
-        [String]$PropertyType = "Dword"
+        [Parameter(Position = 3, Mandatory = $false)]
+        [String]$Type = "Dword",
 
+        [Parameter(Position = 4, Mandatory = $false)]
+        [Switch]$Binary
+        
     )
     
-    If ($PropertyType -eq "Binary")
+    If ($Binary)
     {
         If (!(Test-Path $Path))
         {
@@ -277,31 +272,36 @@ Function Set-RegEntry
         $Test = (((Get-Item -Path $Path).GetValue($Name) -eq $Value)) 
         If ($Test)
         {
+            # If the registry already has this value... Do nothing!
             Write-Log "Key already exists: $name at $Path" -Color Gray -Logfile $Logfile
         }
         Else
         {
-            $Hex = $Value.Split(',') | ForEach-Object -Process { "0x$_" }
-            New-ItemProperty -Path $Path -Name $Name -Value ([byte[]]$Hex) -PropertyType $PropertyType -Force | Out-Null
+            If (!($($Bin.length -gt 0)))
+            {
+                $Bin = Read-Host "Paste the =hex: here"
+            }
+            # Example: $Bin = "03,00,00,00,cd,9a,36,38,64,0b,d2,01"
+            $Hex = $Bin.Split(',') | ForEach-Object -Process { "0x$_" }
+            New-ItemProperty -Path $Path -Name $Name -PropertyType Binary -Value ([byte[]]$Hex) -Force | Out-Null
             Write-Log "Added Key: $Name at $Path" -Color Gray -Logfile $Logfile
         }
+    
+    }
+
+    If (!(Test-Path $Path))
+    {
+        New-Item -Path $Path -Force | Out-Null
+    }
+    $Test = (((Get-Item -Path $Path).GetValue($Name) -eq $Value)) 
+    If ($Test)
+    {
+        Write-Log "Key already exists: $Name at $Path" -Color Gray -Logfile $Logfile
     }
     Else
     {
-        If (!(Test-Path $Path))
-        {
-            New-Item -Path $Path -Force | Out-Null
-        }
-        $Test = (((Get-Item -Path $Path).GetValue($Name) -eq $Value)) 
-        If ($Test)
-        {
-            Write-Log "Key already exists: $Name at $Path" -Color Gray -Logfile $Logfile
-        }
-        Else
-        {
-            New-Itemproperty -Path $Path -Name $Name -Value $Value -Propertytype $PropertyType -Force | Out-Null
-            Write-Log "Added Key: $Name at $Path" -Color Gray -Logfile $Logfile
-        }
+        New-Itemproperty -Path $Path -Name $Name -Value $Value -Propertytype $Type -Force | Out-Null
+        Write-Log "Added Key: $Name at $Path" -Color Gray -Logfile $Logfile
     }
 }
 New-Alias -Name "SetReg" -Value Set-Regentry

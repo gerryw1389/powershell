@@ -1,15 +1,15 @@
 <#######<Module>#######>
 <#######<Header>#######>
 # Name: Module
-# Date: 2017-10-26
+# Date: 2018-03-18
 # Copyright: Gerry Williams
 # License: MIT License (https://opensource.org/licenses/MIT) 
 <#######</Header>#######>
 <#######<Body>#######>
 
 
-$files = @( Get-ChildItem -Path $PSScriptRoot\Public\*.ps1 -Recurse -ErrorAction SilentlyContinue)
-$files | ForEach-Object `
+$Files = @( Get-ChildItem -Path $PSScriptRoot\Public\*.ps1 -Recurse -ErrorAction SilentlyContinue)
+ForEach ($File in $Files)
 { 
     . $_.fullname
 }
