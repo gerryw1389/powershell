@@ -1,0 +1,17 @@
+C:\Users\Carlos Perez\Documents\WindowsPowerShell\Modules\Posh-SSH\PoshSSH\PoshSSH\bin\Release\PoshSSH.dll
+C:\Users\Carlos Perez\Documents\WindowsPowerShell\Modules\Posh-SSH\PoshSSH\PoshSSH\bin\Release\PoshSSH.pdb
+C:\Users\Carlos Perez\Documents\WindowsPowerShell\Modules\Posh-SSH\PoshSSH\PoshSSH\bin\Release\Renci.SshNet.dll
+C:\Users\Carlos Perez\Documents\WindowsPowerShell\Modules\Posh-SSH\PoshSSH\PoshSSH\obj\Release\SSH.Properties.Resources.resources
+C:\Users\Carlos Perez\Documents\WindowsPowerShell\Modules\Posh-SSH\PoshSSH\PoshSSH\obj\Release\PoshSSH.csproj.GenerateResource.Cache
+C:\Users\Carlos Perez\Documents\WindowsPowerShell\Modules\Posh-SSH\PoshSSH\PoshSSH\obj\Release\PoshSSH.dll
+C:\Users\Carlos Perez\Documents\WindowsPowerShell\Modules\Posh-SSH\PoshSSH\PoshSSH\obj\Release\PoshSSH.pdb
+C:\Users\Carlos Perez\Documents\WindowsPowerShell\Modules\Posh-SSH\PoshSSH\PoshSSH\obj\Release\PoshSSH.csprojResolveAssemblyReference.cache
+C:\Users\Carlos\Documents\WindowsPowerShell\Modules\Posh-SSH\PoshSSH\PoshSSH\obj\Release\PoshSSH.csprojResolveAssemblyReference.cache
+C:\Users\Carlos\Documents\WindowsPowerShell\Modules\Posh-SSH\PoshSSH\PoshSSH\obj\Release\SSH.Properties.Resources.resources
+C:\Users\Carlos\Documents\WindowsPowerShell\Modules\Posh-SSH\PoshSSH\PoshSSH\obj\Release\PoshSSH.csproj.GenerateResource.Cache
+C:\Users\Carlos\Documents\WindowsPowerShell\Modules\Posh-SSH\PoshSSH\PoshSSH\obj\Release\PoshSSH.dll
+C:\Users\Carlos\Documents\WindowsPowerShell\Modules\Posh-SSH\PoshSSH\PoshSSH\obj\Release\PoshSSH.pdb
+C:\Users\Carlos\Documents\WindowsPowerShell\Modules\Posh-SSH\PoshSSH\PoshSSH\bin\Release\PoshSSH.dll
+C:\Users\Carlos\Documents\WindowsPowerShell\Modules\Posh-SSH\PoshSSH\PoshSSH\bin\Release\PoshSSH.pdb
+C:\Users\Carlos\Documents\WindowsPowerShell\Modules\Posh-SSH\PoshSSH\PoshSSH\bin\Release\Renci.SshNet.dll
+C:\Users\Carlos\Documents\WindowsPowerShell\Modules\Posh-SSH\PoshSSH\PoshSSH\bin\Release\System.Management.Automation.dll

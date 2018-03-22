@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<SettingsInfo xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Window_ConfirmClose>false</Window_ConfirmClose>
+  <Window_MinimizeInsteadOfTerminating>false</Window_MinimizeInsteadOfTerminating>
+  <Window_MultipleInstances>false</Window_MultipleInstances>
+  <Window_MinimizeToTrayInsteadOfTaskbar>false</Window_MinimizeToTrayInsteadOfTaskbar>
+  <Application_DefaultApplicationViewName>NetworkInterface</Application_DefaultApplicationViewName>
+  <Application_HistoryListEntries>5</Application_HistoryListEntries>
+  <TrayIcon_AlwaysShowIcon>false</TrayIcon_AlwaysShowIcon>
+  <Appearance_EnableTransparency>false</Appearance_EnableTransparency>
+  <Appearance_Opacity>0.85</Appearance_Opacity>
+  <Autostart_StartMinimizedInTray>false</Autostart_StartMinimizedInTray>
+  <HotKey_ShowWindowEnabled>false</HotKey_ShowWindowEnabled>
+  <HotKey_ShowWindowKey>79</HotKey_ShowWindowKey>
+  <HotKey_ShowWindowModifier>3</HotKey_ShowWindowModifier>
+  <ApplicationView_Expand>false</ApplicationView_Expand>
+  <IPScanner_Attempts>2</IPScanner_Attempts>
+  <IPScanner_Buffer>32</IPScanner_Buffer>
+  <IPScanner_Threads>256</IPScanner_Threads>
+  <IPScanner_IPRangeHistory>
+    <string>10.10.10.0-10.10.10.254</string>
+  </IPScanner_IPRangeHistory>
+  <IPScanner_ResolveHostname>true</IPScanner_ResolveHostname>
+  <IPScanner_ResolveMACAddress>false</IPScanner_ResolveMACAddress>
+  <IPScanner_Timeout>4000</IPScanner_Timeout>
+  <IPScanner_ExpandStatistics>true</IPScanner_ExpandStatistics>
+  <IPScanner_ExpandProfileView>true</IPScanner_ExpandProfileView>
+  <NetworkInterface_SelectedInterfaceId>{47904865-6BC0-471F-84DF-EF2BC488627D}</NetworkInterface_SelectedInterfaceId>
+  <NetworkInterface_ExpandProfileView>true</NetworkInterface_ExpandProfileView>
+  <Ping_Attempts>0</Ping_Attempts>
+  <Ping_Buffer>32</Ping_Buffer>
+  <Ping_DontFragment>true</Ping_DontFragment>
+  <Ping_HostnameOrIPAddressHistory />
+  <Ping_ResolveHostnamePreferIPv4>true</Ping_ResolveHostnamePreferIPv4>
+  <Ping_Timeout>4000</Ping_Timeout>
+  <Ping_TTL>64</Ping_TTL>
+  <Ping_WaitTime>1000</Ping_WaitTime>
+  <Ping_ExceptionCancelCount>3</Ping_ExceptionCancelCount>
+  <Ping_ExpandStatistics>true</Ping_ExpandStatistics>
+  <Traceroute_Buffer>32</Traceroute_Buffer>
+  <Traceroute_HostnameHistory />
+  <Traceroute_MaximumHops>30</Traceroute_MaximumHops>
+  <Traceroute_ResolveHostnamePreferIPv4>true</Traceroute_ResolveHostnamePreferIPv4>
+  <Traceroute_Timeout>4000</Traceroute_Timeout>
+  <Traceroute_ExpandStatistics>false</Traceroute_ExpandStatistics>
+  <Lookup_MACAddressOrVendorHistory />
+  <Lookup_PortsHistory>
+    <string>22</string>
+  </Lookup_PortsHistory>
+  <PortScanner_HostnameHistory />
+  <PortScanner_PortsHistory />
+  <PortScanner_Threads>100</PortScanner_Threads>
+  <PortScanner_ShowClosed>false</PortScanner_ShowClosed>
+  <PortScanner_Timeout>4000</PortScanner_Timeout>
+  <PortScanner_ResolveHostnamePreferIPv4>true</PortScanner_ResolveHostnamePreferIPv4>
+  <PortScanner_ExpandStatistics>true</PortScanner_ExpandStatistics>
+  <PortScanner_ExpandProfileView>true</PortScanner_ExpandProfileView>
+  <WakeOnLAN_DefaultPort>7</WakeOnLAN_DefaultPort>
+  <WakeOnLAN_ExpandClientView>true</WakeOnLAN_ExpandClientView>
+  <DNSLookup_HostHistory />
+  <DNSLookup_UseCustomDNSServer>false</DNSLookup_UseCustomDNSServer>
+  <DNSLookup_Class>IN</DNSLookup_Class>
+  <DNSLookup_Type>ANY</DNSLookup_Type>
+  <DNSLookup_AddDNSSuffix>true</DNSLookup_AddDNSSuffix>
+  <DNSLookup_UseCustomDNSSuffix>false</DNSLookup_UseCustomDNSSuffix>
+  <DNSLookup_ResolveCNAME>true</DNSLookup_ResolveCNAME>
+  <DNSLookup_Recursion>true</DNSLookup_Recursion>
+  <DNSLookup_UseResolverCache>false</DNSLookup_UseResolverCache>
+  <DNSLookup_TransportType>Udp</DNSLookup_TransportType>
+  <DNSLookup_Attempts>3</DNSLookup_Attempts>
+  <DNSLookup_Timeout>2000</DNSLookup_Timeout>
+  <DNSLookup_ExpandStatistics>false</DNSLookup_ExpandStatistics>
+  <SubnetCalculator_IPv4Calculator_SubnetHistory />
+  <SubnetCalculator_IPv4Splitter_SubnetHistory />
+  <SubnetCalculator_IPv4Splitter_NewSubnetmaskOrCIDRHistory />
+  <RemoteDesktop_AdjustScreenAutomatically>false</RemoteDesktop_AdjustScreenAutomatically>
+  <RemoteDesktop_DesktopWidth>1280</RemoteDesktop_DesktopWidth>
+  <RemoteDesktop_DesktopHeight>768</RemoteDesktop_DesktopHeight>
+  <RemoteDesktop_ColorDepth>32</RemoteDesktop_ColorDepth>
+  <RemoteDesktop_RedirectClipboard>true</RemoteDesktop_RedirectClipboard>
+  <RemoteDesktop_RedirectDevices>false</RemoteDesktop_RedirectDevices>
+  <RemoteDesktop_RedirectDrives>false</RemoteDesktop_RedirectDrives>
+  <RemoteDesktop_RedirectPorts>false</RemoteDesktop_RedirectPorts>
+  <RemoteDesktop_RedirectSmartCards>false</RemoteDesktop_RedirectSmartCards>
+  <RemoteDesktop_RedirectPrinters>false</RemoteDesktop_RedirectPrinters>
+  <RemoteDesktop_ExpandSessionView>true</RemoteDesktop_ExpandSessionView>
+  <HTTPHeader_WebsiteUriHistory />
+  <HTTPHeader_ExpandStatistics>true</HTTPHeader_ExpandStatistics>
+</SettingsInfo>

@@ -1,0 +1,907 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{E825EC30-AFA2-476A-AC2C-7537630A645B}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>NETworkManager</RootNamespace>
+    <AssemblyName>NETworkManager</AssemblyName>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <WarningLevel>4</WarningLevel>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>NETworkManager.App</StartupObject>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Resources\Images\NETworkManager.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="AxMSTSCLib, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>obj\Debug\AxMSTSCLib.dll</HintPath>
+    </Reference>
+    <Reference Include="ControlzEx, Version=3.0.2.4, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ControlzEx.3.0.2.4\lib\net45\ControlzEx.dll</HintPath>
+    </Reference>
+    <Reference Include="Dragablz, Version=0.0.3.197, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Dragablz.0.0.3.197\lib\net45\Dragablz.dll</HintPath>
+    </Reference>
+    <Reference Include="MahApps.Metro, Version=1.6.0.184, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MahApps.Metro.1.6.0-alpha0184\lib\net45\MahApps.Metro.dll</HintPath>
+    </Reference>
+    <Reference Include="MahApps.Metro.IconPacks, Version=1.9.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MahApps.Metro.IconPacks.1.9.1\lib\net46\MahApps.Metro.IconPacks.dll</HintPath>
+    </Reference>
+    <Reference Include="MSTSCLib, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+      <HintPath>obj\Debug\MSTSCLib.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\ControlzEx.3.0.2.4\lib\net45\System.Windows.Interactivity.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xaml">
+      <RequiredTargetFramework>4.0</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="WindowsBase" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsFormsIntegration" />
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+    <Compile Include="3rdParty\Heijden.DNS\Header.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Question.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\RecordReader.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordA6.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordAPL.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordATMA.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordCERT.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordDHCID.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordDNSKEY.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordEID.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordGID.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordHIP.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordIPSECKEY.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordNIMLOC.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordNSEC.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordNSEC3.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordNSEC3PARAM.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordOPT.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordRRSIG.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordSINK.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordSPF.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordSSHFP.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordUID.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordUINFO.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordUnknown.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\NotUsed\RecordUNSPEC.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\Obsolete\RecordGPOS.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\Obsolete\RecordMD.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\Obsolete\RecordMF.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\Obsolete\RecordNSAPPTR.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\Obsolete\RecordNXT.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\Record.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordA.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordAAAA.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordAFSDB.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordCNAME.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordDNAME.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordDS.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordHINFO.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordISDN.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordKEY.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordKX.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordLOC.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordMB.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordMG.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordMINFO.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordMR.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordMX.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordNAPTR.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordNS.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordNSAP.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordNULL.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordPTR.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordPX.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordRP.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordRT.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordSIG.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordSOA.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordSRV.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordTKEY.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordTSIG.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordTXT.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordWKS.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Records\RecordX25.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Request.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Resolver.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Response.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\RR.cs" />
+    <Compile Include="3rdParty\Heijden.DNS\Structs.cs" />
+    <Compile Include="Controls\DragablzMainInterTabClient.cs" />
+    <Compile Include="Controls\DragablzRemoteDesktopTabItem.cs" />
+    <Compile Include="Converters\NullOrEmptyToBoolConverter.cs" />
+    <Compile Include="Converters\TimestampToStringConverter.cs" />
+    <Compile Include="Converters\NullableDateTimeToStringConverter.cs" />
+    <Compile Include="Converters\ValidateNetworkInterfaceProfileConverter.cs" />
+    <Compile Include="Converters\ValidateSubnetCalculatorIPv4SplitterConverter.cs" />
+    <Compile Include="Helpers\PowerShellHelper.cs" />
+    <Compile Include="Helpers\SecureStringHelper.cs" />
+    <Compile Include="Helpers\SingleInstanceHelper.cs" />
+    <Compile Include="Models\Network\HTTPHeaders.cs" />
+    <Compile Include="Models\Network\ARPTableInfo.cs" />
+    <Compile Include="Models\RemoteDesktop\RemoteDesktopSessionInfo.cs" />
+    <Compile Include="Models\Settings\CredentialInfoSerializable.cs" />
+    <Compile Include="Models\Settings\CredentialInfo.cs" />
+    <Compile Include="Models\Settings\CredentialManager.cs" />
+    <Compile Include="Models\Settings\RemoteDesktopSessionManager.cs" />
+    <Compile Include="Models\Settings\RemoteDesktopSessionInfo.cs" />
+    <Compile Include="Validators\HttpAndHttpsUriValidator.cs" />
+    <Compile Include="ViewModels\Applications\HTTPHeadersViewModel.cs" />
+    <Compile Include="ViewModels\Applications\ARPTableViewModel.cs" />
+    <Compile Include="ViewModels\Dialogs\CredentialsMasterPasswordViewModel.cs" />
+    <Compile Include="ViewModels\Dialogs\CredentialViewModel.cs" />
+    <Compile Include="ViewModels\Dialogs\CredentialsSetMasterPasswordViewModel.cs" />
+    <Compile Include="ViewModels\Dialogs\NetworkInterfaceProfileViewModel.cs" />
+    <Compile Include="ViewModels\Dialogs\PortScannerProfileViewModel.cs" />
+    <Compile Include="ViewModels\Dialogs\ConfirmRemoveViewModel.cs" />
+    <Compile Include="ViewModels\Dialogs\ARPTableAddEntryViewModel.cs" />
+    <Compile Include="ViewModels\Dialogs\WakeOnLANClientViewModel.cs" />
+    <Compile Include="ViewModels\Dialogs\IPScannerProfileViewModel.cs" />
+    <Compile Include="ViewModels\Dialogs\RemoteDesktopSessionViewModel.cs" />
+    <Compile Include="ViewModels\Dialogs\RemoteDesktopSessionConnectViewModel.cs" />
+    <Compile Include="Models\Network\DNSLookup.cs" />
+    <Compile Include="Models\Network\DNSLookupCompleteArgs.cs" />
+    <Compile Include="Models\Network\DNSLookupOptions.cs" />
+    <Compile Include="Models\Network\DNSLookupErrorArgs.cs" />
+    <Compile Include="Models\Network\DNSLookupRecordInfo.cs" />
+    <Compile Include="Models\Network\DNSLookupRecordArgs.cs" />
+    <Compile Include="Models\Settings\NetworkInterfaceProfileManager.cs" />
+    <Compile Include="Models\Settings\IPScannerProfileInfo.cs" />
+    <Compile Include="Models\Settings\PortScannerProfileInfo.cs" />
+    <Compile Include="Models\Settings\IPScannerProfileManager.cs" />
+    <Compile Include="Models\Settings\PortScannerProfileManager.cs" />
+    <Compile Include="Validators\IPAddressValidator.cs" />
+    <Compile Include="Validators\EmptyOrIPv4AddressValidator.cs" />
+    <Compile Include="Validators\SubnetValidator.cs" />
+    <Compile Include="Validators\OpacityTextboxValidator.cs" />
+    <Compile Include="ViewModels\Applications\DNSLookupViewModel.cs" />
+    <Compile Include="ViewModels\Applications\SubnetCalculatorIPv4SplitterViewModel.cs" />
+    <Compile Include="ViewModels\Applications\LookupOUILookupViewModel.cs" />
+    <Compile Include="ViewModels\Applications\RemoteDesktopViewModel.cs" />
+    <Compile Include="ViewModels\Help\HelpCommandLineViewModel.cs" />
+    <Compile Include="ViewModels\Settings\CredentialsViewModel.cs" />
+    <Compile Include="ViewModels\Settings\SettingsApplicationRemoteDesktopViewModel.cs" />
+    <Compile Include="ViewModels\Settings\SettingsApplicationDNSLookupViewModel.cs" />
+    <Compile Include="ViewModels\Settings\SettingsApplicationWakeOnLANViewModel.cs" />
+    <Compile Include="Controls\RemoteDesktopControl.xaml.cs">
+      <DependentUpon>RemoteDesktopControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Applications\HTTPHeadersView.xaml.cs">
+      <DependentUpon>HTTPHeadersView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Applications\ARPTableView.xaml.cs">
+      <DependentUpon>ARPTableView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Applications\SubnetCalculatorIPv4SplitterView.xaml.cs">
+      <DependentUpon>SubnetCalculatorIPv4SplitterView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Applications\SubnetCalculatorView.xaml.cs">
+      <DependentUpon>SubnetCalculatorView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Applications\LookupOUILookupView.xaml.cs">
+      <DependentUpon>LookupOUILookupView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Applications\LookupPortLookupView.xaml.cs">
+      <DependentUpon>LookupPortLookupView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Applications\RemoteDesktopView.xaml.cs">
+      <DependentUpon>RemoteDesktopView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DragablzTabHostWindow.xaml.cs">
+      <DependentUpon>DragablzTabHostWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Dialogs\CredentialDialog.xaml.cs">
+      <DependentUpon>CredentialDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Dialogs\CredentialsMasterPasswordDialog.xaml.cs">
+      <DependentUpon>CredentialsMasterPasswordDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Dialogs\CredentialsSetMasterPasswordDialog.xaml.cs">
+      <DependentUpon>CredentialsSetMasterPasswordDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Dialogs\NetworkInterfaceProfileDialog.xaml.cs">
+      <DependentUpon>NetworkInterfaceProfileDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Dialogs\PortScannerProfileDialog.xaml.cs">
+      <DependentUpon>PortScannerProfileDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Dialogs\ConfirmRemoveDialog.xaml.cs">
+      <DependentUpon>ConfirmRemoveDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Dialogs\ARPTableAddEntryDialog.xaml.cs">
+      <DependentUpon>ARPTableAddEntryDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Dialogs\WakeOnLANClientDialog.xaml.cs">
+      <DependentUpon>WakeOnLANClientDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Dialogs\IPScannerProfileDialog.xaml.cs">
+      <DependentUpon>IPScannerProfileDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Dialogs\RemoteDesktopSessionDialog.xaml.cs">
+      <DependentUpon>RemoteDesktopSessionDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Dialogs\RemoteDesktopSessionConnectDialog.xaml.cs">
+      <DependentUpon>RemoteDesktopSessionConnectDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Settings\CredentialsView.xaml.cs">
+      <DependentUpon>CredentialsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Settings\SettingsApplicationRemoteDesktopView.xaml.cs">
+      <DependentUpon>SettingsApplicationRemoteDesktopView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Settings\UpdateView.xaml.cs">
+      <DependentUpon>UpdateView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Settings\SettingsApplicationDNSLookupView.xaml.cs">
+      <DependentUpon>SettingsApplicationDNSLookupView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Settings\SettingsApplicationWakeOnLANView.xaml.cs">
+      <DependentUpon>SettingsApplicationWakeOnLANView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Help\HelpCommandLineWindow.xaml.cs">
+      <DependentUpon>HelpCommandLineWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="WpfHelper\PasswordBoxBindingBehavior.cs" />
+    <Compile Include="WpfHelper\ProtocolSettingsLayout.cs" />
+    <Page Include="Resources\ContextMenu\ContextMenu.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\RadioButtonStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\CheckBoxStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\ContextMenuStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\DragablzStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\ExpanderStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\PasswordBoxStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\RectangleStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\ToolTipStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\WindowStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\ComboBoxStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\ScrollViewerStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\ScrollBarStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\TabControlStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\NumericUpDownStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Templates\ValidationErrorTemplates.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\MetroDialogStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Controls\RemoteDesktopControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Applications\HTTPHeadersView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Applications\ARPTableView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Applications\SubnetCalculatorIPv4SplitterView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Applications\SubnetCalculatorView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Applications\LookupOUILookupView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Applications\LookupPortLookupView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Applications\RemoteDesktopView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Applications\LookupView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Applications\TracerouteView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Applications\PingView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Applications\DNSLookupView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Applications\PortScannerView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Applications\IPScannerView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\DragablzTabHostWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Dialogs\CredentialDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Dialogs\CredentialsMasterPasswordDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Dialogs\CredentialsSetMasterPasswordDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Dialogs\NetworkInterfaceProfileDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Dialogs\PortScannerProfileDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Dialogs\ConfirmRemoveDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Dialogs\ARPTableAddEntryDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Dialogs\WakeOnLANClientDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Dialogs\IPScannerProfileDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Dialogs\RemoteDesktopSessionDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Dialogs\RemoteDesktopSessionConnectDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Settings\CredentialsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Settings\SettingsApplicationRemoteDesktopView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Settings\UpdateView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Settings\SettingsApplicationDNSLookupView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Settings\SettingsApplicationWakeOnLANView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Settings\SettingsApplicationPortScannerView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Settings\SettingsApplicationTracerouteView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Settings\SettingsApplicationIPScannerView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Settings\SettingsApplicationPingView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Settings\SettingsGeneralGeneralView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Settings\SettingsGeneralImportExportView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Settings\SettingsGeneralSettingsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Settings\SettingsGeneralAutostartView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Settings\SettingsGeneralHotKeysView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Settings\SettingsGeneralLanguageView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Settings\SettingsGeneralAppearanceView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Settings\SettingsGeneralWindowView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Settings\AboutView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Help\HelpCommandLineWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Settings\SettingsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Applications\NetworkInterfaceView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Applications\WakeOnLANView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Applications\SubnetCalculatorIPv4CalculatorView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Compile Include="App.xaml.cs">
+      <DependentUpon>App.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Controls\MultiSelectDataGrid.cs" />
+    <Compile Include="Controls\ScrollingDataGrid.cs" />
+    <Compile Include="Converters\PortStatusToStringConverter.cs" />
+    <Compile Include="Converters\IPAddressToStringConverter.cs" />
+    <Compile Include="Converters\ValidateSettingsImportConverter.cs" />
+    <Compile Include="Converters\ValidateSettingsResetConverter.cs" />
+    <Compile Include="Converters\ValidateSettingsExportConverter.cs" />
+    <Compile Include="Helpers\HistoryListHelper.cs" />
+    <Compile Include="Helpers\HotKeysHelper.cs" />
+    <Compile Include="Models\Network\ARPTable.cs" />
+    <Compile Include="Helpers\PortRangeHelper.cs" />
+    <Compile Include="Helpers\IPScanRangeHelper.cs" />
+    <Compile Include="Helpers\IPv4AddressHelper.cs" />
+    <Compile Include="Helpers\MACAddressHelper.cs" />
+    <Compile Include="Helpers\MagicPacketHelper.cs" />
+    <Compile Include="Helpers\RegexHelper.cs" />
+    <Compile Include="Helpers\SubnetHelper.cs" />
+    <Compile Include="Helpers\SubnetmaskHelper.cs" />
+    <Compile Include="Helpers\TimestampHelper.cs" />
+    <Compile Include="Models\Network\PingExceptionArgs.cs" />
+    <Compile Include="Models\Network\PortInfo.cs" />
+    <Compile Include="Models\Network\PortScannedArgs.cs" />
+    <Compile Include="Models\Network\PortScannerOptions.cs" />
+    <Compile Include="Models\Lookup\PortLookupInfo.cs" />
+    <Compile Include="Models\Lookup\OUIInfo.cs" />
+    <Compile Include="Models\Lookup\PortLookup.cs" />
+    <Compile Include="Models\Lookup\OUILookup.cs" />
+    <Compile Include="Models\Network\PortScanner.cs" />
+    <Compile Include="Models\Settings\ImportExportManager.cs" />
+    <Compile Include="Models\Settings\ImportFileNotValidException.cs" />
+    <Compile Include="Models\Settings\SettingsFileInfo.cs" />
+    <Compile Include="Validators\FileExistsValidator.cs" />
+    <Compile Include="Validators\PortRangeValidator.cs" />
+    <Compile Include="ViewModels\Applications\PortScannerViewModel.cs" />
+    <Compile Include="ViewModels\Applications\LookupPortViewModel.cs" />
+    <Compile Include="ViewModels\Settings\SettingsApplicationPortScannerViewModel.cs" />
+    <Compile Include="ViewModels\Settings\SettingsApplicationIPScannerViewModel.cs" />
+    <Compile Include="ViewModels\Settings\SettingsApplicationPingViewModel.cs" />
+    <Compile Include="ViewModels\Settings\SettingsGeneralGeneralViewModel.cs" />
+    <Compile Include="ViewModels\Settings\SettingsApplicationTracerouteViewModel.cs" />
+    <Compile Include="Views\Applications\LookupView.xaml.cs">
+      <DependentUpon>LookupView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\ApplicationViewManager.cs" />
+    <Compile Include="Views\ApplicationViewInfo.cs" />
+    <Compile Include="Collections\AsyncObservableCollection.cs" />
+    <Compile Include="Models\Network\ProgressChangedArgs.cs" />
+    <Compile Include="Models\Network\TracerouteHopInfo.cs" />
+    <Compile Include="Models\Network\TracerouteHopReceivedArgs.cs" />
+    <Compile Include="Models\Network\IPScannerHostFoundArgs.cs" />
+    <Compile Include="Models\Network\IPScannerHostInfo.cs" />
+    <Compile Include="Models\Network\IPScanner.cs" />
+    <Compile Include="Models\Network\IPScannerOptions.cs" />
+    <Compile Include="Models\Network\MaximumHopsReachedArgs.cs" />
+    <Compile Include="Models\Network\NetworkInterface.cs" />
+    <Compile Include="Models\Network\NetworkInterfaceConfig.cs" />
+    <Compile Include="Models\Network\NetworkInterfaceInfo.cs" />
+    <Compile Include="Models\Network\Ping.cs" />
+    <Compile Include="Models\Network\PingReceivedArgs.cs" />
+    <Compile Include="Models\Network\PingInfo.cs" />
+    <Compile Include="Models\Network\PingOptions.cs" />
+    <Compile Include="Models\Network\Subnet.cs" />
+    <Compile Include="Models\Network\SubnetInfo.cs" />
+    <Compile Include="Models\Network\Subnetmask.cs" />
+    <Compile Include="Models\Network\SubnetmaskInfo.cs" />
+    <Compile Include="Models\Network\Traceroute.cs" />
+    <Compile Include="Models\Network\TracerouteOptions.cs" />
+    <Compile Include="Models\Network\WakeOnLan.cs" />
+    <Compile Include="Models\Network\WakeOnLanInfo.cs" />
+    <Compile Include="Models\Settings\AppearanceManager.cs" />
+    <Compile Include="Models\Settings\AssemblyInfo.cs" />
+    <Compile Include="Models\Settings\AssemblyManager.cs" />
+    <Compile Include="Models\Settings\AutostartManager.cs" />
+    <Compile Include="Models\Settings\CommandLineInfo.cs" />
+    <Compile Include="Models\Settings\CommandLineManager.cs" />
+    <Compile Include="Models\Settings\ConfigurationInfo.cs" />
+    <Compile Include="Models\Settings\ConfigurationManager.cs" />
+    <Compile Include="Models\Settings\LocalizationInfo.cs" />
+    <Compile Include="Models\Settings\LocalizationManager.cs" />
+    <Compile Include="Models\Settings\SettingsInfo.cs" />
+    <Compile Include="Models\Settings\SettingsManager.cs" />
+    <Compile Include="Views\SettingsViewInfo.cs" />
+    <Compile Include="Views\SettingsViewManager.cs" />
+    <Compile Include="Models\Settings\WakeOnLANClientManager.cs" />
+    <Compile Include="Models\Settings\NetworkInterfaceProfileInfo.cs" />
+    <Compile Include="Models\Settings\WakeOnLANClientInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <DependentUpon>Resources.resx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Include="ViewModels\Applications\IPScannerViewModel.cs" />
+    <Compile Include="ViewModels\Applications\NetworkInterfaceViewModel.cs" />
+    <Compile Include="ViewModels\Applications\PingViewModel.cs" />
+    <Compile Include="ViewModels\Applications\SubnetCalculatorIPv4CalculatorViewModel.cs" />
+    <Compile Include="ViewModels\Applications\TracerouteViewModel.cs" />
+    <Compile Include="ViewModels\Applications\WakeOnLANViewModel.cs" />
+    <Compile Include="ViewModels\RelayCommand.cs" />
+    <Compile Include="ViewModels\Settings\AboutViewModel.cs" />
+    <Compile Include="ViewModels\Settings\SettingsGeneralWindowViewModel.cs" />
+    <Compile Include="ViewModels\Settings\SettingsGeneralAppearanceViewModel.cs" />
+    <Compile Include="ViewModels\Settings\SettingsGeneralLanguageViewModel.cs" />
+    <Compile Include="ViewModels\Settings\SettingsGeneralHotKeysViewModel.cs" />
+    <Compile Include="ViewModels\Settings\SettingsGeneralImportExportViewModel.cs" />
+    <Compile Include="ViewModels\Settings\SettingsGeneralSettingsViewModel.cs" />
+    <Compile Include="ViewModels\Settings\SettingsGeneralAutostartViewModel.cs" />
+    <Compile Include="ViewModels\Settings\SettingsViewModel.cs" />
+    <Compile Include="ViewModels\ViewModelBase.cs" />
+    <Compile Include="Views\Applications\TracerouteView.xaml.cs">
+      <DependentUpon>TracerouteView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Applications\PingView.xaml.cs">
+      <DependentUpon>PingView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Applications\DNSLookupView.xaml.cs">
+      <DependentUpon>DNSLookupView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Converters\BooleanReverseToVisibilityConverter.cs" />
+    <Compile Include="Converters\BooleanToVisibilityConverter.cs" />
+    <Compile Include="Converters\PercentConverter.cs" />
+    <Compile Include="Converters\PingTimeToStringConverter.cs" />
+    <Compile Include="Converters\IPStatusToStringConverter.cs" />
+    <Compile Include="Converters\BooleanOrConverter.cs" />
+    <Compile Include="Converters\NullOrEmptyToStringConverter.cs" />
+    <Compile Include="Converters\SelectedItemsToBoolConverter.cs" />
+    <Compile Include="Converters\IntToStringConverter.cs" />
+    <Compile Include="Views\Settings\SettingsApplicationPortScannerView.xaml.cs">
+      <DependentUpon>SettingsApplicationPortScannerView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Settings\SettingsApplicationTracerouteView.xaml.cs">
+      <DependentUpon>SettingsApplicationTracerouteView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Settings\SettingsApplicationIPScannerView.xaml.cs">
+      <DependentUpon>SettingsApplicationIPScannerView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Settings\SettingsApplicationPingView.xaml.cs">
+      <DependentUpon>SettingsApplicationPingView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Settings\SettingsGeneralGeneralView.xaml.cs">
+      <DependentUpon>SettingsGeneralGeneralView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Settings\SettingsGeneralImportExportView.xaml.cs">
+      <DependentUpon>SettingsGeneralImportExportView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Settings\SettingsGeneralSettingsView.xaml.cs">
+      <DependentUpon>SettingsGeneralSettingsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Settings\SettingsGeneralAutostartView.xaml.cs">
+      <DependentUpon>SettingsGeneralAutostartView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Settings\SettingsGeneralHotKeysView.xaml.cs">
+      <DependentUpon>SettingsGeneralHotKeysView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Settings\SettingsGeneralLanguageView.xaml.cs">
+      <DependentUpon>SettingsGeneralLanguageView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Settings\SettingsGeneralAppearanceView.xaml.cs">
+      <DependentUpon>SettingsGeneralAppearanceView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Settings\SettingsGeneralWindowView.xaml.cs">
+      <DependentUpon>SettingsGeneralWindowView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Settings\AboutView.xaml.cs">
+      <DependentUpon>AboutView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="WpfHelper\BindingProxy.cs" />
+    <Compile Include="Converters\BooleanReverseConverter.cs" />
+    <Compile Include="Converters\NullToFalseConverter.cs" />
+    <Compile Include="Converters\ValidateNetworkInterfaceConfigConverter.cs" />
+    <Compile Include="Converters\PhysicalAddressToStringConverter.cs" />
+    <Compile Include="Converters\IPAddressArrayToStringConverter.cs" />
+    <Compile Include="Converters\BitsToHumanReadableSizeConverter.cs" />
+    <Compile Include="Converters\IsSettingsLocationToBoolConverter.cs" />
+    <Compile Include="Converters\IsDefaultLocationToBoolConverter.cs" />
+    <Compile Include="Converters\AccentToBrushConverter.cs" />
+    <Compile Include="Converters\AppThemeToBrushConverter.cs" />
+    <Compile Include="Views\Applications\PortScannerView.xaml.cs">
+      <DependentUpon>PortScannerView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Applications\NetworkInterfaceView.xaml.cs">
+      <DependentUpon>NetworkInterfaceView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Converters\BooleanToStringConverter.cs" />
+    <Compile Include="Converters\AccentToStringConverter.cs" />
+    <Compile Include="Converters\AppThemeToStringConverter.cs" />
+    <Compile Include="Views\Applications\IPScannerView.xaml.cs">
+      <DependentUpon>IPScannerView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Validators\IPScanRangeValidator.cs" />
+    <Compile Include="Views\Settings\SettingsView.xaml.cs">
+      <DependentUpon>SettingsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Validators\SettingsFolderExistsValidator.cs" />
+    <Compile Include="Validators\SubnetmaskValidator.cs" />
+    <Compile Include="Validators\SubnetmaskOrCIDRValidator.cs" />
+    <Compile Include="Validators\IPv4AddressValidator.cs" />
+    <Compile Include="Validators\EmptyValidator.cs" />
+    <Compile Include="Validators\PortValidator.cs" />
+    <Compile Include="Validators\MACAddressValidator.cs" />
+    <Compile Include="Views\Applications\WakeOnLANView.xaml.cs">
+      <DependentUpon>WakeOnLANView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Applications\SubnetCalculatorIPv4CalculatorView.xaml.cs">
+      <DependentUpon>SubnetCalculatorIPv4CalculatorView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="MainWindow.xaml.cs">
+      <DependentUpon>MainWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Page Include="Resources\Localization\Resources.de-DE.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Resources\Localization\Resources.en-US.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Resources\Styles\DataGridStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\ToogleSwitchStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\GroupBoxStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\ButtonStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\TextBoxStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Styles\TextBlockStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <None Include="app.config" />
+    <AppDesigner Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <None Include="Resources\App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Localization\Flags\de-DE.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Localization\Flags\en-US.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Images\NETworkManager.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Images\NETworkManager_128x128.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.5">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.5 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="3rdParty\Heijden.DNS\Records\totla.txt" />
+    <Resource Include="3rdParty\Heijden.DNS\Root\named_root.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Ports.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\OUI.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>PowerShell.exe -ExecutionPolicy Bypass -NoProfile -File "$(ProjectDir)..\..\Scripts\PreBuildEventCommandLine.ps1" "$(TargetDir)"</PreBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
