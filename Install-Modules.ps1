@@ -6,7 +6,7 @@
 # Script Modified from: n/a
 <#######</Header>#######>
 <#######<Body>#######>
-Function Install-gwModules
+Function Install-Modules
 {
     <#
 .Synopsis
@@ -54,8 +54,6 @@ This function will copy all folders in this script's folder to a users $PSModule
     }
 
 }
-
-Install-gwModules
 
 <#######</Body>#######>
 <#######</Script>#######>

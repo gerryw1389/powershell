@@ -90,6 +90,26 @@ Function Start-Log
         Write-Verbose "Logfile has been cleared due to size"
     }
 
+    If (!([System.Diagnostics.Eventlog]::SourceExists($Logfile)))
+    {
+        New-Eventlog -Logname Application -Source $Logfile 
+    }
+ 
+    If (Test-IsAdmin)
+    {
+        Limit-EventLog -LogName "Application" -MaximumSize 20MB -OverflowAction OverwriteAsNeeded
+    }
+			
+    $Params = @{}
+    $Params.Message = "####################<Script>####################"
+    $Params.LogName = "Application"
+    $Params.Source = $Logfile 
+    $Params.EntryType = "Information" 
+    $Params.EventID = 10 
+    $Params.Category = 0
+    Write-EventLog @Params
+    $Params = $Null
+
     "####################<Script>####################" | Out-File -Encoding ASCII -FilePath $Logfile -Append
     ((Get-Date -Format "yyyy-MM-dd hh:mm:ss tt") + ": " + "Script Started on $env:COMPUTERNAME ") | Out-File -Encoding ASCII -FilePath $Logfile -Append
            
@@ -99,24 +119,57 @@ Function Write-Log
 {
     <# 
         .Synopsis
-        Function to write to a log file at $PSScriptRoot\..\Logs\scriptname.log. Colors can be displayed for console view as well.
+        Function to write to 3 places at once: 
+        Console with Color options.
+        A log file at $PSScriptRoot\..\Logs\scriptname.log.
+        The Windows Event Viewer Application log.
         .Description
-        Function to write to the console with colors specified with the "Color" parameter and a logfile at $PSScriptRoot\..\Logs\scriptname.log.
+        Function to write to 3 places at once: 
+        Console with Color options.
+        A log file at $PSScriptRoot\..\Logs\scriptname.log.
+        The Windows Event Viewer Application log.
         .Parameter Message
-        The string to be displayed to the screen and in the logfile. 
+        The string to be displayed in each of the places.
         .Parameter Color
         The color in which to display the input string on the screen
         Default is DarkGreen
         Valid options are: Black, Blue, Cyan, DarkBlue, DarkCyan, DarkGray, DarkGreen, DarkMagenta, DarkRed, DarkYellow, Gray, Green, Magenta, 
         Red, White, and Yellow.
+        .Parameter Warning
+        A warning string to be displayed in each of the places.
+        To search for it, type: Get-Eventlog -Logname Application -Source $Logfile | Where-Object {$_.Eventid -Eq "30"}
+        .Parameter Error
+        An error string to be displayed in each of the places.
+        To search for it, type: Get-Eventlog -Logname Application -Source $Logfile | Where-Object {$_.Eventid -Eq "40"}
         .Example 
         Write-Log "Hello Hello"
-        This will write "Hello Hello" to the console in DarkGreen text and to the logfile at $PSScriptRoot\..\Logs\scriptname.log.
+        This will write "Hello Hello" to the console in DarkGreen text, 
+        to the Windows Event Viewer as an informational event, 
+        and to the logfile at $PSScriptRoot\..\Logs\scriptname.log.
         .Example 
-        Write-Log -Message "Hello Hello Again" -Color Magenta
+        Write-Log "Hello Hello Again" -Color Yellow
+        This will write "Hello Hello" to the console in Yellow text, 
+        to the Windows Event Viewer as an informational event, 
+        and to the logfile at $PSScriptRoot\..\Logs\scriptname.log.
         .Example 
-        Same as above but with Magenta color instead of dark green.
+        Write-Log -Message "Warning My Friend" -Color Magenta -Warning
+        This will write "Warning My Friend" to the console in Magenta text, 
+        to the Windows Event Viewer as an informational event, 
+        and to the logfile at $PSScriptRoot\..\Logs\scriptname.log.
+        .Example 
+        Write-Log "Oops! An Error!" -Error
+        This will write "Oops! An Error!" to the console in Red text, 
+        Terminates the script in place (if terminating error),
+        to the Windows Event Viewer as an error event, 
+        and to the logfile at $PSScriptRoot\..\Logs\scriptname.log.
+        .Example 
+        Write-Log "Oops! An Error!" -Error -ExitGracefully
+        This will write "Oops! An Error!" to the console in Red text,
+        Will exit the script instead of terminating in place, 
+        to the Windows Event Viewer as an error event, 
+        and to the logfile at $PSScriptRoot\..\Logs\scriptname.log.
         .Notes
+        2018-03-21: v1.1 Back from the dead
         2017-10-19: v1.0 Initial script 
         #>
         
@@ -132,56 +185,48 @@ Function Write-Log
         [String]$Color = "Darkgreen",
 
         [Parameter(Mandatory = $True)]
-        [String]$Logfile          
+        [String]$Logfile ,
+        
+        [Switch] $Warning,
+                
+        [Switch] $Error,
+
+        [Switch] $ExitGracefully         
     )
     
-    Write-Host $Message -Foregroundcolor $Color 
-    ((Get-Date -Format "yyyy-MM-dd hh:mm:ss tt") + ": " + "$Message") | Out-File -Encoding ASCII -FilePath $Logfile -Append
-}
-New-Alias -Name "Log" -Value Write-Log
-
-Function Write-ErrorLog 
-{
-    <# 
-        .Synopsis
-        Function to write an error to the log file.
-        .Description
-        Function to write an error to the log file. This function is usually used in the catch block.
-        .Parameter Message
-        What to write after the word "ERROR:" in the logfile.
-        .Parameter ExitGracefully
-        Allows the logfile to wrap up before exiting.
-        .Notes
-        2017-10-19: v1.0 Initial script 
-        #>
-        
-    Param (
-
-        [Parameter(Mandatory = $True, Valuefrompipeline = $True, Valuefrompipelinebypropertyname = $True, Position = 0)]
-        [String]$Message,
-
-        [Parameter(Mandatory = $false, Position = 1)]
-        [switch]$ExitGracefully,
-
-        [Parameter(Mandatory = $True)]
-        [String]$Logfile
-
-    )
-
-    If ( $ExitGracefully)
+    If ($Warning)
     {
-        Write-Error "$Message" 
+        Write-Host $Message -Foregroundcolor "Gray"
+        Write-EventLog -Message $Message -LogName Application -Source $Logfile -EntryType Warning -EventID 30 -Category 0
+        ((Get-Date -Format "yyyy-MM-dd hh:mm:ss tt") + ": " + "WARNING: " + "$Message") | Out-File -Encoding ASCII -FilePath $Logfile -Append
+    }
+    
+    ElseIf ($Error)
+    {
+        Write-Host $Message -Foregroundcolor "Red" 
+        Write-EventLog -Message $Message -LogName Application -Source $Logfile -EntryType Error -EventID 40 -Category 0
+        ((Get-Date -Format "yyyy-MM-dd hh:mm:ss tt") + ": " + "ERROR: " + "$Message") | Out-File -Encoding ASCII -FilePath $Logfile -Append
+    }
+    
+    ElseIf ( $ExitGracefully)
+    {
+        Write-Error $Message -Foregroundcolor "Red" 
+        Write-EventLog -Message $Message -LogName Application -Source $Logfile -EntryType Error -EventID 90 -Category 0 
         ((Get-Date -Format "yyyy-MM-dd hh:mm:ss tt") + ": " + "ERROR: " + "$Message") | Out-File -Encoding ASCII -FilePath $Logfile -Append
         ((Get-Date -Format "yyyy-MM-dd hh:mm:ss tt") + ": " + "ERROR: " + "Exiting early / breaking out!") | Out-File -Encoding ASCII -FilePath $Logfile -Append
         Stop-Log
         Break
     }
+    
     Else
     {
-        Write-Error "$Message" 
-        ((Get-Date -Format "yyyy-MM-dd hh:mm:ss tt") + ": " + "ERROR: " + "$Message") | Out-File -Encoding ASCII -FilePath $Logfile -Append
+        Write-Host $Message -Foregroundcolor $Color 
+        Write-EventLog -Message $Message -LogName Application -Source $Logfile -EntryType Information -EventID 20 -Category 0
+        ((Get-Date -Format "yyyy-MM-dd hh:mm:ss tt") + ": " + "$Message") | Out-File -Encoding ASCII -FilePath $Logfile -Append
     }
+  
 }
+New-Alias -Name "Log" -Value Write-Log
 
 Function Stop-Log
 {
@@ -200,11 +245,42 @@ Function Stop-Log
         [Parameter(Mandatory = $True)]
         [String]$Logfile
     )
+
+    $Params = @{}
+    $Params.Message = "####################</Script>####################"
+    $Params.LogName = "Application"
+    $Params.Source = $Logfile 
+    $Params.EntryType = "Information" 
+    $Params.EventID = 50 
+    $Params.Category = 0
+    Write-EventLog @Params
+    $Params = $Null
+
     ((Get-Date -Format "yyyy-MM-dd hh:mm:ss tt") + ": " + "Script Completed on $env:COMPUTERNAME") | Out-File -Encoding ASCII -FilePath $Logfile -Append
     "####################</Script>####################" | Out-File -Encoding ASCII -FilePath $Logfile -Append
 }
 
-# Admin
+# Find out when a script was started:
+# Get-Eventlog -Logname Application -Source $Logfile | Where-Object {$_.Eventid -Eq "10"}
+
+# Get all the informational events:
+# Get-Eventlog -Logname Application -Source $Logfile | Where-Object {$_.Eventid -Eq "20"}
+
+# Get all the warning events:
+# Get-Eventlog -Logname Application -Source $Logfile | Where-Object {$_.Eventid -Eq "30"}
+
+# Get all the error events:
+# Get-Eventlog -Logname Application -Source $Logfile | Where-Object {$_.Eventid -Eq "40"}
+
+# Get all the error events that exited gracefully:
+# Get-Eventlog -Logname Application -Source $Logfile | Where-Object {$_.Eventid -Eq "45"}
+
+# Get all the script completed successfully events:
+# Get-Eventlog -Logname Application -Source $Logfile | Where-Object {$_.Eventid -Eq "50"}
+
+# To See Events:
+# $Events = Get-Eventlog -Logname Application -Source $Logfile
+# $Events | Sort -Property Index
 
 Function Test-IsAdmin
 {
