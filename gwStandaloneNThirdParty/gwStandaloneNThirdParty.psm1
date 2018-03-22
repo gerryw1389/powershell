@@ -8,10 +8,10 @@
 <#######<Body>#######>
 
 
-$Files = @( Get-ChildItem -Path $PSScriptRoot\Public\*.ps1 -Recurse -ErrorAction SilentlyContinue)
+$Files = @( Get-ChildItem -Path $PSScriptRoot\*.ps1 -Recurse -ErrorAction SilentlyContinue)
 ForEach ($File in $Files)
 { 
-    . $_.fullname
+    . $File.fullname
 }
 
 Export-ModuleMember -Function *
