@@ -55,7 +55,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     
     Process
     {   
-
         $ComputerName = $env:Computername
         Log "Running Query.Exe Against $ComputerName" 
         $Users = Query User /Server:$ComputerName 2>&1

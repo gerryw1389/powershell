@@ -38,8 +38,8 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {
 
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-		$PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
+        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
+        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
         Set-Console
         Start-Log
         New-Alias -Name "SetReg" -Value Set-RegEntry
@@ -51,28 +51,27 @@ Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
     
     Process
     {    
-        
         Log "Creating a lockscreen task"
-		$TaskName = "LockScreen"
-		$service = New-Object -ComObject("Schedule.Service")
-		$service.Connect()
-		$rootFolder = $service.GetFolder("")
-		$taskdef = $service.NewTask(0)
-		$sets = $taskdef.Settings
-		$sets.AllowDemandStart = $true
-		$sets.Compatibility = 2
-		$sets.Enabled = $true
-		$sets.RunOnlyIfIdle = $true
-		$sets.IdleSettings.IdleDuration = "PT05M"
-		$sets.IdleSettings.WaitTimeout = "PT60M"
-		$sets.IdleSettings.StopOnIdleEnd = $true
-		$trg = $taskdef.Triggers.Create(6)
-		$act = $taskdef.Actions.Create(0)
-		$act.Path = "C:\Windows\system32\rundll32.exe"
-		$act.Arguments = "user32.dll,LockWorkStation"
-		$username = "$env:userdomain" + "\" + "$env:username"
-		$user = "$username"
-		$rootFolder.RegisterTaskDefinition($TaskName, $taskdef, 6, $user, $null, 3)
+        $TaskName = "LockScreen"
+        $service = New-Object -ComObject("Schedule.Service")
+        $service.Connect()
+        $rootFolder = $service.GetFolder("")
+        $taskdef = $service.NewTask(0)
+        $sets = $taskdef.Settings
+        $sets.AllowDemandStart = $true
+        $sets.Compatibility = 2
+        $sets.Enabled = $true
+        $sets.RunOnlyIfIdle = $true
+        $sets.IdleSettings.IdleDuration = "PT05M"
+        $sets.IdleSettings.WaitTimeout = "PT60M"
+        $sets.IdleSettings.StopOnIdleEnd = $true
+        $trg = $taskdef.Triggers.Create(6)
+        $act = $taskdef.Actions.Create(0)
+        $act.Path = "C:\Windows\system32\rundll32.exe"
+        $act.Arguments = "user32.dll,LockWorkStation"
+        $username = "$env:userdomain" + "\" + "$env:username"
+        $user = "$username"
+        $rootFolder.RegisterTaskDefinition($TaskName, $taskdef, 6, $user, $null, 3)
         
         Log "Showing Task Manager details"
         If (!(Test-Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager"))

@@ -119,7 +119,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         }
         Catch
         {
-            Write-ErrorLog -Message $($_.Exception.Message) -ExitGracefully
+            Log $($_.Exception.Message) -Error -ExitGracefully
         }
              
     }

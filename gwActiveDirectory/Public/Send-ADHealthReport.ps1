@@ -29,7 +29,7 @@ Sends A Report To The Email You Specify Of Ad Health Check Tests That Run Will R
 Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
  
 #>
-   [Cmdletbinding()]
+    [Cmdletbinding()]
 
     Param
     (
@@ -53,9 +53,9 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             $Smtpclient.Send($Mailmessage)
         }
        
-      Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-		$PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
+        Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
+        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
+        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
         Set-Console
         Start-Log
         
@@ -63,9 +63,6 @@ Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
     
     Process
     {
-        
-        
-
         # Get The Replication Info.
         $Myrepinfo = @(Repadmin /Replsum * /Bysrc /Bydest /Sort:Delta)
  

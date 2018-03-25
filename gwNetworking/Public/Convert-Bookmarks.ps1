@@ -33,51 +33,47 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     
     Begin
     {       
-        
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-		$PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
+        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
+        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
         Set-Console
         Start-Log
     }
     
     Process
     {   
-        
-        
-        
         If (Test-Path "c:\users\$env:username\Downloads\GoogleBookmarks.html")
-{
-    Remove-Item "c:\users\$env:username\Downloads\GoogleBookmarks.html"
-}
+        {
+            Remove-Item "c:\users\$env:username\Downloads\GoogleBookmarks.html"
+        }
 
-& 'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe' https://www.google.com/bookmarks/bookmarks.html?hl=en
+        & 'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe' https://www.google.com/bookmarks/bookmarks.html?hl=en
 
-Set-Location -Path "$env:userprofile\Downloads"
-Start-Sleep -Seconds 6
+        Set-Location -Path "$env:userprofile\Downloads"
+        Start-Sleep -Seconds 6
 
-$File = "$env:userprofile\Downloads\GoogleBookmarks.html"
-$Find = [regex]::Escape($Find) 
+        $File = "$env:userprofile\Downloads\GoogleBookmarks.html"
+        $Find = [regex]::Escape($Find) 
 
-$Find = '<DT>'
-$Replace = (Get-Content $File -Raw) -replace '<DT>', '' -Replace '<DL>', '' -Replace '</DL>','' -replace 'ADD_DATE=..................','' |
-Add-Content -Path "$File.tmp" -Force 
-Remove-Item -Path $File 
-Rename-Item -Path "$File.tmp" -NewName $File
+        $Find = '<DT>'
+        $Replace = (Get-Content $File -Raw) -replace '<DT>', '' -Replace '<DL>', '' -Replace '</DL>', '' -replace 'ADD_DATE=..................', '' |
+            Add-Content -Path "$File.tmp" -Force 
+        Remove-Item -Path $File 
+        Rename-Item -Path "$File.tmp" -NewName $File
 
-$a = foreach ($line in [System.IO.File]::ReadLines($file)) 
-{
-    If ( $line -cmatch '^<A HREF' )
-       {
-            [regex]$pattern = '>'
-            $pattern.replace($line,' target="_blank">', 1) 
-       }
-       Else
-       {
-       $line
-       }
-}
-$a | Out-File '.\Completed.html'    
+        $a = foreach ($line in [System.IO.File]::ReadLines($file)) 
+        {
+            If ( $line -cmatch '^<A HREF' )
+            {
+                [regex]$pattern = '>'
+                $pattern.replace($line, ' target="_blank">', 1) 
+            }
+            Else
+            {
+                $line
+            }
+        }
+        $a | Out-File '.\Completed.html'    
     
     }
 

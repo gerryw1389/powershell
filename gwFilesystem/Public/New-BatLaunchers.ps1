@@ -41,8 +41,8 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {       
         
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-		$PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
+        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
+        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
         Set-Console
         Start-Log
 
@@ -64,9 +64,6 @@ Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
     
     Process
     {   
-        
-        
-
         #Write-TestFiles
         $Files = Get-ChildItem $Path -Filter "*.ps1" -Recurse
 

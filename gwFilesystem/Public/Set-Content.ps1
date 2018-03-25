@@ -46,18 +46,14 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         $Include = @("*.txt", "*.ps1", "*.log")
         
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-		$PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
+        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
+        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
         Set-Console
         Start-Log
     }
     
     Process
     {    
-        
-        
-
-
         # $Source = Get-Childitem "C:\Test" -Include "$Include" -Recurse
         $Source = Get-Childitem "C:\Test" -Include "$Include"
 

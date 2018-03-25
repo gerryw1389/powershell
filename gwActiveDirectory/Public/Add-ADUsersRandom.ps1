@@ -9,7 +9,7 @@
 
 Function Add-ADUsersRandom
 {
-     <#
+    <#
 .Synopsis
 Creates a number of AD users retrieved from https://randomuser.me/api/
 .Description
@@ -36,7 +36,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
   
 #>
 
-   [Cmdletbinding()]
+    [Cmdletbinding()]
 
     Param
     (
@@ -55,8 +55,8 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         $Pass = $Password | ConvertTo-SecureString -AsPlainText -Force
     
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-		$PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
+        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
+        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
         Set-Console
         Start-Log
 
@@ -64,9 +64,6 @@ Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
     
     Process
     {   
-        
-        
-        
         For ($I = 0; $I -Lt $Numberofusers; $I++)
         {
             $Data = Invoke-Webrequest -Uri "https://randomuser.me/api/"
@@ -91,7 +88,7 @@ Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
                 -Enabled $True `
                 -Userprincipalname $Upn `
                 -Path $Ou
-            Log "User account created: $Together in $Ou " 
+            Log "User account created: $Together in $Ou" 
         }
     }
 

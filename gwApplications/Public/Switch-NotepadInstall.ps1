@@ -10,7 +10,7 @@
 Function Switch-NotepadInstall
 {
 
-   <#
+    <#
 .Synopsis
 Installs Notepad++ And Replaces Default Notepad.Exe With Notepad++ Executable In System Folders.
 .Description
@@ -28,7 +28,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
 #>
 
-   [Cmdletbinding()]
+    [Cmdletbinding()]
 
     Param
     (
@@ -60,19 +60,15 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             $Acl | Set-Acl $File
         }
         
-         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-		$PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
+        Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
+        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
+        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
         Set-Console
         Start-Log
     }
     
-    
     Process
     {   
-        
-        
-        
         # Installs The Latest Version Of Notepad++ From Chocolatey Repo. 
         # Comment Out If You Already Have Notepad++ Installed.
         Install-Package -Name Notepadplusplus -Force

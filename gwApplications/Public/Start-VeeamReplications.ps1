@@ -43,22 +43,18 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
     Begin
     {
-
         #Enable The Veeam Powershell Snapin
         Add-Pssnapin Veeampssnapin
 
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-		$PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
+        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
+        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
         Set-Console
         Start-Log
     }
 
-
     Process
     {
-        
-        
         Foreach ($Job In $Jobs)
         {
             $Currentjob = Get-Vbrjob -Name $Job | Enable-Vbrjob

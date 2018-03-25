@@ -59,18 +59,15 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         [String]$NewExtension = "." + $NewExtension
 
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-		$PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
+        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
+        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
         Set-Console
         Start-Log
 
     }
     
-     Process
+    Process
     {
-        
-        
-                
         If ([Bool]($MyInvocation.BoundParameters.Keys -match 'Recurse'))
         {
             Get-Childitem $Source -Filter ("*" + $OldExtension) -Recurse | Rename-Item -Newname { [Io.Path]::Changeextension($_.Name, $NewExtension) }

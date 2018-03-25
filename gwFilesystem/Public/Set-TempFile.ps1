@@ -35,7 +35,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         [Parameter(Position = 0, Mandatory = $True)]
         [String[]]$Path,
 
-        [Parameter(Position = 1, Mandatory = $True, HelpMessage='Enter the size in MB')]
+        [Parameter(Position = 1, Mandatory = $True, HelpMessage = 'Enter the size in MB')]
         [Double]$Size,
         
         [String]$Logfile = "$PSScriptRoot\..\Logs\Set-TempFile.log"
@@ -44,20 +44,16 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     Begin
     {       
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-		$PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
+        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
+        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
         Set-Console
         Start-Log 
     }
     
     Process
     {   
-        
-        
-
         ForEach ($P in $Path)
         {
-		
             If (Test-Path $P)
             {
                 "File already exists, skipping..."
@@ -68,11 +64,10 @@ Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
                 Log "File $P created"
         
                 $File.SetLength($Size)
-                Log "File $P set to $Size bytes"
+                Log "File $P set to $Size megabytes"
 		
                 $File.Close()  
-    			
-            }
+    		}
         
         }
         

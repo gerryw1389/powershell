@@ -41,17 +41,14 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     Begin
     {
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-		$PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
+        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
+        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
         Set-Console
         Start-Log
     }
     
     Process
     { 
-        
-        
-        
         Foreach ($F In $File)
         {
             If (Test-Path -Literalpath $F)
@@ -76,7 +73,6 @@ Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
                 # New-Item -Path $File -Itemtype File | Out-Null
             }
         }
-	
     }
 
     End

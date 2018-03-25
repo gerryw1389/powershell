@@ -57,8 +57,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     
     Begin
     {
-        
-   	    Import-Module pscx
+        Import-Module pscx
         Import-Module "C:\Program Files (x86)\AWS Tools\PowerShell\AWSPowerShell\AWSPowerShell.psd1"
 
         Set-AWSCredentials -AccessKey $AKey -SecretKey $SKey
@@ -67,8 +66,8 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         $Source = Get-Childitem $Source | Where-Object { $_.PSisContainer }
         
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-		$PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
+        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
+        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
         Set-Console
         Start-Log
 
@@ -76,9 +75,6 @@ Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
     
     Process
     {    
-        
-        
-
         ForEach ($S in $Source)
         {
             $ItemName = $S.name

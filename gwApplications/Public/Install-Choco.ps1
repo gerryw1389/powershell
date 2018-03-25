@@ -42,8 +42,8 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Import-Module PackageManagement
         
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-		$PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
+        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
+        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
         Set-Console
         Start-Log
 
@@ -51,9 +51,6 @@ Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
     
     Process
     {   
-        
-        
-        
         # Invoke-WebRequest https://chocolatey.org/install.ps1 -UseBasicParsing | Invoke-Expression
         Install-PackageProvider NuGet -MinimumVersion '2.8.5.201' -Force
         Install-PackageProvider Chocolatey

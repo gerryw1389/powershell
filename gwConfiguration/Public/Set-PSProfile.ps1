@@ -39,17 +39,14 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {
         
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-		$PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
+        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
+        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
         Set-Console
         Start-Log   
     }
     
     Process
     {    
-        
-        
-
         $Files = @("$env:USERPROFILE\Documents\WindowsPowershell\Microsoft.Powershell_profile.ps1",
             "$env:USERPROFILE\Documents\WindowsPowershell\Microsoft.PowershellISE_profile.ps1",
             "$env:USERPROFILE\Documents\WindowsPowershell\Microsoft.VSCode_profile.ps1")

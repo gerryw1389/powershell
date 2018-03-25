@@ -10,7 +10,7 @@
 Function Install-ClickOnceApplication
 {
 
-     <#
+    <#
 .Synopsis
 This function uninstalls a clickonce application and then re-downloads and installs it for you. 
 You will need to provide the application name and download path.
@@ -31,7 +31,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
 #>
 
-   [Cmdletbinding()]
+    [Cmdletbinding()]
 
     Param
     (
@@ -93,17 +93,14 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         }
 
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-		$PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
+        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
+        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
         Set-Console
         Start-Log
     }
     
     Process
     {   
-        
-        
-        
         Log "Uninstalling App..." 
         $Installedapplicationnotmsi = Get-Childitem Hkcu:\Software\Microsoft\Windows\Currentversion\Uninstall | 
             Foreach-Object {Get-Itemproperty $_.Pspath}

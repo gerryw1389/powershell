@@ -64,19 +64,15 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             Stop-Process -id $pid
         }
 
-         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-		$PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
+        Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
+        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
+        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
         Set-Console
         Start-Log
     }
     
     Process
     {   
-        
-        
-
-        
         Add-Type -AssemblyName System.Windows.Forms
         $Form = New-Object system.Windows.Forms.Form 
         $Form.Text = "GerrysScripts"
