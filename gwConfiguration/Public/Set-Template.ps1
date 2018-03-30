@@ -73,18 +73,15 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Log "Radios"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\{A8804298-2D5F-42E3-9531-9C8C39EB29CE}" -Name "Value" -Value "Deny" -PropertyType "String"
 
-        Log "Disabling Start menu suggestions"
-        SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SystemPaneSuggestionsEnabled" -Value "0"
-			
-        Log "Setting Taskbar to not group unless full"
-        SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarGlomLevel" -Value "1"
-
-        Log "Disabling Background application access..."
-        $RegPaths = Get-ChildItem -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications" -Exclude "Microsoft.Windows.Cortana*" 
+        Log "Disabling Notifications for lockscreen"
+        SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Notifications\Settings" -Name "NOC_GLOBAL_SETTING_ALLOW_TOASTS_ABOVE_LOCK" -Value "0"
+        SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Notifications\Settings" -Name "NOC_GLOBAL_SETTING_ALLOW_CRITICAL_TOASTS_ABOVE_LOCK" -Value "0"
+		
+        Log "Disabling Notifications"
+        $RegPaths = Get-ChildItem -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Notifications\Settings" 
         ForEach ($RegPath in $RegPaths) 
         {
-            SetReg -Path $RegPath.PsPath -Name "Disabled" -Value "1"
-            SetReg -Path $RegPath.PsPath -Name "DisabledByUser" -Value "1"
+            SetReg -Path $RegPath.PsPath -Name "Enabled" -Value "0"
         }
             
         Log "Lockscreen suggestions, rotating pictures"
@@ -95,6 +92,9 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SubscribedContent-338388Enabled" -Value "0"  
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SubscribedContent-338389Enabled" -Value "0"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SubscribedContent-338393Enabled" -Value "0"
+        
+        Log "Disabling Welcome Experience Notification"
+        SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SubscribedContent-310093Enabled" -Value "0"
 
         Log "Preinstalled apps, Minecraft Twitter etc all that - Enterprise only it seems"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "PreInstalledAppsEnabled" -Value "0"
@@ -442,7 +442,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Log "Sync with devices"			
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsSyncWithDevices" -Value "2"
         Log "Tasks"
-        SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessTasks" -Value "2" 
+        SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessTasks" -Value "2"
 
         Log "Application Compatibility Settings..."
         Log "Turn off Application Telemetry"			
