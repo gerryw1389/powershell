@@ -135,6 +135,15 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "CortanaEnabled" -Value "0" 
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "BingSearchEnabled" -Value "0" 
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "DeviceHistoryEnabled" -Value "0"
+
+        $Build = (Get-CimInstance -ClassName CIM_OperatingSystem).Buildnumber
+        If ($Build -like "17*")
+        {
+        Log "New Build detected: Blocking Internet Search via Windows Search"
+        SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "BingSearchEnabled" -Value "0"
+        SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "AllowSearchToUseLocation" -Value "0"
+        SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "CortanaConsent" -Value "0"
+        }
             
         Log "Below takes search bar off the taskbar, personal preference"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Value "0"
@@ -184,6 +193,9 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         Log "Setting Windows to not track app launches"
         SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Start_TrackProgs" -Value "0"
+
+        Log "Setting Windows Powershell to default on Win X Menu"
+        SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "DontUsePowerShellOnWinX" -Value "0"
         
         Log "Unchecking Show Recently Used Files In Quick Access" 
         SetReg -Path "HKCU:\Software\Microsoft\Windows\Currentversion\Explorer" -Name "ShowRecent" -Value "0"
@@ -842,10 +854,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             Log "Uninstalling: $($PPackage.PackageName)"
             Remove-Appxprovisionedpackage -PackageName $($PPackage.PackageName) -Online -Erroraction Silentlycontinue | Out-Null
         }
-           
-
-        
-
+         
     }
 
     End

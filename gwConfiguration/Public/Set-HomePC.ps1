@@ -131,6 +131,17 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         $hexified = $Bin.Split(',') | ForEach-Object -Process { "0x$_"}
         New-ItemProperty -Path $RegPath -Name $AttrName -PropertyType Binary -Value ([byte[]]$hexified) -Force
 
+        Log "Adding OpenPSHere to right click menu"
+        $menu = 'OpenPSHere'
+        $command = "$PSHOME\powershell.exe -NoExit -NoProfile -Command ""Set-Location '%V'"""
+
+        'directory', 'directory\background', 'drive' | ForEach-Object {
+            New-Item -Path "Registry::HKEY_CLASSES_ROOT\$_\shell" -Name runas\command -Force |
+                Set-ItemProperty -Name '(default)' -Value $command -PassThru |
+                Set-ItemProperty -Path {$_.PSParentPath} -Name '(default)' -Value $menu -PassThru |
+                Set-ItemProperty -Name HasLUAShield -Value ''
+        }
+
         # Applications
 
         Log "Installing Linux Subsystem"
