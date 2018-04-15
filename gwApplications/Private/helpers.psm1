@@ -312,9 +312,8 @@ Function Set-RegEntry
         .Parameter Value
         This is the value of the entry.
         .Parameter PropertyType
-        This is the type of entry the function is to write. Default is "Dword", but also accepts all the others, including "Binary.
+        This is the type of entry the function is to write. Default is "Dword", but also accepts all the others, including Binary.
         Note on Binary:
-        Have only tested with Dword and String
         You will need to export the key you are about to change first (from a machine that has it how you want it) and then copy and paste the results into the $Value variable.
         For example, if I want OneDrive to not run on startup I would export the keys from [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run]
         on a machine that I already have OneDrive disabled on startup and then copy the $Value as "03,00,00,00,cd,9a,36,38,64,0b,d2,01". I would then place:
@@ -343,6 +342,11 @@ Function Set-RegEntry
         [String]$PropertyType = "Dword"
 
     )
+    
+    If (!(Test-Path HKCR:))
+    {
+        New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT | Out-Null
+    }
     
     If ($PropertyType -eq "Binary")
     {

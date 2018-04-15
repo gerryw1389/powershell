@@ -42,16 +42,13 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
         Set-Console
         Start-Log
-        New-Alias -Name "SetReg" -Value Set-RegEntry
 
-        New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT | Out-Null
-        
     }
     
     
     Process
     {    
-        Log "Creating a lockscreen task"
+        Log "Creating a lockscreen task. This will lock the screen every 5 minutes of inactivity"
         $TaskName = "LockScreen"
         $service = New-Object -ComObject("Schedule.Service")
         $service.Connect()
@@ -71,8 +68,66 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         $act.Arguments = "user32.dll,LockWorkStation"
         $username = "$env:userdomain" + "\" + "$env:username"
         $user = "$username"
-        $rootFolder.RegisterTaskDefinition($TaskName, $taskdef, 6, $user, $null, 3)
+        $rootFolder.RegisterTaskDefinition($TaskName, $taskdef, 6, $user, $null, 3) | Out-Null
+
+        Log "Adding OpenPSHere to right click menu"
+        $menu = 'OpenPSHere'
+        $command = "$PSHOME\powershell.exe -NoExit -NoProfile -Command ""Set-Location '%V'"""
+
+        'directory', 'directory\background', 'drive' | ForEach-Object {
+            New-Item -Path "Registry::HKEY_CLASSES_ROOT\$_\shell" -Name runas\command -Force |
+                Set-ItemProperty -Name '(default)' -Value $command -PassThru |
+                Set-ItemProperty -Path {$_.PSParentPath} -Name '(default)' -Value $menu -PassThru |
+                Set-ItemProperty -Name HasLUAShield -Value ''
+        }
+
+        Log "Enabling SMB 1.0 protocol for connections to legacy NAS devices"
+        Set-SmbServerConfiguration -EnableSMB1Protocol $true -Force
+
+        Log "Adjusting visual effects for appearance..."
+        SetReg -Path "HKCU:\Control Panel\Desktop" -Name "DragFullWindows" -PropertyType "String" -Value "1"
+        SetReg -Path "HKCU:\Control Panel\Desktop" -Name "MenuShowDelay" -PropertyType "String" -Value "400"
+        SetReg -Path "HKCU:\Control Panel\Desktop" -Name "UserPreferencesMask" -PropertyType "Binary" -Value "9e,7e,06,80,12,00,00,00"
+        SetReg -Path "HKCU:\Control Panel\Desktop\WindowMetrics" -Name "MinAnimate" -PropertyType "String" -Value "1"
+        SetReg -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardDelay" -Value "1"
+        SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ListviewAlphaSelect" -Value "1"
+        SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ListviewShadow" -Value "1"
+        SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Value "1"
+        SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name "VisualFXSetting" -Value "3"
+        SetReg -Path "HKCU:\Software\Microsoft\Windows\DWM" -Name "EnableAeroPeek" -Value "1"
         
+        Log "Disabling Windows Update automatic restart"
+        SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "NoAutoRebootWithLoggedOnUsers" -Value "1"
+        SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "AUPowerManagement" -Value "0"
+
+        Log "Stopping and disabling Home Groups services"
+        Stop-Service "HomeGroupListener" -WarningAction SilentlyContinue
+        Set-Service "HomeGroupListener" -StartupType Disabled
+        Stop-Service "HomeGroupProvider" -WarningAction SilentlyContinue
+        Set-Service "HomeGroupProvider" -StartupType Disabled
+
+        Log "Starting and enabling Windows Search indexing service"
+        Set-Service "WSearch" -StartupType Automatic
+        SetReg -Path "HKLM:\SYSTEM\CurrentControlSet\Services\WSearch" -Name "DelayedAutoStart" -Value "1"
+        Start-Service "WSearch" -WarningAction SilentlyContinue
+
+        Log "Enabling Fast Startup"
+        SetReg -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -Value "1"
+
+        Log "Disabling Action Center"
+        If (!(Test-Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer"))
+        {
+            New-Item -Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer" | Out-Null
+        }
+        SetReg -Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "DisableNotificationCenter" -Value "1"
+        SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications" -Name "ToastEnabled" -Value "0"
+
+        Log "Disabling Sticky keys prompt"
+        SetReg -Path "HKCU:\Control Panel\Accessibility\StickyKeys" -Name "Flags" -PropertyType "String" -Value "506"
+
+        Log "Disabling file delete confirmation dialog"
+        Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "ConfirmFileDelete" -ErrorAction SilentlyContinue
+    
         Log "Showing Task Manager details"
         If (!(Test-Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager"))
         {
@@ -96,12 +151,8 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\OperationStatusManager" -Name "EnthusiastMode" -Value "1"
         
         Log "Disabling and Uninstalling OneDrive"
-        If (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive")) 
-        {
-            New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive" | Out-Null
-        }
-        Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive" -Name "DisableFileSyncNGSC" -Type DWord -Value 1
-        Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive" -Name "DisableFileSync" -Type Dword -Value 1
+        SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive" -Name "DisableFileSyncNGSC" -Value "1"
+        SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive" -Name "DisableFileSync" -Value "1"
         Stop-Process -Name OneDrive -ErrorAction SilentlyContinue
         Start-Sleep -s 3
         $onedrive = "$env:SYSTEMROOT\SysWOW64\OneDriveSetup.exe"
@@ -125,39 +176,27 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         SetReg -Path "HKCR:\Wow6432Node\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Name "System.IsPinnedToNameSpaceTree" -Value "0"
 
         Log "Removing OneDrive Startup Entry"
-        $Bin = "03,00,00,00,cd,9a,36,38,64,0b,d2,01"
-        $RegPath = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
-        $AttrName = "OneDrive"
-        $hexified = $Bin.Split(',') | ForEach-Object -Process { "0x$_"}
-        New-ItemProperty -Path $RegPath -Name $AttrName -PropertyType Binary -Value ([byte[]]$hexified) -Force
-
-        Log "Adding OpenPSHere to right click menu"
-        $menu = 'OpenPSHere'
-        $command = "$PSHOME\powershell.exe -NoExit -NoProfile -Command ""Set-Location '%V'"""
-
-        'directory', 'directory\background', 'drive' | ForEach-Object {
-            New-Item -Path "Registry::HKEY_CLASSES_ROOT\$_\shell" -Name runas\command -Force |
-                Set-ItemProperty -Name '(default)' -Value $command -PassThru |
-                Set-ItemProperty -Path {$_.PSParentPath} -Name '(default)' -Value $menu -PassThru |
-                Set-ItemProperty -Name HasLUAShield -Value ''
-        }
-
-        # Applications
-
+        SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" -Name "OneDrive" -PropertyType "Binary" -Value "03,00,00,00,cd,9a,36,38,64,0b,d2,01"
+  
         Log "Installing Linux Subsystem"
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" -Name "AllowDevelopmentWithoutDevLicense" -Value "1"
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" -Name "AllowAllTrustedApps" -Value "1"
-
         Enable-WindowsOptionalFeature -Online -FeatureName "Microsoft-Windows-Subsystem-Linux" -NoRestart -WarningAction SilentlyContinue | Out-Null
         
+        <#
+        # I used to disable featurs, but I honestly don't think it's worth the hassle anymore.
+
         Log "Removing system bloat"
         $Features = Get-WindowsOptionalFeature -Online | Where-Object `
         {
             $_.FeatureName -notlike '*Net*FX*' `
                 -and $_.FeatureName -notlike '*Internet-Explorer*' `
+                -and $_.FeatureName -notlike '*SMB1*' `
                 -and $_.FeatureName -notlike '*Powershell*' `
                 -and $_.FeatureName -notlike '*Printing*' `
                 -and $_.FeatureName -notlike '*Linux*' `
+                -and $_.FeatureName -notlike '*WCF*' `
+                -and $_.FeatureName -notlike '*Defender*' `
         } | Sort-Object -Property { $_.FeatureName.Length }
         
         ForEach ($Feature in $Features)
@@ -167,7 +206,8 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
                 $Feature | Disable-WindowsOptionalFeature -Online -Remove -NoRestart > $null 3> $null
                 Log "Disabling Feature: $($Feature.FeatureName)"
             }    
-        }    
+        }
+        #>     
     }
 
     End
