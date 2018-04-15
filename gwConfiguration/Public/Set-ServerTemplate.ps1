@@ -1,19 +1,19 @@
 <#######<Script>#######>
 <#######<Header>#######>
-# Name: Set-Template
+# Name: Set-ServerTemplate
 # Copyright: Gerry Williams (https://www.gerrywilliams.net)
 # License: MIT License (https://opensource.org/licenses/mit)
 # Script Modified from: n/a
 <#######</Header>#######>
 <#######<Body>#######>
 
-Function Set-Template
+Function Set-ServerTemplate
 {
     <#
 .Synopsis
-W10 config script.
+Server 2016 config script.
 .Description
-W10 config script that I run on any generic W10 install. It sets settings that I use often and makes a generic "clean image".
+Server 2016 config script that I run on any generic install. It sets settings that I use often and makes a generic "clean image".
 .Parameter Logfile
 Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
 .Example
@@ -704,6 +704,25 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Taskband" -Name "Favorites" -Type Binary -Value ([byte[]](255))
         Remove-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Taskband" -Name "FavoritesResolve" -ErrorAction SilentlyContinue
 
+		# Server Specific Tweaks
+		Log "Hide Server Manager after login"
+		SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Server\ServerManager" -Name "DoNotOpenAtLogon" -Value "1"
+
+		Log "Disable Shutdown Event Tracker"
+		SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Reliability" -Name "ShutdownReasonOn" -Value "0"
+
+		Log "Disable password complexity and maximum age requirements"
+		$tmpfile = New-TemporaryFile
+		secedit /export /cfg $tmpfile /quiet
+		(Get-Content $tmpfile).Replace("PasswordComplexity = 1", "PasswordComplexity = 0").Replace("MaximumPasswordAge = 42", "MaximumPasswordAge = -1") | Out-File $tmpfile
+		secedit /configure /db "$env:SYSTEMROOT\security\database\local.sdb" /cfg $tmpfile /areas SECURITYPOLICY | Out-Null
+		Remove-Item -Path $tmpfile
+
+		Log "Disable Internet Explorer Enhanced Security Configuration (IE ESC)"
+		SetReg -Path "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A7-37EF-4b3f-8CFC-4F3A74704073}" -Name "IsInstalled" -Value "0"
+		SetReg -Path "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A8-37EF-4b3f-8CFC-4F3A74704073}" -Name "IsInstalled" -Value "0"
+
+
         Function EnableNumlock
         {
             Log "Enabling NumLock after startup..."
@@ -776,12 +795,9 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Log "Stopping and Disabling Diagnostics Tracking Service, WAP Push Service, Home Groups service, Xbox Services, and Other Unncessary Services" 
         $Services = @()
         $Services += "Diagtrack"
-        $Services += "Homegroupprovider"
         $Services += "Xblauthmanager"
         $Services += "Xblgamesave"
-        $Services += "Xboxnetapisvc"
         $Services += "Trkwks"
-        $Services += "Wmpnetworksvc"
         $Services += "dmwappushservice"
         Foreach ($Service In $Services) 
         {
@@ -798,8 +814,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         $Tasks += "Microsoft\Windows\DiskDiagnostic\Microsoft-Windows-DiskDiagnosticDataCollector"
         $Tasks += "Microsoft\Windows\NetTrace\GatherNetworkInfo"  
         $Tasks += "Microsoft\Windows\Windows Error Reporting\QueueReporting"
-        $Tasks += "Microsoft\Windows\Feedback\Siuf\DmClient"
-        $Tasks += "Microsoft\Windows\Feedback\Siuf\DmClientOnScenarioDownload" 
         ForEach ($Task in $Tasks)
         {
             Log "Disabing $Task"
@@ -873,9 +887,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
     End
     {
-        Log "Enabling System Restore and creating a checkpoint" -Color Yellow
-        Enable-ComputerRestore -Drive $env:systemdrive -Verbose
-        Checkpoint-Computer -Description "Default Config" -RestorePointType "MODIFY_SETTINGS" -Verbose
         Stop-Log
         Log "Configuration Complete. Press any key to reboot the computer"
         cmd /c "Pause"
