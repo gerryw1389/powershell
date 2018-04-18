@@ -192,7 +192,10 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Log "Setting Explorer Default To Show File Extensions"
         SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HideFileExt" -Value "0"
 
-        Log "Setting Windows to not track app launches"
+        Log "Setting Checkboxes in Explorer"
+		SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "AutoCheckSelect" -Value "1"
+		
+		Log "Setting Windows to not track app launches"
         SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Start_TrackProgs" -Value "0"
 
         Log "Setting Windows Powershell to default on Win X Menu"
@@ -215,8 +218,8 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         Log "Disabling TaskBar People Icon"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People" -Name "PeopleBand" -Value "0"
-
-        Log "Disabling Taskview on Taskbar"
+		
+		Log "Disabling Taskview on Taskbar"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -Value "0"
 
         # Log "Unpinning all items on taskbar - Irreversible!"
