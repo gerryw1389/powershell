@@ -30,7 +30,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
     Param
     (
-        [String]$Logfile = "$PSScriptRoot\Set-Template.Log"
+        [String]$Logfile = "$PSScriptRoot\..\Logs\Set-Template.Log"
     )
 
    
