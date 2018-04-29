@@ -36,21 +36,10 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
     Begin
     {
-        Function Get-Diskspace
-        {
-            Get-Wmiobject Win32_Logicaldisk | Where-Object { $_.Drivetype -Eq "3" } | Select-Object Systemname,
-            @{ Name = "Drive" ; Expression = { ( $_.Deviceid ) } },
-            @{ Name = "Size (Gb)" ; Expression = {"{0:N1}" -F ( $_.Size / 1gb)}},
-            @{ Name = "Freespace (Gb)" ; Expression = {"{0:N1}" -F ( $_.Freespace / 1gb ) } },
-            @{ Name = "Percentfree" ; Expression = {"{0:P1}" -F ( $_.Freespace / $_.Size ) } } |
-                Format-Table -Autosize
-        }
-
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
         $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
         Set-Console
         Start-Log
-        
     }
     
     Process

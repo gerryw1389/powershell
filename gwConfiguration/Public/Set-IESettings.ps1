@@ -10,9 +10,9 @@ Function Set-IESettings
 {
     <#
 .Synopsis
-Resets IE and adds yoursite to trusted site(s) and pop up blocker.
+Resets IE and adds your site(s) to trusted site and pop up blocker.
 .Description
-Resets IE and adds yoursite to trusted site(s) and pop up blocker. 
+Resets IE and adds your site(s) to trusted site and pop up blocker.
 Additionally, it opens trusted zones for those crappy enterprise portals that need "full allow" settings.
 .Parameter Logfile
 Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
