@@ -18,7 +18,7 @@ All my scripts call their main function at the end. You will need to uncomment t
 The path to the scripts directory with the powershell scripts.
 .Parameter Logfile
 Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
-Note: If you don't like my scripts forcing logging, I wrote a post on how to fix this at https://www.gerrywilliams.net/2018/02/ps-forcing-preferences/
+NOTE: If you wish to delete the logfile, I have updated my scripts to where they should still run fine with no logging.
 .Example
 New-BatLaunchers -Path C:\scripts
 Creates a batch file for every powershell script that when double clicked, launches the script bypassing Executionpolicy.
@@ -38,13 +38,51 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     )
     
     Begin
-    {       
-        
+    {   
+    
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
-        Set-Console
-        Start-Log
+        If ($($Logfile.Length) -gt 1)
+        {
+            $EnabledLogging = $True
+        }
+        Else
+        {
+            $EnabledLogging = $False
+        }
+    
+        Filter Timestamp
+        {
+            "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $_"
+        }
+
+        If ($EnabledLogging)
+        {
+            # Create parent path and logfile if it doesn't exist
+            $Regex = '([^\\]*)$'
+            $Logparent = $Logfile -Replace $Regex
+            If (!(Test-Path $Logparent))
+            {
+                New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+            }
+            If (!(Test-Path $Logfile))
+            {
+                New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+            }
+    
+            # Clear it if it is over 10 MB
+            $Sizemax = 10
+            $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+            $Sizemb = "{0:N2}" -F ($Size.Sum / 1mb) + "Mb"
+            If ($Sizemb -Ge $Sizemax)
+            {
+                Get-Childitem $Logfile | Clear-Content
+                Write-Verbose "Logfile has been cleared due to size"
+            }
+            # Start writing to logfile
+            Start-Transcript -Path $Logfile -Append 
+            Write-Output "####################<Script>####################"
+            Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
+        }
 
         Function Write-TestFiles
         {
@@ -69,6 +107,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         ForEach ($File in $Files)
         {
+            Write-Output "Creating batch launcher for file $file" | Timestamp
             $Batch = $($File.DirectoryName) + "\" + $($File.BaseName) + ".bat"
             $String = @"
 `@ECHO OFF
@@ -83,7 +122,12 @@ PAUSE
 
     End
     {
-        Stop-Log  
+        If ($EnableLogging)
+        {
+            Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
+            Write-Output "####################</Script>####################"
+            Stop-Transcript
+        }
     }
 
 }

@@ -29,9 +29,7 @@ Classic Snake game in Powershell!
 Classic Snake game in Powershell!
 .Parameter Logfile
 Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
-Note: If you don't like my scripts forcing logging, I wrote a post on how to fix this at https://www.gerrywilliams.net/2018/02/ps-forcing-preferences/
-
-.Example
+NOTE: If you wish to delete the logfile, I have updated my scripts to where they should still run fine with no logging..Example
 Start-SnakeGame
 Classic Snake game in Powershell!
 .Notes
@@ -47,18 +45,56 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     )
     
     Begin
-    {       
+    {   
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
-        Set-Console
-        Start-Log 
+        If ($($Logfile.Length) -gt 1)
+        {
+            $EnabledLogging = $True
+        }
+        Else
+        {
+            $EnabledLogging = $False
+        }
+    
+        Filter Timestamp
+        {
+            "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $_"
+        }
+
+        If ($EnabledLogging)
+        {
+            # Create parent path and logfile if it doesn't exist
+            $Regex = '([^\\]*)$'
+            $Logparent = $Logfile -Replace $Regex
+            If (!(Test-Path $Logparent))
+            {
+                New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+            }
+            If (!(Test-Path $Logfile))
+            {
+                New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+            }
+    
+            # Clear it if it is over 10 MB
+            $Sizemax = 10
+            $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+            $Sizemb = "{0:N2}" -F ($Size.Sum / 1mb) + "Mb"
+            If ($Sizemb -Ge $Sizemax)
+            {
+                Get-Childitem $Logfile | Clear-Content
+                Write-Verbose "Logfile has been cleared due to size"
+            }
+            # Start writing to logfile
+            Start-Transcript -Path $Logfile -Append 
+            Write-Output "####################<Script>####################"
+            Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
+        } 
     }
     
     Process
     {   
-        Log "Be aware that the game usually starts unfocused. Just press enter (after your first death) to start a new game. Enjoy!"
-        Log "All credits go to https://www.reddit.com/user/NuvolaGrande, I just wrote a wrapper function"
+        Write-Output "Be aware that the game usually starts unfocused. Just press enter (after your first death) to start a new game. Enjoy!" | Timestamp
+        Write-Output "All credits go to https://www.reddit.com/user/NuvolaGrande, I just wrote a wrapper function" | Timestamp
 		
         Set-StrictMode -Version Latest
 
@@ -70,15 +106,15 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Class ViewModel : INotifyPropertyChanged
         {
             Hidden [PropertyChangedEventHandler] $PropertyChanged
-            [Int32]                              $BoardWidthPixels
-            [Int32]                              $BoardHeightPixels
-            [Int32]                              $FieldDisplaySizePixels
-            [Int32]                              $HalfFieldDisplaySizePixels
-            [Int32]                              $Score
-            [Object]                             $SnakeGeometry
-            [Object]                             $FoodCenter
-            [Boolean]                            $GameOverVisible
-            [Boolean]                            $WonVisible
+            [Int32]      $BoardWidthPixels
+            [Int32]      $BoardHeightPixels
+            [Int32]      $FieldDisplaySizePixels
+            [Int32]      $HalfFieldDisplaySizePixels
+            [Int32]      $Score
+            [Object]         $SnakeGeometry
+            [Object]         $FoodCenter
+            [Boolean]        $GameOverVisible
+            [Boolean]        $WonVisible
 
             [Void] add_PropertyChanged([PropertyChangedEventHandler] $propertyChanged)
             {
@@ -161,7 +197,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         Class SnakeSegment
         {
-            [Int32]          $Length
+            [Int32]  $Length
             [SnakeDirection] $Direction
 
             SnakeSegment([Int32] $length, [SnakeDirection] $direction)
@@ -180,15 +216,15 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         Class Snake
         {
-            Hidden [Int32]        $BoardWidth
-            Hidden [Int32]        $BoardHeight
-            Hidden [Int32]        $FieldSizePixels
-            [Int32]               $HeadX
-            [Int32]               $HeadY
-            [Int32]               $TailX
-            [Int32]               $TailY
+            Hidden [Int32]    $BoardWidth
+            Hidden [Int32]    $BoardHeight
+            Hidden [Int32]    $FieldSizePixels
+            [Int32]   $HeadX
+            [Int32]   $HeadY
+            [Int32]   $TailX
+            [Int32]   $TailY
             [List[SnakeSegment]]  $Segments
-            [SnakeDirection]      $Direction
+            [SnakeDirection]  $Direction
 
             Snake([Int32] $boardWidth, [Int32] $boardHeight, [Int32] $fieldSizePixels)
             {
@@ -343,11 +379,11 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         Class Food
         {
-            Hidden [Int32]                        $FieldSizePixels
-            Hidden [Random]                       $Random
+            Hidden [Int32]        $FieldSizePixels
+            Hidden [Random]       $Random
             Hidden [HashSet[Tuple[Int32, Int32]]] $AllValidPoints
-            [Int32]                               $FoodX
-            [Int32]                               $FoodY
+            [Int32]       $FoodX
+            [Int32]       $FoodY
 
             Food([Int32] $boardWidth, [Int32] $boardHeight, [Int32] $fieldSizePixels)
             {
@@ -387,57 +423,57 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         [Window] $mainWindow = [XamlReader]::Parse(@'
     <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-            Title="{Binding Score, StringFormat={}Snake - {0}}"
-            SizeToContent="WidthAndHeight"
-            ResizeMode="NoResize"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="{Binding Score, StringFormat={}Snake - {0}}"
+    SizeToContent="WidthAndHeight"
+    ResizeMode="NoResize"
     >
-        <Window.Resources>
-            <BooleanToVisibilityConverter x:Key="VisibilityConverter" />
-        </Window.Resources>
-        <Grid Margin="5">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <DockPanel Grid.Row="0" LastChildFill="True" Margin="0 0 0 5">
-                <TextBlock DockPanel.Dock="Left"
-                           Text="{Binding Score, StringFormat={}Score: {0}}"
-                           Margin="0 0 5 0"
-                />
-                <TextBlock DockPanel.Dock="Left"
-                           Text="GAME OVER"
-                           FontWeight="Bold"
-                           Visibility="{Binding GameOverVisible, Converter={StaticResource VisibilityConverter}}"
-                />
-                <TextBlock DockPanel.Dock="Left"
-                           Text="YOU WON"
-                           FontWeight="Bold"
-                           Foreground="DarkGreen"
-                           Visibility="{Binding WonVisible, Converter={StaticResource VisibilityConverter}}"
-                />
-                <TextBlock Text="Use arrow keys to move, Enter to reset." TextAlignment="Right" />
-            </DockPanel>
-            <Border Grid.Row="1" BorderBrush="Black" BorderThickness="1">
-                <Canvas Width="{Binding BoardWidthPixels}" Height="{Binding BoardHeightPixels}">
-                    <Path Stroke="DarkGreen"
-                          StrokeThickness="{Binding FieldDisplaySizePixels}"
-                          StrokeStartLineCap="Round"
-                          StrokeEndLineCap="Round"
-                          StrokeLineJoin="Round"
-                          Data="{Binding SnakeGeometry}"
-                    />
-                    <Path Fill="DarkRed">
-                        <Path.Data>
-                            <EllipseGeometry Center="{Binding FoodCenter}"
-                                            RadiusX="{Binding HalfFieldDisplaySizePixels}"
-                                            RadiusY="{Binding HalfFieldDisplaySizePixels}"
-                            />
-                        </Path.Data>
-                    </Path>
-                </Canvas>
-            </Border>
-        </Grid>
+    <Window.Resources>
+    <BooleanToVisibilityConverter x:Key="VisibilityConverter" />
+    </Window.Resources>
+    <Grid Margin="5">
+    <Grid.RowDefinitions>
+    <RowDefinition Height="Auto" />
+    <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+    <DockPanel Grid.Row="0" LastChildFill="True" Margin="0 0 0 5">
+    <TextBlock DockPanel.Dock="Left"
+       Text="{Binding Score, StringFormat={}Score: {0}}"
+       Margin="0 0 5 0"
+    />
+    <TextBlock DockPanel.Dock="Left"
+       Text="GAME OVER"
+       FontWeight="Bold"
+       Visibility="{Binding GameOverVisible, Converter={StaticResource VisibilityConverter}}"
+    />
+    <TextBlock DockPanel.Dock="Left"
+       Text="YOU WON"
+       FontWeight="Bold"
+       Foreground="DarkGreen"
+       Visibility="{Binding WonVisible, Converter={StaticResource VisibilityConverter}}"
+    />
+    <TextBlock Text="Use arrow keys to move, Enter to reset." TextAlignment="Right" />
+    </DockPanel>
+    <Border Grid.Row="1" BorderBrush="Black" BorderThickness="1">
+    <Canvas Width="{Binding BoardWidthPixels}" Height="{Binding BoardHeightPixels}">
+    <Path Stroke="DarkGreen"
+      StrokeThickness="{Binding FieldDisplaySizePixels}"
+      StrokeStartLineCap="Round"
+      StrokeEndLineCap="Round"
+      StrokeLineJoin="Round"
+      Data="{Binding SnakeGeometry}"
+    />
+    <Path Fill="DarkRed">
+        <Path.Data>
+        <EllipseGeometry Center="{Binding FoodCenter}"
+            RadiusX="{Binding HalfFieldDisplaySizePixels}"
+            RadiusY="{Binding HalfFieldDisplaySizePixels}"
+        />
+        </Path.Data>
+    </Path>
+    </Canvas>
+    </Border>
+    </Grid>
     </Window>
 '@)
 
@@ -569,8 +605,13 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
     End
     {
-        Log "Unfortunately you have to close your Powershell session and recall the function if you want to play again." -Color Magenta
-        Stop-Log  
+        Write-Output "Unfortunately you have to close your Powershell session and recall the function if you want to play again." | Timestamp
+        If ($EnableLogging)
+        {
+            Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
+            Write-Output "####################</Script>####################"
+            Stop-Transcript
+        }
     }
 
 }

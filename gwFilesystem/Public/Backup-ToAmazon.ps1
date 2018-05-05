@@ -25,7 +25,7 @@ Mandatory parameter to specify the Amazon Access Key.
 Mandatory parameter to specify the Amazon Secret Key.
 .Parameter Logfile
 Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
-Note: If you don't like my scripts forcing logging, I wrote a post on how to fix this at https://www.gerrywilliams.net/2018/02/ps-forcing-preferences/
+NOTE: If you wish to delete the logfile, I have updated my scripts to where they should still run fine with no logging.
 .Example
 Backup-ToAmazon -Source "D:\backups" -Bucket "Backups" -Akey "asdfadfasdf" -Skey "adfasdfsdaf"
 Zips up every folder in D:\backups one by one into separate zip files. It then uploads them to an Amazon Bucket called "backups".
@@ -44,10 +44,10 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         [Parameter(Position = 1, Mandatory = $True)]
         [String]$Bucket,
-        
+    
         [Parameter(Position = 2, Mandatory = $True)]
         [String]$Akey,
-        
+    
         [Parameter(Position = 3, Mandatory = $True)]
         [String]$Skey,
 
@@ -61,15 +61,53 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Import-Module "C:\Program Files (x86)\AWS Tools\PowerShell\AWSPowerShell\AWSPowerShell.psd1"
 
         Set-AWSCredentials -AccessKey $AKey -SecretKey $SKey
-     
+ 
         Set-Location $Source
         $Source = Get-Childitem $Source | Where-Object { $_.PSisContainer }
-        
+    
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
-        Set-Console
-        Start-Log
+        If ($($Logfile.Length) -gt 1)
+        {
+            $EnabledLogging = $True
+        }
+        Else
+        {
+            $EnabledLogging = $False
+        }
+    
+        Filter Timestamp
+        {
+            "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $_"
+        }
+
+        If ($EnabledLogging)
+        {
+            # Create parent path and logfile if it doesn't exist
+            $Regex = '([^\\]*)$'
+            $Logparent = $Logfile -Replace $Regex
+            If (!(Test-Path $Logparent))
+            {
+                New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+            }
+            If (!(Test-Path $Logfile))
+            {
+                New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+            }
+    
+            # Clear it if it is over 10 MB
+            $Sizemax = 10
+            $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+            $Sizemb = "{0:N2}" -F ($Size.Sum / 1mb) + "Mb"
+            If ($Sizemb -Ge $Sizemax)
+            {
+                Get-Childitem $Logfile | Clear-Content
+                Write-Verbose "Logfile has been cleared due to size"
+            }
+            # Start writing to logfile
+            Start-Transcript -Path $Logfile -Append 
+            Write-Output "####################<Script>####################"
+            Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
+        }
 
     }
     
@@ -78,19 +116,24 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         ForEach ($S in $Source)
         {
             $ItemName = $S.name
-            Log "Uploading $ItemName"
+            Write-Output "Uploading $ItemName" | Timestamp
             $Destination = $Source + "\" + "$ItemName.zip"
             Write-Zip -LiteralPath $S.fullname -OutputPath $Destination -Level 1
             Remove-Item $S.fullname -Recurse -Force
             Write-S3Object -BucketName $Bucket -File $Destination
-            Log "Upload of $ItemName completed"
-            
+            Write-Output "Upload of $ItemName completed" | Timestamp
+    
         } 
     }
 
     End
     {
-        Stop-Log  
+        If ($EnableLogging)
+        {
+            Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
+            Write-Output "####################</Script>####################"
+            Stop-Transcript
+        }
     }
 
 }

@@ -16,7 +16,7 @@ This function creates my PS profile.
 This function creates my PS profile.
 .Parameter Logfile
 Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
-Note: If you don't like my scripts forcing logging, I wrote a post on how to fix this at https://www.gerrywilliams.net/2018/02/ps-forcing-preferences/
+NOTE: If you wish to delete the logfile, I have updated my scripts to where they should still run fine with no logging.
 .Example
 Set-PSProfile
 This function creates my PS profile.
@@ -27,7 +27,7 @@ This function creates my PS profile.
 2017-09-08: v1.0 Initial script 
 .Functionality
 Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
-#>       
+#>   
     [Cmdletbinding()]
 
     Param
@@ -37,12 +37,50 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
     Begin
     {
-        
+    
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
-        Set-Console
-        Start-Log   
+        If ($($Logfile.Length) -gt 1)
+        {
+            $EnabledLogging = $True
+        }
+        Else
+        {
+            $EnabledLogging = $False
+        }
+    
+        Filter Timestamp
+        {
+            "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $_"
+        }
+
+        If ($EnabledLogging)
+        {
+            # Create parent path and logfile if it doesn't exist
+            $Regex = '([^\\]*)$'
+            $Logparent = $Logfile -Replace $Regex
+            If (!(Test-Path $Logparent))
+            {
+                New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+            }
+            If (!(Test-Path $Logfile))
+            {
+                New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+            }
+    
+            # Clear it if it is over 10 MB
+            $Sizemax = 10
+            $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+            $Sizemb = "{0:N2}" -F ($Size.Sum / 1mb) + "Mb"
+            If ($Sizemb -Ge $Sizemax)
+            {
+                Get-Childitem $Logfile | Clear-Content
+                Write-Verbose "Logfile has been cleared due to size"
+            }
+            # Start writing to logfile
+            Start-Transcript -Path $Logfile -Append 
+            Write-Output "####################<Script>####################"
+            Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
+        }   
     }
     
     Process
@@ -50,7 +88,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         $Files = @("$env:USERPROFILE\Documents\WindowsPowershell\Microsoft.Powershell_profile.ps1",
             "$env:USERPROFILE\Documents\WindowsPowershell\Microsoft.PowershellISE_profile.ps1",
             "$env:USERPROFILE\Documents\WindowsPowershell\Microsoft.VSCode_profile.ps1")
-        
+    
         ForEach ($F in $Files)
         {
             # Remember to use the escape character "`" before every dollar sign and ` character. For example `$myVar and ``r``n (new line)
@@ -79,10 +117,10 @@ Import-Module psColor
 Function Test-IsAdmin
 {
     <#
-        .Synopsis
-        Determines whether or not the user is a member of the local Administrators security group.
-        .Outputs
-        System.Bool
+    .Synopsis
+    Determines whether or not the user is a member of the local Administrators security group.
+    .Outputs
+    System.Bool
     #>
     [CmdletBinding()]
     
@@ -95,23 +133,23 @@ Function Test-IsAdmin
 Function Set-Console
 {
     <# 
-        .Synopsis
-        Function to set console colors just for the session.
-        .Description
-        Function to set console colors just for the session.
-        I mainly did this because darkgreen does not look too good on blue (Powershell defaults).
-        .Notes
-        2017-10-19: v1.0 Initial script 
-        #>
-        
+    .Synopsis
+    Function to set console colors just for the session.
+    .Description
+    Function to set console colors just for the session.
+    I mainly did this because darkgreen does not look too good on blue (Powershell defaults).
+    .Notes
+    2017-10-19: v1.0 Initial script 
+    #>
+    
     `$console = `$host.UI.RawUI
     If (Test-IsAdmin)
     {
-        `$console.WindowTitle = "Administrator: Powershell"
+    `$console.WindowTitle = "Administrator: Powershell"
     }
     Else
     {
-        `$console.WindowTitle = "Powershell"
+    `$console.WindowTitle = "Powershell"
     }
     `$Background = "Black"
     `$Foreground = "Green"
@@ -147,7 +185,7 @@ Opens a window in your default internet browser to ss64's page on get-process.
 #>
     param
     (
-        [string]`$command
+    [string]`$command
     )
     `$command = `$command.ToLower()
     Start-process -filepath "https://ss64.com/ps/`$command.html"
@@ -174,7 +212,7 @@ If you are running as admin, it will also put an [Admin] in front on the first l
     `$CurPath = `$ExecutionContext.SessionState.Path.CurrentLocation.Path
     If (`$CurPath.ToLower().StartsWith(`$Home.ToLower()))
     {
-        `$CurPath = "~" + `$CurPath.SubString(`$Home.Length)
+    `$CurPath = "~" + `$CurPath.SubString(`$Home.Length)
     }
 
     `$Date = (Get-Date -Format "yyyy-MM-dd@hh:mm:sstt")
@@ -202,18 +240,21 @@ If you are running as admin, it will also put an [Admin] in front on the first l
 
 "@
             Set-Content -Path $F -Value $val
-            Log "Profile $F has been set"
+            Write-Output "Profile $F has been set" | TimeStamp
         }
     }
 
     End
     {
-        Stop-Log  
+        If ($EnableLogging)
+        {
+            Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
+            Write-Output "####################</Script>####################"
+            Stop-Transcript
+        }
     }
 
 }
-
-# Set-PSProfile
 
 <#######</Body>#######>
 <#######</Script>#######>

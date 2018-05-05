@@ -23,7 +23,7 @@ Function Restart-ComputerWin32
     Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
     .Example
     Restart-ComputerWin32 -ComputerName "Server01", "Server02" -Action "Logoff" -Force
-    Logs off Server01 and Server02
+Write-Outputs off Server01 and Server02 | TimeStamp
     .Example
     'localhost', 'server1' | Restart-ComputerWin32 -Action "LogOff" -Whatif
     This doesn't actually happen! It just shows what would: Pipelined in, the computers localhost and Server1 will be logged off of.
@@ -37,24 +37,63 @@ Function Restart-ComputerWin32
     param 
     (
         [parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)][string[]]$computerName,
-         
+     
         [parameter(Mandatory = $true)][string]
         [ValidateSet("Restart", "LogOff", "Shutdown", "PowerOff")]
         $Action,
-         
+     
         [Switch]$Force,
 
         [String]$Logfile = "$PSScriptRoot\..\Logs\Set-Template.Log"
-         
+     
     )
     
     Begin
     {
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-        Set-Console
-        Start-Log
+        If ($($Logfile.Length) -gt 1)
+        {
+            $EnabledLogging = $True
+        }
+        Else
+        {
+            $EnabledLogging = $False
+        }
         
+        Filter Timestamp
+        {
+            "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $_"
+        }
+
+        If ($EnabledLogging)
+        {
+            # Create parent path and logfile if it doesn't exist
+            $Regex = '([^\\]*)$'
+            $Logparent = $Logfile -Replace $Regex
+            If (!(Test-Path $Logparent))
+            {
+                New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+            }
+            If (!(Test-Path $Logfile))
+            {
+                New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+            }
+    
+            # Clear it if it is over 10 MB
+            $Sizemax = 10
+            $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+            $Sizemb = "{0:N2}" -F ($Size.Sum / 1mb) + "Mb"
+            If ($Sizemb -Ge $Sizemax)
+            {
+                Get-Childitem $Logfile | Clear-Content
+                Write-Verbose "Logfile has been cleared due to size"
+            }
+            # Start writing to logfile
+            Start-Transcript -Path $Logfile -Append 
+            Write-Output "####################<Script>####################"
+            Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
+        }
+    
         # Translate action to numeric value required by the method
         Switch ($Action)
         {
@@ -79,14 +118,14 @@ Function Restart-ComputerWin32
                 break
             }
         }
-         
+     
         # To force, add 4 to the value
         If ($Force)
         {
             $_action += 4
         }
-         
-        Log "Action set to $Action"
+     
+        Write-Output "Action set to $Action" | TimeStamp
     }
  
     Process
@@ -95,24 +134,29 @@ Function Restart-ComputerWin32
         {
             ForEach ($Computer in $ComputerName)
             {
-                Log "Attempting to connect to $Computer"
-         
+                Write-Output "Attempting to connect to $Computer" | TimeStamp
+     
                 If ($Pscmdlet.ShouldProcess($Computer, "$Action"))
                 {
                     Get-Wmiobject Win32_Operatingsystem -Computername $Computer |
-                    Invoke-Wmimethod -Name Win32shutdown -Argumentlist $_Action
+                        Invoke-Wmimethod -Name Win32shutdown -Argumentlist $_Action
                 }
             }
         }
         Catch
         {
-            Log $($_.Exception.Message) -Error -ExitGracefully
+            Write-Error $($_.Exception.Message)
         }
     }
 
     End
     {
-        Stop-Log  
+        If ($EnableLogging)
+        {
+            Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
+            Write-Output "####################</Script>####################"
+            Stop-Transcript
+        }
     }
 
 }

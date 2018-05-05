@@ -19,7 +19,7 @@ This function uninstalls a clickonce application and then re-downloads and insta
 You will need to provide the application name and download path.
 .Parameter Logfile
 Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
-Note: If you don't like my scripts forcing logging, I wrote a post on how to fix this at https://www.gerrywilliams.net/2018/02/ps-forcing-preferences/
+NOTE: If you wish to delete the logfile, I have updated my scripts to where they should still run fine with no logging.
 .Example
 Install-ClickOnceApplication
 This Function Uninstalls A Clickonce Application And Then Re-Downloads And Installs It For You. 
@@ -40,7 +40,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
     Begin
     {
-        
+    
         Function Open-Internetexplorer
         {
             Param
@@ -74,15 +74,15 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     Using System.Runtime.Interopservices;
 
     Public Static Class Nativehelper
-        {
-        [Dllimport("User32.Dll")]
-        [Return: Marshalas(Unmanagedtype.Bool)]
-        Private Static Extern Bool Setforegroundwindow(Intptr Hwnd);
+    {
+    [Dllimport("User32.Dll")]
+    [Return: Marshalas(Unmanagedtype.Bool)]
+    Private Static Extern Bool Setforegroundwindow(Intptr Hwnd);
 
-        Public Static Bool Setforeground(Intptr Windowhandle)
-        {
-           Return Nativehelper.Setforegroundwindow(Windowhandle);
-        }
+    Public Static Bool Setforeground(Intptr Windowhandle)
+    {
+   Return Nativehelper.Setforegroundwindow(Windowhandle);
+    }
 
     }
 "@
@@ -93,15 +93,53 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         }
 
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
-        Set-Console
-        Start-Log
+        If ($($Logfile.Length) -gt 1)
+        {
+            $EnabledLogging = $True
+        }
+        Else
+        {
+            $EnabledLogging = $False
+        }
+    
+        Filter Timestamp
+        {
+            "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $_"
+        }
+
+        If ($EnabledLogging)
+        {
+            # Create parent path and logfile if it doesn't exist
+            $Regex = '([^\\]*)$'
+            $Logparent = $Logfile -Replace $Regex
+            If (!(Test-Path $Logparent))
+            {
+                New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+            }
+            If (!(Test-Path $Logfile))
+            {
+                New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+            }
+    
+            # Clear it if it is over 10 MB
+            $Sizemax = 10
+            $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+            $Sizemb = "{0:N2}" -F ($Size.Sum / 1mb) + "Mb"
+            If ($Sizemb -Ge $Sizemax)
+            {
+                Get-Childitem $Logfile | Clear-Content
+                Write-Verbose "Logfile has been cleared due to size"
+            }
+            # Start writing to logfile
+            Start-Transcript -Path $Logfile -Append 
+            Write-Output "####################<Script>####################"
+            Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
+        }
     }
     
     Process
     {   
-        Log "Uninstalling App..." 
+        Write-Output "Uninstalling App..." | TimeStamp
         $Installedapplicationnotmsi = Get-Childitem Hkcu:\Software\Microsoft\Windows\Currentversion\Uninstall | 
             Foreach-Object {Get-Itemproperty $_.Pspath}
         $Uninstallstring = $Installedapplicationnotmsi | 
@@ -113,23 +151,23 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Start-Sleep -Seconds 5
         $Wshell.Sendkeys("Ok")
         $Wshell.Sendkeys("{Enter}")
-        Log "Uninstalling App... Completed" -Color Darkred 
+        Write-Output "Uninstalling App... Completed" | TimeStamp
     
-        Log "Renaming Localappdata-Apps-2.0 Folder..." 
+        Write-Output "Renaming Localappdata-Apps-2.0 Folder..." | TimeStamp
         Set-Location "C:\Users\$Env:Username\Appdata\Local\Apps"
         Rename-Item -Path .\2.0 -Newname 2.0.Old -Force
         If (Test-Path "C:\Users\$Env:Username\Appdata\Local\Apps\2.0.Old") 
         {
-       
-            Log "Renaming Localappdata-Apps-2.0 Folder...Completed" 
+   
+            Write-Output "Renaming Localappdata-Apps-2.0 Folder...Completed" | TimeStamp
         }
         Else 
         { 
 
-            Log "Renaming Localappdata-Apps-2.0 Folder...Failed!" -Color Darkred 
+            Write-Output "Renaming Localappdata-Apps-2.0 Folder...Failed!" | TimeStamp
         }
 
-        Log "Reinstalling Application..." 
+        Write-Output "Reinstalling Application..." | TimeStamp
   
         Open-Internetexplorer -Url Http://Example.Com/Install.Application -Fullscreen -Inforeground
 
@@ -137,18 +175,20 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Start-Sleep -Seconds 5
         $Wshell.Sendkeys("{Left}")
         $Wshell.Sendkeys("{Enter}")	
-            
+    
     }
 
     End
     {
-        Stop-Log  
+        If ($EnableLogging)
+        {
+            Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
+            Write-Output "####################</Script>####################"
+            Stop-Transcript
+        }
     }
 
 }
-
-# Install-ClickOnceApplication
-
 
 <#######</Body>#######>
 <#######</Script>#######>

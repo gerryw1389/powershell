@@ -16,7 +16,7 @@ This function tests your system to see if you have Powershell profiles loaded. I
 This function tests your system to see if you have Powershell profiles loaded. If not, it creates blank ones for you.
 .Parameter Logfile
 Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
-Note: If you don't like my scripts forcing logging, I wrote a post on how to fix this at https://www.gerrywilliams.net/2018/02/ps-forcing-preferences/
+NOTE: If you wish to delete the logfile, I have updated my scripts to where they should still run fine with no logging.
 .Example
 Test-PSProfiles
 This function tests your system to see if you have Powershell profiles loaded. If not, it creates blank ones for you.
@@ -39,53 +39,92 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     Begin
     {
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
-        Set-Console
-        Start-Log  
-        
+        If ($($Logfile.Length) -gt 1)
+        {
+            $EnabledLogging = $True
+        }
+        Else
+        {
+            $EnabledLogging = $False
+        }
+    
+    
+        Filter Timestamp
+        {
+            "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $_"
+        }
+
+        If ($EnabledLogging)
+        {
+            # Create parent path and logfile if it doesn't exist
+            $Regex = '([^\\]*)$'
+            $Logparent = $Logfile -Replace $Regex
+            If (!(Test-Path $Logparent))
+            {
+                New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+            }
+            If (!(Test-Path $Logfile))
+            {
+                New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+            }
+    
+            # Clear it if it is over 10 MB
+            $Sizemax = 10
+            $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+            $Sizemb = "{0:N2}" -F ($Size.Sum / 1mb) + "Mb"
+            If ($Sizemb -Ge $Sizemax)
+            {
+                Get-Childitem $Logfile | Clear-Content
+                Write-Verbose "Logfile has been cleared due to size"
+            }
+            # Start writing to logfile
+            Start-Transcript -Path $Logfile -Append 
+            Write-Output "####################<Script>####################"
+            Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
+        }  
+    
     }
     
     Process
     {    
         If (Test-Path $profile)
         {
-            Log "Powershell CurrentUser,CurrentHost Profile Already exists" 
+            Write-Output "Powershell CurrentUser,CurrentHost Profile Already exists" | TimeStamp
         }
         Else
         {
             New-Item $profile -ItemType file -Force
-            Log "Created Powershell CurrentUser,CurrentHost Profile" 
+            Write-Output "Created Powershell CurrentUser,CurrentHost Profile" | TimeStamp
         }
 
         If (Test-Path $profile.CurrentUserAllHosts)
         {
-            Log "Powershell CurrentUser,AllHost Profile already exists" 
+            Write-Output "Powershell CurrentUser,AllHost Profile already exists" | TimeStamp
         }
         Else
         {
             New-Item $profile.CurrentUserAllHosts -ItemType file -Force
-            Log "Created Powershell CurrentUser,AllHost profile" 
+            Write-Output "Created Powershell CurrentUser,AllHost profile" | TimeStamp
         }
 
         If (Test-Path $profile.AllUsersCurrentHost)
         {
-            Log "Powershell AllUsers,CurrentHost profile already exists" 
+            Write-Output "Powershell AllUsers,CurrentHost profile already exists" | TimeStamp
         }
         Else
         {
             New-Item $profile.AllUsersCurrentHost -ItemType file -Force
-            Log "Created Powershell AllUsers,CurrentHost profile" 
+            Write-Output "Created Powershell AllUsers,CurrentHost profile" | TimeStamp
         }
 
         If (Test-Path $profile.AllUsersAllHosts)
         {
-            Log "Powershell AllUsers,AllHosts profile already exists" 
+            Write-Output "Powershell AllUsers,AllHosts profile already exists" | TimeStamp
         }
         Else
         {
             New-Item $profile.AllUsersAllHosts -ItemType file -Force
-            Log "Created Powershell AllUsers,AllHosts profile" 
+            Write-Output "Created Powershell AllUsers,AllHosts profile" | TimeStamp
         }
 
         # This is for Powershell ISE
@@ -93,34 +132,37 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         $isePath = "$env:userprofile\Documents\WindowsPowershell\Microsoft.PowerShellISE_profile.ps1"
         If (Test-Path $isePath)
         {
-            Log "Powershell ISE CurrentUser, CurrentHost profile already exists" 
+            Write-Output "Powershell ISE CurrentUser, CurrentHost profile already exists" | TimeStamp
         }
         Else
         {
             New-Item -path $isePath -ItemType file -Force
-            Log "Created Powershell ISE CurrentUser, CurrentHost profile" 
+            Write-Output "Created Powershell ISE CurrentUser, CurrentHost profile" | TimeStamp
         }
 
         $iseAllUsersPath = "$env:userprofile\Documents\Microsoft.PowerShellISE_profile.ps1"
         If (Test-Path $iseAllUsersPath)
         {
-            Log "Powershell ISE AllUsers, CurrentHost profile already exists" 
+            Write-Output "Powershell ISE AllUsers, CurrentHost profile already exists" | TimeStamp
         }
         Else
         {
             New-Item -path $iseAllUsersPath -ItemType file -Force
-            Log "Created Powershell ISE AllUsers, CurrentHost profile" 
+            Write-Output "Created Powershell ISE AllUsers, CurrentHost profile" | TimeStamp
         }
     }
 
     End
     {
-        Stop-Log  
+        If ($EnableLogging)
+        {
+            Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
+            Write-Output "####################</Script>####################"
+            Stop-Transcript
+        }
     }
 
 }
-
-# Test-PSProfiles
 
 <#######</Body>#######>
 <#######</Script>#######>

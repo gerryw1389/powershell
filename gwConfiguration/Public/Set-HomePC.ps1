@@ -16,7 +16,7 @@ W10 config script.
 W10 config script that I run on on my home PC after Set-Template. It has further customizations that I wouldn't want just any PC.
 .Parameter Logfile
 Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
-Note: If you don't like my scripts forcing logging, I wrote a post on how to fix this at https://www.gerrywilliams.net/2018/02/ps-forcing-preferences/
+NOTE: If you wish to delete the logfile, I have updated my scripts to where they should still run fine with no logging.
 .Example
 Set-HomePC
 Usually same as synopsis.
@@ -38,17 +38,55 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {
 
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
-        Set-Console
-        Start-Log
+        If ($($Logfile.Length) -gt 1)
+        {
+            $EnabledLogging = $True
+        }
+        Else
+        {
+            $EnabledLogging = $False
+        }
+    
+        Filter Timestamp
+        {
+            "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $_"
+        }
+
+        If ($EnabledLogging)
+        {
+            # Create parent path and logfile if it doesn't exist
+            $Regex = '([^\\]*)$'
+            $Logparent = $Logfile -Replace $Regex
+            If (!(Test-Path $Logparent))
+            {
+                New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+            }
+            If (!(Test-Path $Logfile))
+            {
+                New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+            }
+    
+            # Clear it if it is over 10 MB
+            $Sizemax = 10
+            $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+            $Sizemb = "{0:N2}" -F ($Size.Sum / 1mb) + "Mb"
+            If ($Sizemb -Ge $Sizemax)
+            {
+                Get-Childitem $Logfile | Clear-Content
+                Write-Verbose "Logfile has been cleared due to size"
+            }
+            # Start writing to logfile
+            Start-Transcript -Path $Logfile -Append 
+            Write-Output "####################<Script>####################"
+            Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
+        }
 
     }
     
     
     Process
     {    
-        Log "Creating a lockscreen task. This will lock the screen every 5 minutes of inactivity"
+        Write-Output "Creating a lockscreen task. This will lock the screen every 5 minutes of inactivity" | TimeStamp
         $TaskName = "LockScreen"
         $service = New-Object -ComObject("Schedule.Service")
         $service.Connect()
@@ -70,7 +108,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         $user = "$username"
         $rootFolder.RegisterTaskDefinition($TaskName, $taskdef, 6, $user, $null, 3) | Out-Null
 
-        Log "Adding OpenPSHere to right click menu"
+        Write-Output "Adding OpenPSHere to right click menu" | TimeStamp
         $menu = 'OpenPSHere'
         $command = "$PSHOME\powershell.exe -NoExit -NoProfile -Command ""Set-Location '%V'"""
 
@@ -81,10 +119,10 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
                 Set-ItemProperty -Name HasLUAShield -Value ''
         }
 
-        Log "Enabling SMB 1.0 protocol for connections to legacy NAS devices"
+        Write-Output "Enabling SMB 1.0 protocol for connections to legacy NAS devices" | TimeStamp
         Set-SmbServerConfiguration -EnableSMB1Protocol $true -Force
 
-        Log "Adjusting visual effects for appearance..."
+        Write-Output "Adjusting visual effects for appearance..." | TimeStamp
         SetReg -Path "HKCU:\Control Panel\Desktop" -Name "DragFullWindows" -PropertyType "String" -Value "1"
         SetReg -Path "HKCU:\Control Panel\Desktop" -Name "MenuShowDelay" -PropertyType "String" -Value "400"
         SetReg -Path "HKCU:\Control Panel\Desktop" -Name "UserPreferencesMask" -PropertyType "Binary" -Value "9e,7e,06,80,12,00,00,00"
@@ -95,26 +133,26 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Value "1"
         SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name "VisualFXSetting" -Value "3"
         SetReg -Path "HKCU:\Software\Microsoft\Windows\DWM" -Name "EnableAeroPeek" -Value "1"
-        
-        Log "Disabling Windows Update automatic restart"
+    
+        Write-Output "Disabling Windows Update automatic restart" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "NoAutoRebootWithLoggedOnUsers" -Value "1"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "AUPowerManagement" -Value "0"
 
-        Log "Stopping and disabling Home Groups services"
+        Write-Output "Stopping and disabling Home Groups services" | TimeStamp
         Stop-Service "HomeGroupListener" -WarningAction SilentlyContinue
         Set-Service "HomeGroupListener" -StartupType Disabled
         Stop-Service "HomeGroupProvider" -WarningAction SilentlyContinue
         Set-Service "HomeGroupProvider" -StartupType Disabled
 
-        Log "Starting and enabling Windows Search indexing service"
+        Write-Output "Starting and enabling Windows Search indexing service" | TimeStamp
         Set-Service "WSearch" -StartupType Automatic
         SetReg -Path "HKLM:\SYSTEM\CurrentControlSet\Services\WSearch" -Name "DelayedAutoStart" -Value "1"
         Start-Service "WSearch" -WarningAction SilentlyContinue
 
-        Log "Enabling Fast Startup"
+        Write-Output "Enabling Fast Startup" | TimeStamp
         SetReg -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -Value "1"
 
-        Log "Disabling Action Center"
+        Write-Output "Disabling Action Center" | TimeStamp
         If (!(Test-Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer"))
         {
             New-Item -Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer" | Out-Null
@@ -122,13 +160,13 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         SetReg -Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "DisableNotificationCenter" -Value "1"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications" -Name "ToastEnabled" -Value "0"
 
-        Log "Disabling Sticky keys prompt"
+        Write-Output "Disabling Sticky keys prompt" | TimeStamp
         SetReg -Path "HKCU:\Control Panel\Accessibility\StickyKeys" -Name "Flags" -PropertyType "String" -Value "506"
 
-        Log "Disabling file delete confirmation dialog"
+        Write-Output "Disabling file delete confirmation dialog" | TimeStamp
         Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "ConfirmFileDelete" -ErrorAction SilentlyContinue
     
-        Log "Showing Task Manager details"
+        Write-Output "Showing Task Manager details" | TimeStamp
         If (!(Test-Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager"))
         {
             New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager" -Force | Out-Null
@@ -146,11 +184,11 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         }
         $preferences.Preferences[28] = 0
         Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager" -Name "Preferences" -Type Binary -Value $preferences.Preferences
-        
-        Log "Showing file operations details"
+    
+        Write-Output "Showing file operations details" | TimeStamp
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\OperationStatusManager" -Name "EnthusiastMode" -Value "1"
-        
-        Log "Disabling and Uninstalling OneDrive"
+    
+        Write-Output "Disabling and Uninstalling OneDrive" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive" -Name "DisableFileSyncNGSC" -Value "1"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive" -Name "DisableFileSync" -Value "1"
         Stop-Process -Name OneDrive -ErrorAction SilentlyContinue
@@ -170,49 +208,54 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Remove-Item "$env:SYSTEMDRIVE\OneDriveTemp" -Force -Recurse -ErrorAction SilentlyContinue
         Remove-Item -Path "HKCR:\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Recurse -ErrorAction SilentlyContinue
         Remove-Item -Path "HKCR:\Wow6432Node\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Recurse -ErrorAction SilentlyContinue
-        
-        Log "Removing Onedrive From Explorer"
+    
+        Write-Output "Removing Onedrive From Explorer" | TimeStamp
         SetReg -Path "HKCR:\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Name "System.IsPinnedToNameSpaceTree" -Value "0"
         SetReg -Path "HKCR:\Wow6432Node\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Name "System.IsPinnedToNameSpaceTree" -Value "0"
 
-        Log "Removing OneDrive Startup Entry"
+        Write-Output "Removing OneDrive Startup Entry" | TimeStamp
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" -Name "OneDrive" -PropertyType "Binary" -Value "03,00,00,00,cd,9a,36,38,64,0b,d2,01"
   
-        Log "Installing Linux Subsystem"
+        Write-Output "Installing Linux Subsystem" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" -Name "AllowDevelopmentWithoutDevLicense" -Value "1"
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" -Name "AllowAllTrustedApps" -Value "1"
         Enable-WindowsOptionalFeature -Online -FeatureName "Microsoft-Windows-Subsystem-Linux" -NoRestart -WarningAction SilentlyContinue | Out-Null
-        
+    
         <#
-        # I used to disable featurs, but I honestly don't think it's worth the hassle anymore.
+    # I used to disable features, but I honestly don't think it's worth the hassle anymore.
 
-        Log "Removing system bloat"
-        $Features = Get-WindowsOptionalFeature -Online | Where-Object `
-        {
-            $_.FeatureName -notlike '*Net*FX*' `
-                -and $_.FeatureName -notlike '*Internet-Explorer*' `
-                -and $_.FeatureName -notlike '*SMB1*' `
-                -and $_.FeatureName -notlike '*Powershell*' `
-                -and $_.FeatureName -notlike '*Printing*' `
-                -and $_.FeatureName -notlike '*Linux*' `
-                -and $_.FeatureName -notlike '*WCF*' `
-                -and $_.FeatureName -notlike '*Defender*' `
-        } | Sort-Object -Property { $_.FeatureName.Length }
-        
-        ForEach ($Feature in $Features)
-        {
-            If ($Feature.State -eq 'Enabled')
-            {
-                $Feature | Disable-WindowsOptionalFeature -Online -Remove -NoRestart > $null 3> $null
-                Log "Disabling Feature: $($Feature.FeatureName)"
-            }    
-        }
-        #>     
+Write-Output "Removing system bloat" | TimeStamp
+    $Features = Get-WindowsOptionalFeature -Online | Where-Object `
+    {
+    $_.FeatureName -notlike '*Net*FX*' `
+    -and $_.FeatureName -notlike '*Internet-Explorer*' `
+    -and $_.FeatureName -notlike '*SMB1*' `
+    -and $_.FeatureName -notlike '*Powershell*' `
+    -and $_.FeatureName -notlike '*Printing*' `
+    -and $_.FeatureName -notlike '*Linux*' `
+    -and $_.FeatureName -notlike '*WCF*' `
+    -and $_.FeatureName -notlike '*Defender*' `
+    } | Sort-Object -Property { $_.FeatureName.Length }
+    
+    ForEach ($Feature in $Features)
+    {
+    If ($Feature.State -eq 'Enabled')
+    {
+    $Feature | Disable-WindowsOptionalFeature -Online -Remove -NoRestart > $null 3> $null
+Write-Output "Disabling Feature: $($Feature.FeatureName)" | TimeStamp
+    }    
+    }
+    #> 
     }
 
     End
     {
-        Stop-Log
+        If ($EnableLogging)
+        {
+            Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
+            Write-Output "####################</Script>####################"
+            Stop-Transcript
+        }
     }
 
 }   

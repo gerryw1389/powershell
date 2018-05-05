@@ -37,18 +37,56 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     Begin
     {
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
-        Set-Console
-        Start-Log
+        If ($($Logfile.Length) -gt 1)
+        {
+            $EnabledLogging = $True
+        }
+        Else
+        {
+            $EnabledLogging = $False
+        }
+        
+        Filter Timestamp
+        {
+            "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $_"
+        }
+
+        If ($EnabledLogging)
+        {
+            # Create parent path and logfile if it doesn't exist
+            $Regex = '([^\\]*)$'
+            $Logparent = $Logfile -Replace $Regex
+            If (!(Test-Path $Logparent))
+            {
+                New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+            }
+            If (!(Test-Path $Logfile))
+            {
+                New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+            }
+    
+            # Clear it if it is over 10 MB
+            $Sizemax = 10
+            $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+            $Sizemb = "{0:N2}" -F ($Size.Sum / 1mb) + "Mb"
+            If ($Sizemb -Ge $Sizemax)
+            {
+                Get-Childitem $Logfile | Clear-Content
+                Write-Verbose "Logfile has been cleared due to size"
+            }
+            # Start writing to logfile
+            Start-Transcript -Path $Logfile -Append 
+            Write-Output "####################<Script>####################"
+            Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
+        }
     }
 
     Process
     {
-        Log "Configuring Internet Settings" 
+        Write-Output "Configuring Internet Settings" | TimeStamp
 
         # Reset IE to defaults, you don't have to click, just wait and it will for you.
-        Log "Resetting to defaults" 
+        Write-Output "Resetting to defaults" | TimeStamp
         Add-Type -Assemblyname Microsoft.Visualbasic
         Add-Type -Assemblyname System.Windows.Forms
         rundll32.exe inetcpl.cpl ResetIEtoDefaults
@@ -58,20 +96,20 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Start-Sleep -Seconds 2
         [System.Windows.Forms.Sendkeys]::Sendwait("%C")
 
-        Log "Setting Homepage to Google"
+        Write-Output "Setting Homepage to Google" | TimeStamp
         SetReg -Path "HKCU:\Software\Microsoft\Internet Explorer\Main" -Name "Start Page" -Value "https://google.com" -PropertyType "String"
 
         ForEach ($Site in $TrustedSites)
         {
-            Log "Adding $Site To Trusted Sites" 
+            Write-Output "Adding $Site To Trusted Sites" | TimeStamp
             $Substring = $Site.Replace('http://', '').replace('https://', '').replace('www.', '')
             SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\$Substring" -Name "*" -Value "2"
-            Log "Adding $Site to Pop Up Blocker list..." 
+            Write-Output "Adding $Site to Pop Up Blocker list..." | TimeStamp
             SetReg -Path "HKCU:\Software\Microsoft\Internet Explorer\New Windows\Allow" -Name "*.$Substring" -Value "00,00" -PropertyType "Binary"
         }
 
         # Basically full open the trusted sites zone.
-        Log "Configuring zones"
+        Write-Output "Configuring zones" | TimeStamp
         SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\zones\2" -Name "1001" -Value "0"
         SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\zones\2" -Name "1004" -Value "0"
         SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\zones\2" -Name "1200" -Value "0"
@@ -93,14 +131,19 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\zones\2" -Name "2702" -Value "0"
         SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\zones\2" -Name "270C" -Value "0"
     
-        Log "Launching IE" 
-        Invoke-Item "C:\Program Files (x86)\Internet Explorer\iexplore.exe"     
+        Write-Output "Launching IE" | TimeStamp
+        Invoke-Item "C:\Program Files (x86)\Internet Explorer\iexplore.exe" 
  
     }
 
     End
     {
-        Stop-Log 
+        If ($EnableLogging)
+        {
+            Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
+            Write-Output "####################</Script>####################"
+            Stop-Transcript
+        }
     }
 
 }

@@ -1,0 +1,40 @@
+####################<Script>####################
+2018-05-02 08:32:34 AM: Script Started on GW-VMH 
+2018-05-02 08:32:34 AM: Creating a lockscreen task. This will lock the screen every 5 minutes of inactivity
+2018-05-02 08:32:35 AM: Adding OpenPSHere to right click menu
+2018-05-02 08:32:35 AM: Enabling SMB 1.0 protocol for connections to legacy NAS devices
+2018-05-02 08:32:36 AM: Adjusting visual effects for appearance...
+2018-05-02 08:32:36 AM: Key already exists: KeyboardDelay at HKCU:\Control Panel\Keyboard
+2018-05-02 08:32:36 AM: Key already exists: ListviewAlphaSelect at HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+2018-05-02 08:32:36 AM: Key already exists: ListviewShadow at HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+2018-05-02 08:32:36 AM: Key already exists: TaskbarAnimations at HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+2018-05-02 08:32:36 AM: Added Key: VisualFXSetting at HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects
+2018-05-02 08:32:36 AM: Added Key: EnableAeroPeek at HKCU:\Software\Microsoft\Windows\DWM
+2018-05-02 08:32:36 AM: Disabling Windows Update automatic restart
+2018-05-02 08:32:36 AM: Added Key: NoAutoRebootWithLoggedOnUsers at HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU
+2018-05-02 08:32:36 AM: Added Key: AUPowerManagement at HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU
+2018-05-02 08:32:36 AM: Stopping and disabling Home Groups services
+2018-05-02 08:32:36 AM: Starting and enabling Windows Search indexing service
+2018-05-02 08:32:36 AM: Key already exists: DelayedAutoStart at HKLM:\SYSTEM\CurrentControlSet\Services\WSearch
+2018-05-02 08:32:36 AM: Enabling Fast Startup
+2018-05-02 08:32:36 AM: Key already exists: HiberbootEnabled at HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power
+2018-05-02 08:32:36 AM: Disabling Action Center
+2018-05-02 08:32:36 AM: Added Key: DisableNotificationCenter at HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer
+2018-05-02 08:32:36 AM: Added Key: ToastEnabled at HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications
+2018-05-02 08:32:36 AM: Disabling Sticky keys prompt
+2018-05-02 08:32:36 AM: Disabling file delete confirmation dialog
+2018-05-02 08:32:36 AM: Showing Task Manager details
+2018-05-02 08:32:36 AM: Showing file operations details
+2018-05-02 08:32:36 AM: Added Key: EnthusiastMode at HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\OperationStatusManager
+2018-05-02 08:32:36 AM: Disabling and Uninstalling OneDrive
+2018-05-02 08:32:36 AM: Key already exists: DisableFileSyncNGSC at HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive
+2018-05-02 08:32:36 AM: Key already exists: DisableFileSync at HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive
+2018-05-02 08:32:47 AM: Removing Onedrive From Explorer
+2018-05-02 08:32:47 AM: Added Key: System.IsPinnedToNameSpaceTree at HKCR:\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}
+2018-05-02 08:32:47 AM: Added Key: System.IsPinnedToNameSpaceTree at HKCR:\Wow6432Node\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}
+2018-05-02 08:32:47 AM: Removing OneDrive Startup Entry
+2018-05-02 08:32:47 AM: Installing Linux Subsystem
+2018-05-02 08:32:47 AM: Key already exists: AllowDevelopmentWithoutDevLicense at HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock
+2018-05-02 08:32:47 AM: Key already exists: AllowAllTrustedApps at HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock
+2018-05-02 08:32:59 AM: Script Completed on GW-VMH
+####################</Script>####################

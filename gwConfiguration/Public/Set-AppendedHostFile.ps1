@@ -19,7 +19,7 @@ Downloads lists of "Blacklisted" Websites from three sources (below) and APPENDS
 # http://someonewhocares.org/hosts/
 .Parameter Logfile
 Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
-Note: If you don't like my scripts forcing logging, I wrote a post on how to fix this at https://www.gerrywilliams.net/2018/02/ps-forcing-preferences/
+NOTE: If you wish to delete the logfile, I have updated my scripts to where they should still run fine with no logging.
 .Example
 Set-AppendedHostFile
 Downloads lists of "Blacklisted" Websites from three sources (below) and APPENDS them to your current Windows Host File.
@@ -42,10 +42,48 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     Begin
     {
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
-        Set-Console
-        Start-Log  
+        If ($($Logfile.Length) -gt 1)
+        {
+            $EnabledLogging = $True
+        }
+        Else
+        {
+            $EnabledLogging = $False
+        }
+    
+        Filter Timestamp
+        {
+            "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $_"
+        }
+
+        If ($EnabledLogging)
+        {
+            # Create parent path and logfile if it doesn't exist
+            $Regex = '([^\\]*)$'
+            $Logparent = $Logfile -Replace $Regex
+            If (!(Test-Path $Logparent))
+            {
+                New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+            }
+            If (!(Test-Path $Logfile))
+            {
+                New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+            }
+    
+            # Clear it if it is over 10 MB
+            $Sizemax = 10
+            $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+            $Sizemb = "{0:N2}" -F ($Size.Sum / 1mb) + "Mb"
+            If ($Sizemb -Ge $Sizemax)
+            {
+                Get-Childitem $Logfile | Clear-Content
+                Write-Verbose "Logfile has been cleared due to size"
+            }
+            # Start writing to logfile
+            Start-Transcript -Path $Logfile -Append 
+            Write-Output "####################<Script>####################"
+            Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
+        }  
     }
     
     Process
@@ -53,13 +91,13 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         # Get Hostfile Values From Winhelp2002.Mvps.Org, Github, And Someonewhocares.Org And Store Them In Separate Text Files
         $Hfv = Invoke-Webrequest "http://winhelp2002.mvps.org/hosts.txt"
         New-Item -Itemtype File -Path C:\Scripts\Hfv.Txt -Value $Hfv.Content
-        Log "Created C:\Scripts\hfv.txt from winhelp2002" 
+        Write-Output "Created C:\Scripts\hfv.txt from winhelp2002" | TimeStamp
         $Hfv2 = Invoke-Webrequest "https://raw.githubusercontent.com/stevenblack/hosts/master/hosts"
         New-Item -Itemtype File -Path C:\Scripts\Hfv2.Txt -Value $Hfv2.Content
-        Log "Created C:\Scripts\hfv2.txt from Github" 
+        Write-Output "Created C:\Scripts\hfv2.txt from Github" | TimeStamp
         $Hfv3 = Invoke-Webrequest "http://someonewhocares.org/hosts/"
         New-Item -Itemtype File -Path C:\Scripts\Hfv3.Txt -Value $Hfv3.Content
-        Log "Created C:\Scripts\hfv3.txt from someonewhocares.org" 
+        Write-Output "Created C:\Scripts\hfv3.txt from someonewhocares.org" | TimeStamp
         # Combine The Files
 
         $Merged = Get-Content C:\Scripts\Hfv.Txt
@@ -77,17 +115,17 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 # Follow Their Rules In Regards To Licensing And Copyright
 # Entries Below
 "@
-        Log "Cleaning The File By Removing Anything That Is Not A 0 Or 1" 
+        Write-Output "Cleaning The File By Removing Anything That Is Not A 0 Or 1" | TimeStamp
         $B = Get-Content Combined.Txt | Where-Object { $_ -Match "^0" -Or $_ -Match "^1"}
         $C = -Join $A, $B
-        Log "Replace All 127.0.0.1 With 0.0.0.0" 
+        Write-Output "Replace All 127.0.0.1 With 0.0.0.0" | TimeStamp
         $D = $C.Replace("127.0.0.1", "0.0.0.0")
 
-        Log "Sort Alphabetically And Remove Duplicates" 
+        Write-Output "Sort Alphabetically And Remove Duplicates" | TimeStamp
         $E = $D | Sort-Object | Get-Unique
         $E | Out-File Host.Txt
 
-        Log "Appending To The Current Windows Host File" 
+        Write-Output "Appending To The Current Windows Host File" | TimeStamp
         Add-Content -Value $E -Path "$($Env:Windir)\System32\Drivers\Etc\Hosts"
 
         # Clean Up
@@ -96,13 +134,18 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Remove-Item -Path C:\Scripts\Hfv2.Txt
         Remove-Item -Path C:\Scripts\Hfv3.Txt
         Remove-Item -Path C:\Scripts\Host.Txt
-        Log "Deleting Txt Files Created By Script"                 
+        Write-Output "Deleting Txt Files Created By Script" | TimeStamp
     }
 
     End
     {
-        Stop-Log
-        
+        If ($EnableLogging)
+        {
+            Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
+            Write-Output "####################</Script>####################"
+            Stop-Transcript
+        }
+    
         $Input = Read-Host "Would You Like To See Your Windows Host File? (Y)Yes Or (N)No"
         If ($Input -Eq "Y")
         {
@@ -115,7 +158,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     }
 
 }
-               
+   
 # Set-AppendedHostFile
 
 <#######</Body>#######>

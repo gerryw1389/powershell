@@ -15,6 +15,7 @@ Generate PINs with freely definable number of numbers
 Generate PINs with freely definable number of numbers. You can also set the smallest and greatest possible number.
 .Parameter Logfile
 Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
+NOTE: If you wish to delete the logfile, I have updated my scripts to where they should still run fine with no logging.
 .Example
 Get-RandomPIN -Length 8
 PIN
@@ -24,11 +25,11 @@ PIN
 Get-RandomPIN -Length 6 -Count 5 -Minimum 4 -Maximum 8
 Count PIN
 ----- ---
-        1 767756
-        2 755655
-        3 447667
-        4 577646
-        5 644665
+    1 767756
+    2 755655
+    3 447667
+    4 577646
+    5 644665
 .Notes
 2017-09-08: v1.0 Initial script 
 .Functionality
@@ -38,33 +39,64 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     [Cmdletbinding()]
     Param
     (
-        [Parameter(Position = 0, HelpMessage = 'Length of the PIN (Default=4)')]
-        [ValidateScript( {if ($_ -eq 0){ throw "Length of the PIN can not be 0!" } else{ return $true }})]
-        [Int32]$Length = 4,
+        [Parameter(Position = 0)][Int32]$Length = 4,
 
-        [Parameter(ParameterSetName = 'NoClipboard', Position = 1, HelpMessage = 'Number of PINs to be generated (Default=1)')]
-        [ValidateScript( {if ($_ -eq 0){ throw "Number of PINs to be generated can not be 0" } else{ return $true }})]
-        [Int32]$Count = 1,
-        
-        [Parameter(ParameterSetName = 'Clipboard', Position = 1, HelpMessage = 'Copy PIN to clipboard')]
-        [switch]$CopyToClipboard,
+        [Parameter(ParameterSetName = 'NoClipboard', Position = 1)][Int32]$Count = 1,
+    
+        [Parameter(ParameterSetName = 'Clipboard', Position = 1)][switch]$CopyToClipboard,
 
-        [Parameter(Position = 2, HelpMessage = 'Smallest possible number (Default=0)')]
-        [Int32]$Minimum = 0,
-        
-        [Parameter(Position = 3, HelpMessage = 'Greatest possible number (Default=9)')]
-        [ValidateScript( { if ($_ -lt $Minimum){ throw "Minimum can not be greater than maximum!" }})]
-        [Int32]$Maximum = 9,
-            
+        [Parameter(Position = 2)][Int32]$Minimum = 0,
+    
+        [Parameter(Position = 3)][Int32]$Maximum = 9,
+    
         [String]$Logfile = "$PSScriptRoot\..\Logs\Invoke-RandomPIN.log"
     )
     
     Begin
-    {       
+    {   
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-        Set-Console
-        Start-Log
+        If ($($Logfile.Length) -gt 1)
+        {
+            $EnabledLogging = $True
+        }
+        Else
+        {
+            $EnabledLogging = $False
+        }
+        
+        Filter Timestamp
+        {
+            "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $_"
+        }
+
+        If ($EnabledLogging)
+        {
+            # Create parent path and logfile if it doesn't exist
+            $Regex = '([^\\]*)$'
+            $Logparent = $Logfile -Replace $Regex
+            If (!(Test-Path $Logparent))
+            {
+                New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+            }
+            If (!(Test-Path $Logfile))
+            {
+                New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+            }
+    
+            # Clear it if it is over 10 MB
+            $Sizemax = 10
+            $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+            $Sizemb = "{0:N2}" -F ($Size.Sum / 1mb) + "Mb"
+            If ($Sizemb -Ge $Sizemax)
+            {
+                Get-Childitem $Logfile | Clear-Content
+                Write-Verbose "Logfile has been cleared due to size"
+            }
+            # Start writing to logfile
+            Start-Transcript -Path $Logfile -Append 
+            Write-Output "####################<Script>####################"
+            Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
+        }
     }
     
     Process
@@ -80,7 +112,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
                     $PIN += (Get-Random -Minimum $Minimum -Maximum $Maximum).ToString()
                 }
                 # Return result
-                
+    
                 if ($Count -eq 1)
                 {
                     # Set to clipboard
@@ -93,23 +125,28 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
                     }
                 }
                 else 
-                {                        
+                {        
                     [pscustomobject] @{
                         Count = $i
                         PIN   = $PIN
-                    }        
+                    }    
                 }
             }
         }
         Catch
         {
-            Log $($_.Exception.Message) -Error -ExitGracefully
+            Write-Error $($_.Exception.Message)
         }
     }
 
     End
     {
-        Stop-Log  
+        If ($EnableLogging)
+        {
+            Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
+            Write-Output "####################</Script>####################"
+            Stop-Transcript
+        }
     }
 
 }

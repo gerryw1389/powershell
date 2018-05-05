@@ -17,7 +17,7 @@ Invokes a menu driven application that can run pre-defined Powershell commands a
 Invokes a menu driven application that can run pre-defined Powershell commands and scripts.
 .Parameter Logfile
 Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
-Note: If you don't like my scripts forcing logging, I wrote a post on how to fix this at https://www.gerrywilliams.net/2018/02/ps-forcing-preferences/
+NOTE: If you wish to delete the logfile, I have updated my scripts to where they should still run fine with no logging.
 .Example
 Invoke-CustomMenu
 Invokes a menu driven application that can run pre-defined Powershell commands and scripts.
@@ -44,49 +44,49 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Function Write-Color
         {
             <#
-                .SYNOPSIS
-                    Enables support to write multiple color text on a single line
-                .DESCRIPTION
-                    Users color codes to enable support to write multiple color text on a single line
-                    ################################################
-                    # Write-Color Color Codes
-                    ################################################
-                    # ^cn = Normal Output Color
-                    # ^ck = Black
-                    # ^cb = Blue
-                    # ^cc = Cyan
-                    # ^ce = Gray
-                    # ^cg = Green
-                    # ^cm = Magenta
-                    # ^cr = Red
-                    # ^cw = White
-                    # ^cy = Yellow
-                    # ^cB = DarkBlue
-                    # ^cC = DarkCyan
-                    # ^cE = DarkGray
-                    # ^cG = DarkGreen
-                    # ^cM = DarkMagenta
-                    # ^cR = DarkRed
-                    # ^cY = DarkYellow
-                    ################################################
-                .PARAMETER text
-                    Mandatory. Line of text to write
-                .INPUTS
-                    [string]$text
-                .OUTPUTS
-                    None
-                .NOTES
-                    Version:        1.0
-                    Author:         Brian Clark
-                    Creation Date:  01/21/2017
-                    Purpose/Change: Initial function development
-                    Version:        1.1
-                    Author:         Brian Clark
-                    Creation Date:  01/23/2017
-                    Purpose/Change: Fix Gray / Code Format Fixes
-                .EXAMPLE
-                    Write-Color "Hey look ^crThis is red ^cgAnd this is green!"
-                #>
+    .SYNOPSIS
+    Enables support to write multiple color text on a single line
+    .DESCRIPTION
+    Users color codes to enable support to write multiple color text on a single line
+    ################################################
+    # Write-Color Color Codes
+    ################################################
+    # ^cn = Normal Output Color
+    # ^ck = Black
+    # ^cb = Blue
+    # ^cc = Cyan
+    # ^ce = Gray
+    # ^cg = Green
+    # ^cm = Magenta
+    # ^cr = Red
+    # ^cw = White
+    # ^cy = Yellow
+    # ^cB = DarkBlue
+    # ^cC = DarkCyan
+    # ^cE = DarkGray
+    # ^cG = DarkGreen
+    # ^cM = DarkMagenta
+    # ^cR = DarkRed
+    # ^cY = DarkYellow
+    ################################################
+    .PARAMETER text
+    Mandatory. Line of text to write
+    .INPUTS
+    [string]$text
+    .OUTPUTS
+    None
+    .NOTES
+    Version:    1.0
+    Author:     Brian Clark
+    Creation Date:  01/21/2017
+    Purpose/Change: Initial function development
+    Version:    1.1
+    Author:     Brian Clark
+    Creation Date:  01/23/2017
+    Purpose/Change: Fix Gray / Code Format Fixes
+    .EXAMPLE
+    Write-Color "Hey look ^crThis is red ^cgAnd this is green!"
+    #>
 
             [CmdletBinding()]
             Param (
@@ -224,31 +224,31 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Function New-MenuItem
         {
             <#
-                .SYNOPSIS
-                    Creates a Menu Item used with New-Menu
-                .DESCRIPTION
-                    Use this in conjunction with New-Menu and Show-Menu
-                    to generate a menu system for your scripts
-                .PARAMETER Name
-                    Mandatory. Text that shows up in the menu for this menu item.
-                .PARAMETER Command
-                    Mandatory. Command the menu item executes when selected
-                    Important Note: Define your command in single quotes '' and not double quotes ""
-                .INPUTS
-                    [string]$Name
-                    [string]$Command
-                .OUTPUTS
-                    [PSObject] Name, Command
-                .NOTES
-                    Version:        1.0
-                    Author:         Brian Clark
-                    Creation Date:  03/23/2017
-                    Purpose/Change: Initial function development
-                .EXAMPLE
-                    $item = New-MenuItem -Name "List All Services" -Command 'Get-Service'
-                    $item_end = New-MenuItem -Name "Exit Menu" -Command 'End-Menu'
-                    $item_switch_menu = New-MenuItem -Name "View Menu 2" -Command 'Show-Menu $menu2'
-                #>
+    .SYNOPSIS
+    Creates a Menu Item used with New-Menu
+    .DESCRIPTION
+    Use this in conjunction with New-Menu and Show-Menu
+    to generate a menu system for your scripts
+    .PARAMETER Name
+    Mandatory. Text that shows up in the menu for this menu item.
+    .PARAMETER Command
+    Mandatory. Command the menu item executes when selected
+    Important Note: Define your command in single quotes '' and not double quotes ""
+    .INPUTS
+    [string]$Name
+    [string]$Command
+    .OUTPUTS
+    [PSObject] Name, Command
+    .NOTES
+    Version:    1.0
+    Author:     Brian Clark
+    Creation Date:  03/23/2017
+    Purpose/Change: Initial function development
+    .EXAMPLE
+    $item = New-MenuItem -Name "List All Services" -Command 'Get-Service'
+    $item_end = New-MenuItem -Name "Exit Menu" -Command 'End-Menu'
+    $item_switch_menu = New-MenuItem -Name "View Menu 2" -Command 'Show-Menu $menu2'
+    #>
             [CmdletBinding()]
             Param ([Parameter(Mandatory = $true)][string]$Name,
                 [Parameter(Mandatory = $true)]$Command)
@@ -275,33 +275,33 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Function New-Menu
         {
             <#
-                .SYNOPSIS
-                    Creates a looping menu system
-                .DESCRIPTION
-                    Use this in conjunction with New-MenuItem and Show-Menu
-                    to generate a menu system for your scripts
-                .PARAMETER Name
-                    Mandatory. Text that shows up as the menu title in the menu screen
-                .PARAMETER MenuItems[]
-                    Mandatory. Array of Menu Items created via the New-MenuItem cmdlet
-                .INPUTS
-                    [string]$Name
-                    [PSObject]$MenuItems[]
-                .OUTPUTS
-                    [PSObject] Name, MenuItems[]
-                .NOTES
-                    Version:        1.0
-                    Author:         Brian Clark
-                    Creation Date:  03/23/2017
-                    Purpose/Change: Initial function development
-                .EXAMPLE
-                    $main_menu = New-Menu -Name 'Main Menu' -MenuItems @(
-                        (New-MenuItem -Name 'Get Services' -Command 'Get-Service'),
-                        (New-MenuItem -Name 'Get ChildItems' -Command 'Get-ChildItem'),
-                        (New-MenuItem -Name 'GoTo Sub Menu' -Command 'Show-Menu -Menu $sub_menu'),
-                        (New-MenuItem -Name 'Exit' -Command "End-Menu")
-                    )
-                #>
+    .SYNOPSIS
+    Creates a looping menu system
+    .DESCRIPTION
+    Use this in conjunction with New-MenuItem and Show-Menu
+    to generate a menu system for your scripts
+    .PARAMETER Name
+    Mandatory. Text that shows up as the menu title in the menu screen
+    .PARAMETER MenuItems[]
+    Mandatory. Array of Menu Items created via the New-MenuItem cmdlet
+    .INPUTS
+    [string]$Name
+    [PSObject]$MenuItems[]
+    .OUTPUTS
+    [PSObject] Name, MenuItems[]
+    .NOTES
+    Version:    1.0
+    Author:     Brian Clark
+    Creation Date:  03/23/2017
+    Purpose/Change: Initial function development
+    .EXAMPLE
+    $main_menu = New-Menu -Name 'Main Menu' -MenuItems @(
+        (New-MenuItem -Name 'Get Services' -Command 'Get-Service'),
+        (New-MenuItem -Name 'Get ChildItems' -Command 'Get-ChildItem'),
+        (New-MenuItem -Name 'GoTo Sub Menu' -Command 'Show-Menu -Menu $sub_menu'),
+        (New-MenuItem -Name 'Exit' -Command "End-Menu")
+    )
+    #>
             [CmdletBinding()]
             Param ([Parameter(Mandatory = $true)][string]$Name,
                 [Parameter(Mandatory = $true)][PSObject[]]$MenuItems)
@@ -349,26 +349,26 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Function Show-Menu
         {
             <#
-                .SYNOPSIS
-                    Starts the menu display/selection loop for a menu created with New-Menu
-                .DESCRIPTION
-                    Use this in conjunction with New-Menu and New-MenuItem
-                    to generate a menu system for your scripts
-                .PARAMETER Menu
-                    Mandatory. A menu created with the New-Menu cmdlet
-                .INPUTS
-                    [PSObject]$Menu
-                .OUTPUTS
-                    Starts the Menu Display Loop
-                    This function returns nothing
-                .NOTES
-                    Version:        1.0
-                    Author:         Brian Clark
-                    Creation Date:  03/23/2017
-                    Purpose/Change: Initial function development
-                .EXAMPLE
-                    Show-Menu $MyMenu
-                #>
+    .SYNOPSIS
+    Starts the menu display/selection loop for a menu created with New-Menu
+    .DESCRIPTION
+    Use this in conjunction with New-Menu and New-MenuItem
+    to generate a menu system for your scripts
+    .PARAMETER Menu
+    Mandatory. A menu created with the New-Menu cmdlet
+    .INPUTS
+    [PSObject]$Menu
+    .OUTPUTS
+    Starts the Menu Display Loop
+    This function returns nothing
+    .NOTES
+    Version:    1.0
+    Author:     Brian Clark
+    Creation Date:  03/23/2017
+    Purpose/Change: Initial function development
+    .EXAMPLE
+    Show-Menu $MyMenu
+    #>
             [CmdletBinding()]
             Param ([Parameter(Mandatory = $true)][PSObject]$Menu)
 
@@ -424,21 +424,56 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             }
         }
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
-        Set-Console
-        Start-Log
-        
+        If ($($Logfile.Length) -gt 1)
+        {
+            $EnabledLogging = $True
+        }
+        Else
+        {
+            $EnabledLogging = $False
+        }
+    
+        Filter Timestamp
+        {
+            "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $_"
+        }
+
+        If ($EnabledLogging)
+        {
+            # Create parent path and logfile if it doesn't exist
+            $Regex = '([^\\]*)$'
+            $Logparent = $Logfile -Replace $Regex
+            If (!(Test-Path $Logparent))
+            {
+                New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+            }
+            If (!(Test-Path $Logfile))
+            {
+                New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+            }
+    
+            # Clear it if it is over 10 MB
+            $Sizemax = 10
+            $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+            $Sizemb = "{0:N2}" -F ($Size.Sum / 1mb) + "Mb"
+            If ($Sizemb -Ge $Sizemax)
+            {
+                Get-Childitem $Logfile | Clear-Content
+                Write-Verbose "Logfile has been cleared due to size"
+            }
+            # Start writing to logfile
+            Start-Transcript -Path $Logfile -Append 
+            Write-Output "####################<Script>####################"
+            Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
+        }
+    
     }
     
     
     Process
     {   
-        
-        
-        
         # MENU SAMPLE
-        
+    
         Function Start-PowershellISE 
         { 
             Powershell.exe Start-Process "Powershell_ise" -Verb runas 
@@ -474,17 +509,20 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         )
 
         Show-Menu -Menu $main_menu	
-                
+    
     }
 
     End
     {
-        Stop-Log  
+        If ($EnableLogging)
+        {
+            Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
+            Write-Output "####################</Script>####################"
+            Stop-Transcript
+        }
     }
  
 }
-
-# Invoke-CustomMenu
 
 <#######</Body>#######>
 <#######</Script>#######>

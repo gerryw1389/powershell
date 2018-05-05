@@ -32,10 +32,48 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     Begin
     {
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-        Set-Variable -Name "Logfile" -Value $Logfile -Scope "Global"
-        Set-Console
-        Start-Log
+        If ($($Logfile.Length) -gt 1)
+        {
+            $EnabledLogging = $True
+        }
+        Else
+        {
+            $EnabledLogging = $False
+        }
+        
+        Filter Timestamp
+        {
+            "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $_"
+        }
+
+        If ($EnabledLogging)
+        {
+            # Create parent path and logfile if it doesn't exist
+            $Regex = '([^\\]*)$'
+            $Logparent = $Logfile -Replace $Regex
+            If (!(Test-Path $Logparent))
+            {
+                New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+            }
+            If (!(Test-Path $Logfile))
+            {
+                New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+            }
+    
+            # Clear it if it is over 10 MB
+            $Sizemax = 10
+            $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+            $Sizemb = "{0:N2}" -F ($Size.Sum / 1mb) + "Mb"
+            If ($Sizemb -Ge $Sizemax)
+            {
+                Get-Childitem $Logfile | Clear-Content
+                Write-Verbose "Logfile has been cleared due to size"
+            }
+            # Start writing to logfile
+            Start-Transcript -Path $Logfile -Append 
+            Write-Output "####################<Script>####################"
+            Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
+        }
 
         Function Set-2013Old
         {
@@ -137,15 +175,15 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         }
 
     }
-        
+    
     Process
     {
-        Log "Getting the version of Operating System"
+        Write-Output "Getting the version of Operating System" | Timestamp
         $WMI = Get-WmiObject -Class win32_operatingsystem | Select-Object -Property Version
         $String = $WMI.Version.tostring()
         $OS = $String.Substring(0, 4)
 
-        Log "Getting the version of Office"
+        Write-Output "Getting the version of Office" | Timestamp
         $Version = 0
         $Reg = [Microsoft.Win32.Registrykey]::Openremotebasekey('Localmachine', $Env:Computername)
         $Reg.Opensubkey('Software\Microsoft\Office').Getsubkeynames() |Foreach-Object {
@@ -161,46 +199,46 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         If ($OS -match "10.0" -and $Version -match "15")
         {
-            Log "Creating settings for Windows 10 and Office 2013"
+            Write-Output "Creating settings for Windows 10 and Office 2013" | Timestamp
             Set-2013
         }
 
         ElseIf ($OS -match "10.0" -and $Version -match "16")
         {
-            Log "Creating settings for Windows 10 and Office 2016"
+            Write-Output "Creating settings for Windows 10 and Office 2016" | Timestamp
             Set-2016
         }
 
         ElseIf ($OS -match "6.3." -and $Version -match "15")
         {
-            Log "Creating settings for Windows 8.1 and Office 2013"
+            Write-Output "Creating settings for Windows 8.1 and Office 2013" | Timestamp
             Set-2013Old
         }
 
         ElseIf ($OS -match "6.3." -and $Version -match "16")
         {
-            Log "Creating settings for Windows 8.1 and Office 2016"
+            Write-Output "Creating settings for Windows 8.1 and Office 2016" | Timestamp
             Set-2016Old
         }
 
         ElseIf ($OS -match "6.1." -and $Version -match "15")
         {
-            Log "Creating settings for Windows 7 and Office 2013"
+            Write-Output "Creating settings for Windows 7 and Office 2013" | Timestamp
             Set-2013Old
         }
-        
+    
         ElseIf ($OS -match "6.1." -and $Version -match "16")
         {
-            Log "Creating settings for Windows 7 and Office 2016"
+            Write-Output "Creating settings for Windows 7 and Office 2016" | Timestamp
             Set-2016Old
         }
 
         Else
         {
-            Log "Either the OS is unsupported or Office is not installed/ unsupported."
+            Write-Output "Either the OS is unsupported or Office is not installed/ unsupported." | Timestamp
         }
-        
-        Log "Sending OWA Link to Desktop"
+    
+        Write-Output "Sending OWA Link to Desktop" | Timestamp
         # Send OWA Link to desktop
         $TargetFile = "https://your.owa.com"
         $ShortcutFile = "$env:userprofile\Desktop\OWA.url"
@@ -212,17 +250,22 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         # Clear Credential Manager manually (pick and choose)
         rundll32.exe keymgr.dll, KRShowKeyMgr
 
-        
+    
         # To Clear Completely
         # cmd /c "cmdkey /list" | ForEach-Object {if ($_ -like "*Target:*")
         #    {
-        #        cmdkey /del:($_ -replace " ", "" -replace "Target:", "")
+        #    cmdkey /del:($_ -replace " ", "" -replace "Target:", "")
         #    }} 
     }
 
     End
     {
-        Stop-Log  
+        If ($EnableLogging)
+        {
+            Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
+            Write-Output "####################</Script>####################"
+            Stop-Transcript
+        }
     }
 
 }

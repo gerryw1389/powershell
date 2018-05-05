@@ -27,7 +27,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     param
     (
         [Parameter(Position = 0, Mandatory = $False, ValueFromPipeline = $True)][alias("CN")][string[]]$ComputerName = $Env:COMPUTERNAME, 
-        
+    
         [Parameter(Position = 1, Mandatory = $True)][System.Management.Automation.Credential()]$Credential = [System.Management.Automation.PSCredential]::Empty,
 
         [String]$Logfile = "$PSScriptRoot\..\Logs\Get-ComputerInfo.log" 
@@ -35,11 +35,50 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     
     Begin
     {
-        
+    
         Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
-        $PSDefaultParameterValues = @{ "*-Log:Logfile" = $Logfile }
-        Set-Console
-        Start-Log
+        If ($($Logfile.Length) -gt 1)
+        {
+            $EnabledLogging = $True
+        }
+        Else
+        {
+            $EnabledLogging = $False
+        }
+        
+        Filter Timestamp
+        {
+            "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $_"
+        }
+
+        If ($EnabledLogging)
+        {
+            # Create parent path and logfile if it doesn't exist
+            $Regex = '([^\\]*)$'
+            $Logparent = $Logfile -Replace $Regex
+            If (!(Test-Path $Logparent))
+            {
+                New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+            }
+            If (!(Test-Path $Logfile))
+            {
+                New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+            }
+    
+            # Clear it if it is over 10 MB
+            $Sizemax = 10
+            $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+            $Sizemb = "{0:N2}" -F ($Size.Sum / 1mb) + "Mb"
+            If ($Sizemb -Ge $Sizemax)
+            {
+                Get-Childitem $Logfile | Clear-Content
+                Write-Verbose "Logfile has been cleared due to size"
+            }
+            # Start writing to logfile
+            Start-Transcript -Path $Logfile -Append 
+            Write-Output "####################<Script>####################"
+            Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
+        }
 
         Function Get-LHSCimSession  
         { 
@@ -63,7 +102,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 .EXAMPLE 
     $CimSession = Get-LHSCimSession -ComputerName PC1 
     $BIOS = Get-CimInstance -ClassName Win32_BIOS -CimSession $CimSession 
-    Remove-CimSession -CimSession $CimSession     
+    Remove-CimSession -CimSession $CimSession 
 .EXAMPLE 
     $cred = Get-Credential Domain01\User02  
     $CimSession = Get-LHSCimSession -ComputerName PC1 -Credential $cred 
@@ -92,7 +131,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             Param
             ( 
                 [Parameter(Position = 0, Mandatory = $False, ValueFromPipeline = $True)][alias("CN")][string[]]$ComputerName = $Env:COMPUTERNAME, 
-        
+    
                 [Parameter()][System.Management.Automation.Credential()]$Credential = [System.Management.Automation.PSCredential]::Empty 
             ) 
     
@@ -164,7 +203,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
                         If (Test-IsWsman3 –ComputerName $Computer) 
                         { 
                             $option = New-CimSessionOption -Protocol WSMan  
-                            $SessionParams.SessionOption = $Option       
+                            $SessionParams.SessionOption = $Option   
                         } 
                         Else 
                         { 
@@ -185,7 +224,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
                 Write-Verbose "Function ${CmdletName} finished." 
             } 
         }
-        
+    
         # Initialize counters
         $i = 0
         $j = 0
@@ -195,27 +234,21 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     
     Process
     {
-	
         Try
         {
-
             Foreach ($Computer in $ComputerName)
             {
-
                 If (!([String]::IsNullOrWhiteSpace($Computer)))
                 {
-
                     If (Test-Connection -Quiet -Count 1 -Computer $Computer)
                     {
-
                         $Progress = @{}
                         $Progress.Activity = "Getting Sytem Information..." 
                         $Progress.Status = ("Percent Complete:" + "{0:N0}" -f ((($i++) / $ComputerName.count) * 100) + "%")
                         $Progress.CurrentOperation = "Processing $($Computer)..."
                         $Progress.PercentComplete = ((($j++) / $ComputerName.count) * 100)
                         Write-Progress @Progress
-                    
-                    
+    
                         $CimSession = Get-LHSCimSession -ComputerName $Computer -Credential $Credential
 
                         $computerSystem = Get-CimInstance CIM_ComputerSystem -CimSession $CimSession
@@ -233,24 +266,24 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
                         $ComputerObject.DiskCapacity = "{0:N2}" -f ($computerHDD.Size / 1GB) + "GB"
                         $ComputerObject.TotalDiskSpace = "{0:P2}" -f ($computerHDD.FreeSpace / $computerHDD.Size) + " Free (" + "{0:N2}" -f ($computerHDD.FreeSpace / 1GB) + "GB)"
                         $ComputerObject.CurrentUser = $computerSystem.UserName
-                        
-                        Log "ComputerName: $($ComputerObject.ComputerName.ToString())"
-                        Log "LastReboot: $($ComputerObject.LastReboot.ToString())"
-                        Log "OperatingSystem: $($ComputerObject.OperatingSystem.ToString())"
-                        Log "Ram: $($ComputerObject.RAM.ToString())"
-                        Log "TotalDiskSpace: $($ComputerObject.TotalDiskSpace.ToString())"
-                        Log "CurrentUser: $($ComputerObject.CurrentUser.ToString())"
-                        Log "####################<Break>####################"
+        
+                        Write-Output "ComputerName: $($ComputerObject.ComputerName.ToString())" | Timestamp
+                        Write-Output "LastReboot: $($ComputerObject.LastReboot.ToString())" | Timestamp
+                        Write-Output "OperatingSystem: $($ComputerObject.OperatingSystem.ToString())" | Timestamp
+                        Write-Output "Ram: $($ComputerObject.RAM.ToString())" | Timestamp
+                        Write-Output "TotalDiskSpace: $($ComputerObject.TotalDiskSpace.ToString())" | Timestamp
+                        Write-Output "CurrentUser: $($ComputerObject.CurrentUser.ToString())" | Timestamp
+                        Write-Output "####################<Break>####################" | Timestamp
 
                         $ComputerObjects += $ComputerObject
-                        
+        
                         Remove-CimSession -CimSession $CimSession 
 
                     }
 
                     Else
                     {
-                        Log "Remote computer was not online."
+                        Write-Output "Remote computer was not online." | Timestamp
                         $ComputerObject = [Ordered]@{}
                         $ComputerObject.ComputerName = $computer
                         $ComputerObject.LastReboot = "Unable to ping. Make sure the computer is turned on and ICMP inbound ports are opened."
@@ -261,13 +294,13 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
                         $ComputerObject.TotalDiskSpace = "$null"
                         $ComputerObject.CurrentUser = "$null"
 
-                        $ComputerObjects += $ComputerObject                     
+                        $ComputerObjects += $ComputerObject     
                     }
                 }
 
                 Else
                 {
-                    Log "Computer name was not in a usable format"
+                    Write-Output "Computer name was not in a usable format" | Timestamp
                     $ComputerObject.ComputerName = "Value is null. Make sure computer name is not blank"
                     $ComputerObject.LastReboot = "$Null"
                     $ComputerObject.OperatingSystem = "$null"
@@ -285,14 +318,19 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     
         Catch
         {
-            Log $($_.Exception.Message) -Error -ExitGracefully
+            Write-Error $($_.Exception.Message)
         }
     }
     End
     {
         # I prefer to check the log file instead of showing the output on the screen so I commented out. My log command outputs to screen and log file.
         # Write-Output $ComputerObjects
-        Stop-Log
+        If ($EnableLogging)
+        {
+            Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
+            Write-Output "####################</Script>####################"
+            Stop-Transcript
+        }
     }
 }
 
