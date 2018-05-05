@@ -158,8 +158,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     }
 
 }
-   
-# Set-AppendedHostFile
 
 <#######</Body>#######>
 <#######</Script>#######>

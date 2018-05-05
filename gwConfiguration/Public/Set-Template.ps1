@@ -464,103 +464,103 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Write-Output "Setting System Privacy Settings" | TimeStamp
     
         # Local Group Policy Settings - Can be adjusted in GPedit.msc in Pro+ editions. Local Policy/Computer Config/Admin Templates/Windows Components			
-        Write-Output "Removing App Telemetry Settings for..."			 | TimeStamp
-        Write-Output "Account Info"			 | TimeStamp
+        Write-Output "Removing App Telemetry Settings for..." | TimeStamp
+        Write-Output "Account Info" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessAccountInfo" -Value "2" 
-        Write-Output "Calendar"			 | TimeStamp
+        Write-Output "Calendar" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessCalendar" -Value "2" 
-        Write-Output "Call History"			 | TimeStamp
+        Write-Output "Call History" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessCallHistory" -Value "2" 
-        Write-Output "Camera"			 | TimeStamp
+        Write-Output "Camera" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessCamera" -Value "2" 
-        Write-Output "Contacts"			 | TimeStamp
+        Write-Output "Contacts" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessContacts" -Value "2" 
-        Write-Output "Email"			 | TimeStamp
+        Write-Output "Email" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessEmail" -Value "2" 
-        Write-Output "Location"			 | TimeStamp
+        Write-Output "Location" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessLocation" -Value "2" 
-        Write-Output "Messaging"			 | TimeStamp
+        Write-Output "Messaging" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessMessaging" -Value "2" 
-        Write-Output "Microphone"		 | TimeStamp
-        SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessMicrophone" -Value "2" 
-        Write-Output "Motion"			 | TimeStamp
+        Write-Output "Microphone - This one, let the user choose" | TimeStamp
+        SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessMicrophone" -Value "0" 
+        Write-Output "Motion" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessMotion" -Value "2" 
-        Write-Output "Notifications"			 | TimeStamp
+        Write-Output "Notifications" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessNotifications" -Value "2" 
-        Write-Output "Make Phone Calls"			 | TimeStamp
+        Write-Output "Make Phone Calls" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessPhone" -Value "2" 
-        Write-Output "Radios"			 | TimeStamp
+        Write-Output "Radios" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessRadios" -Value "2" 
-        Write-Output "Access trusted devices"			 | TimeStamp
+        Write-Output "Access trusted devices" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessTrustedDevices" -Value "2" 
-        Write-Output "Sync with devices"			 | TimeStamp
+        Write-Output "Sync with devices" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsSyncWithDevices" -Value "2"
         Write-Output "Tasks" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessTasks" -Value "2"
 
         Write-Output "Application Compatibility Settings..." | TimeStamp
-        Write-Output "Turn off Application Telemetry"			 | TimeStamp
+        Write-Output "Turn off Application Telemetry" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppCompat" -Name "AITEnable" -Value "0" 			
-        Write-Output "Turn off inventory collector"			 | TimeStamp
+        Write-Output "Turn off inventory collector" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppCompat" -Name "DisableInventory" -Value "1" 
         Write-Output "Turn off steps recorder" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppCompat" -Name "DisableUAR" -Value "1" 
 
-        Write-Output "Cloud Content Settings..."			 | TimeStamp
-        Write-Output "Do not show Windows Tips"			 | TimeStamp
+        Write-Output "Cloud Content Settings..." | TimeStamp
+        Write-Output "Do not show Windows Tips" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableSoftLanding" -Value "1" 
-        Write-Output "Turn off Consumer Experiences"			 | TimeStamp
+        Write-Output "Turn off Consumer Experiences" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableWindowsConsumerFeatures" -Value "1" 
   
-        Write-Output "Data Collection Settings..."		 | TimeStamp
-        Write-Output "Set Telemetry to Basic"	 | TimeStamp
+        Write-Output "Data Collection Settings..." | TimeStamp
+        Write-Output "Set Telemetry to Basic" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name "AllowTelemetry" -Value "0" 
         SetReg -Path "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Policies\DataCollection" -Name "AllowTelemetry" -Value "0"  
-        Write-Output "Disable pre-release features and settings"			 | TimeStamp
+        Write-Output "Disable pre-release features and settings" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PreviewBuilds" -Name "EnableConfigFlighting" -Value "0" 
-        Write-Output "Do not show feedback notifications"			 | TimeStamp
+        Write-Output "Do not show feedback notifications" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name "DoNotShowFeedbackNotifications" -Value "1" 
 
-        Write-Output "Delivery Optimization Settings..."			 | TimeStamp
+        Write-Output "Delivery Optimization Settings..." | TimeStamp
         # Disable DO; set to "1" to allow DO over LAN only			
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization" -Name "DODownloadMode" -Value "0" 
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config" -Name "DownloadMode" -Value "0" 
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config" -Name "DODownloadMode" -Value "0" 
     
-        Write-Output "Location and Sensors"			 | TimeStamp
+        Write-Output "Location and Sensors" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors" -Name "DisableLocation" -Value "1" 
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors" -Name "DisableSensors" -Value "1" 
 
-        Write-Output "Microsoft Edge - Always send do not track"			 | TimeStamp
+        Write-Output "Microsoft Edge - Always send do not track" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\MicrosoftEdge\Main" -Name "DoNotTrack" -Value "1" 
 
-        Write-Output "Disabling Cortana..."			 | TimeStamp
+        Write-Output "Disabling Cortana..." | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "AllowCortana" -Value "0"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "BingSearchEnabled" -Value "0" 
-        Write-Output "Disallow Cortana on lock screen"			 | TimeStamp
+        Write-Output "Disallow Cortana on lock screen" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "AllowCortanaAboveLock" -Value "0" 
-        Write-Output "Disallow web search from desktop search"			 | TimeStamp
+        Write-Output "Disallow web search from desktop search" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "DisableWebSearch" -Value "1"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "AllowCloudSearch" -Value "0"
-        Write-Output "Don't search the web or display web results in search"			 | TimeStamp
+        Write-Output "Don't search the web or display web results in search" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "ConnectedSearchUseWeb" -Value "0" 
 
-        Write-Output "Windows Store..."			 | TimeStamp
-        Write-Output "Turn off Automatic download/install of app updates"		 | TimeStamp
+        Write-Output "Windows Store..." | TimeStamp
+        Write-Output "Turn off Automatic download/install of app updates" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "AutoDownload" -Value "2" 		
         # Disable all apps from store, left disabled by default			
         # SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "DisableStoreApps" -Value "1" 
         # Turn off Store, left disabled by default
         # SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "RemoveWindowsStore" -Value "1" 
 
-        Write-Output "Sync Settings..."			 | TimeStamp
-        Write-Output "Do not syncanything"			 | TimeStamp
+        Write-Output "Sync Settings..." | TimeStamp
+        Write-Output "Do not syncanything" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\SettingSync" -Name "DisableSettingSync" -Value "2" 
         Write-Output "Disallow users to override this" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\SettingSync" -Name "DisableSettingSyncUserOverride" -Value "1" 
 
-        Write-Output "Windows Update Settings..."			 | TimeStamp
-        Write-Output "Turn off featured software notifications through WU (basically ads)"			 | TimeStamp
+        Write-Output "Windows Update Settings..." | TimeStamp
+        Write-Output "Turn off featured software notifications through WU (basically ads)" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "EnableFeaturedSoftware" -Value "0" 
 
         Write-Output "Disabling Wifi Sense" | TimeStamp
