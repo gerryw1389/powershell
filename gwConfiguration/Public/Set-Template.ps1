@@ -18,9 +18,9 @@ W10 config script that I run on any generic W10 install. It sets settings that I
 Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
 .Example
 Set-Template
-Usually same as synopsis.
+W10 config script.
 .Notes
-2017-12-26: Updated to single file for one off executions.
+2018-05-05: Updated for W10v1803.
 2017-09-08: v1.0 Initial script 
 .Functionality
 Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
@@ -197,9 +197,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo" -Name "Enabled" -Value "0"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Privacy" -Name "TailoredExperiencesWithDiagnosticDataEnabled" -Value "0"
     
-        Write-Output "Disabling Delivery Optomization" | TimeStamp
-        SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization" -Name "SystemSettingsDownloadMode" -Value "3"
-
         Function Remove-AutoLogger
         {
             Write-Output "Removing Autologger File And Restricting Directory" | TimeStamp
@@ -233,7 +230,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Write-Output "Setting Checkboxes in Explorer" | TimeStamp
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "AutoCheckSelect" -Value "1"
 		
-        Log "Setting Windows to not track app launches"
+        Write-Output "Setting Windows to not track app launches" | TimeStamp
         SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Start_TrackProgs" -Value "0"
 
         Write-Output "Setting Windows Powershell to default on Win X Menu" | TimeStamp
@@ -257,16 +254,8 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Write-Output "Disabling TaskBar People Icon" | TimeStamp
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People" -Name "PeopleBand" -Value "0"
 		
-        Log "Disabling Taskview on Taskbar"
+        Write-Output "Disabling Taskview on Taskbar" | Timestamp
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -Value "0"
-
-        # Log "Unpinning all items on taskbar - Irreversible!"
-        # New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Taskband" -Name "Favorites" -PropertyType Binary -Value ([byte[]](0xFF)) -Force
-        # Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Taskband" -Name "FavoritesResolve" -ErrorAction SilentlyContinue
-
-        # Log "Enabling built-in Adobe Flash in IE and Edge..."
-        # Remove-ItemProperty -Path "HKCU:\Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppContainer\Storage\microsoft.microsoftedge_8wekyb3d8bbwe\MicrosoftEdge\Addons" -Name "FlashPlayerEnabled" -ErrorAction SilentlyContinue
-        # Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Ext\Settings\{D27CDB6E-AE6D-11CF-96B8-444553540000}" -Name "Flags" -ErrorAction SilentlyContinue
 
         Function Set-DesktopIcons
         {
@@ -548,11 +537,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Write-Output "Windows Store..." | TimeStamp
         Write-Output "Turn off Automatic download/install of app updates" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "AutoDownload" -Value "2" 		
-        # Disable all apps from store, left disabled by default			
-        # SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "DisableStoreApps" -Value "1" 
-        # Turn off Store, left disabled by default
-        # SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "RemoveWindowsStore" -Value "1" 
-
+        
         Write-Output "Sync Settings..." | TimeStamp
         Write-Output "Do not syncanything" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\SettingSync" -Name "DisableSettingSync" -Value "2" 
@@ -564,7 +549,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "EnableFeaturedSoftware" -Value "0" 
 
         Write-Output "Disabling Wifi Sense" | TimeStamp
-        SetReg -Path "HKLM:\Software\Microsoft\PolicyManager\default\WiFi\AllowWiFiHotSpotReporting" -Name "Value" -Value "0"
         SetReg -Path "HKLM:\Software\Microsoft\PolicyManager\default\WiFi\AllowAutoConnectToWiFiSenseHotspots" -Name "Value" -Value "0"
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\config" -Name "AutoConnectAllowedOEM" -Value "0"
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\config" -Name "WiFISenseAllowed" -Value "0"
@@ -600,9 +584,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         Write-Output "Setting System Settings" | TimeStamp
 
-        Write-Output "Setting Execution Policy Back To Correct Settings" | TimeStamp
-        Set-Executionpolicy Remotesigned -Force | Out-Null
-		
         Write-Output "Disabling The Built-In Admin Account" | TimeStamp
         Cmd /c "Net User Administrator /Active:No"
      
@@ -622,13 +603,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         cmd /c "powercfg /X standby-timeout-ac 0"
         cmd /c "powercfg /X standby-timeout-dc 0"
 
-        Write-Output "Disabling Sleep start menu and keyboard button..." | TimeStamp
-        SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings" -Name "ShowSleepOption" -Value "0"
-        cmd /c "powercfg /SETACVALUEINDEX SCHEME_CURRENT SUB_BUTTONS SBUTTONACTION 0"
-        cmd /c "powercfg /SETDCVALUEINDEX SCHEME_CURRENT SUB_BUTTONS SBUTTONACTION 0"
-
-        Write-Output "Disabling Hibernation" | TimeStamp
-        SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings" -Name "ShowHibernateOption" -Value "0"
+        
 
         Write-Output "Enable F8 boot menu options" | TimeStamp
         cmd /c "bcdedit /set `{current`} bootmenupolicy Legacy" | Out-Null
@@ -644,9 +619,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             Set-TimeZone -Name $TimeZone
             Write-Output "The time zone set to $TimeZone." | TimeStamp
         }
-
-        Write-Output "Setting current network profile to private" | TimeStamp
-        Set-NetConnectionProfile -NetworkCategory Private
 
         Write-Output "Configuring To Allow Pings, RDP, WMI, and File and Printer Sharing Through Firewall" | TimeStamp
         Import-Module NetSecurity
@@ -712,14 +684,8 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         SetReg -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System" -Name "FilterAdministratorToken" -Value "0"
     
         Write-Output "Removing memory dumping, event logging, and automatic restarts on operating system crashes" | TimeStamp
-        # SetReg -Path "HKLM:\SYSTEM\CurrentControlSet\Control\CrashControl" -Name "LogEvent" -Value "0"
         SetReg -Path "HKLM:\SYSTEM\CurrentControlSet\Control\CrashControl" -Name "AutoReboot" -Value "0"
-        # SetReg -Path "HKLM:\SYSTEM\CurrentControlSet\Control\CrashControl" -Name "CrashDumpEnabled" -Value "0"
-    
-        Write-Output "Allowing Lock Screen" | TimeStamp
-        SetReg -Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Personalization" -Name "NoLockScreen" -Value "0"
-        SetReg -Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Personalization" -Name "NoChangingLockScreen" -Value "0"
-    
+        
         Write-Output "Disabling Windows Update automatic restart" | TimeStamp
         SetReg -Path "HKLM:\Software\Microsoft\WindowsUpdate\UX\Settings" -Name "NoAutoRebootWithLoggedOnUsers" -Value "1"
         SetReg -Path "HKLM:\Software\Microsoft\WindowsUpdate\UX\Settings" -Name "UxOption" -Value "1"
@@ -738,12 +704,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         SetReg -Path "HKLM:\System\CurrentControlSet\Control\Remote Assistance" -Name "fAllowToGetHelp" -Value "0"
 
         Write-Output "Setting Control Panel view to small icons..." | TimeStamp
-        SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\ControlPanel" -Name "StartupPage" -Value "1"
         SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\ControlPanel" -Name "AllItemsIconView" -Value "1"
-
-        Write-Output "Unpinning all Taskbar icons. Pin back the ones you want" | TimeStamp
-        Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Taskband" -Name "Favorites" -Type Binary -Value ([byte[]](255))
-        Remove-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Taskband" -Name "FavoritesResolve" -ErrorAction SilentlyContinue
 
         Function EnableNumlock
         {
@@ -817,12 +778,10 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Write-Output "Stopping and Disabling Diagnostics Tracking Service, WAP Push Service, Home Groups service, Xbox Services, and Other Unncessary Services" | TimeStamp
         $Services = @()
         $Services += "Diagtrack"
-        $Services += "Homegroupprovider"
         $Services += "Xblauthmanager"
         $Services += "Xblgamesave"
         $Services += "Xboxnetapisvc"
         $Services += "Trkwks"
-        $Services += "Wmpnetworksvc"
         $Services += "dmwappushservice"
         Foreach ($Service In $Services) 
         {
@@ -847,39 +806,18 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             Disable-ScheduledTask -TaskName $Task | Out-Null
         }
 
-        Function Get-ScheduledTasksStatus
-        {
-
-            $Tasks = @()
-            $Tasks += "Microsoft Compatibility Appraiser"
-            $Tasks += "ProgramDataUpdater"
-            $Tasks += "Proxy"
-            $Tasks += "Consolidator"
-            $Tasks += "UsbCeip"
-            $Tasks += "Microsoft-Windows-DiskDiagnosticDataCollector"
-            $Tasks += "GatherNetworkInfo"  
-            $Tasks += "QueueReporting"
-            $Tasks += "DmClient"
-            $Tasks += "DmClientOnScenarioDownload" 
-            ForEach ($Task in $Tasks)
-            {
-                Get-ScheduledTask -TaskName $Task
-            }
-        }
-        # Get-ScheduledTasksStatus
-    
         Write-Output "Disabling Xbox features..." | TimeStamp
-        Get-AppxPackage "Microsoft.XboxApp" | Remove-AppxPackage
-        Get-AppxPackage "Microsoft.XboxIdentityProvider" | Remove-AppxPackage
-        Get-AppxPackage "Microsoft.XboxSpeechToTextOverlay" | Remove-AppxPackage
-        Get-AppxPackage "Microsoft.XboxGameOverlay" | Remove-AppxPackage
-        Get-AppxPackage "Microsoft.Xbox.TCUI" | Remove-AppxPackage
-        New-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_Enabled" -PropertyType DWord -Value 0 -Force
+        Get-AppxPackage "Microsoft.XboxApp" | Remove-AppxPackage | Out-Null
+        Get-AppxPackage "Microsoft.XboxIdentityProvider" | Remove-AppxPackage | Out-Null
+        Get-AppxPackage "Microsoft.XboxSpeechToTextOverlay" | Remove-AppxPackage | Out-Null
+        Get-AppxPackage "Microsoft.XboxGameOverlay" | Remove-AppxPackage | Out-Null
+        Get-AppxPackage "Microsoft.Xbox.TCUI" | Remove-AppxPackage | Out-Null
+        New-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_Enabled" -PropertyType DWord -Value 0 -Force | Out-Null
         If (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR"))
         {
             New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" | Out-Null
         }
-        New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" -Name "AllowGameDVR" -PropertyType DWord -Value 0 -Force
+        New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" -Name "AllowGameDVR" -PropertyType DWord -Value 0 -Force | Out-Null
     
         Write-Output "Removing Unwanted Default Apps" | TimeStamp
         $Packages = $a = Get-Appxpackage -Allusers | Where-Object { $_.Name -Notlike "*Store*" } |
@@ -914,10 +852,14 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
     End
     {
-        Write-Output "Enabling System Restore and creating a checkpoint" -Color Yellow | TimeStamp
+        Write-Output "Enabling System Restore and creating a checkpoint" | TimeStamp
         Enable-ComputerRestore -Drive $env:systemdrive -Verbose
         Checkpoint-Computer -Description "Default Config" -RestorePointType "MODIFY_SETTINGS" -Verbose
         
+        Write-Output "Setting Execution Policy Back To Correct Settings" | TimeStamp
+        Write-Output "Ignore the error" | TimeStamp
+        Set-Executionpolicy Remotesigned -Force | Out-Null
+
         If ($EnabledLogging)
         {
             Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
@@ -931,6 +873,58 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     }
 
 }
+<#
+Below are features that used to work in prior versions that seem to throw errors now.
+Some are ones I never implemented anyways but you may want to:
+
+
+Write-Output "Disabling Delivery Optomization" | TimeStamp
+SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization" -Name "SystemSettingsDownloadMode" -Value "3"
+
+Write-Output "Disabling WifiSense" | TimeStamp
+SetReg -Path "HKLM:\Software\Microsoft\PolicyManager\default\WiFi\AllowWiFiHotSpotReporting" -Name "Value" -Value "0"
+
+Write-Output "Disabling Sleep start menu and keyboard button..." | TimeStamp
+SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings" -Name "ShowSleepOption" -Value "0"
+cmd /c "powercfg /SETACVALUEINDEX SCHEME_CURRENT SUB_BUTTONS SBUTTONACTION 0"
+cmd /c "powercfg /SETDCVALUEINDEX SCHEME_CURRENT SUB_BUTTONS SBUTTONACTION 0"
+
+Write-Output "Disabling Hibernation" | TimeStamp
+SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings" -Name "ShowHibernateOption" -Value "0"
+
+Write-Output "Allowing Lock Screen" | TimeStamp
+SetReg -Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Personalization" -Name "NoLockScreen" -Value "0"
+SetReg -Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Personalization" -Name "NoChangingLockScreen" -Value "0"
+
+Write-Output "Unpinning all items on taskbar - Irreversible!" | Timestamp
+New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Taskband" -Name "Favorites" -PropertyType Binary -Value ([byte[]](0xFF)) -Force
+Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Taskband" -Name "FavoritesResolve" -ErrorAction SilentlyContinue
+
+Write-Output "Enabling built-in Adobe Flash in IE and Edge..." | Timestamp
+Remove-ItemProperty -Path "HKCU:\Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppContainer\Storage\microsoft.microsoftedge_8wekyb3d8bbwe\MicrosoftEdge\Addons" -Name "FlashPlayerEnabled" -ErrorAction SilentlyContinue
+Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Ext\Settings\{D27CDB6E-AE6D-11CF-96B8-444553540000}" -Name "Flags" -ErrorAction SilentlyContinue
+
+Disable all apps from store, left disabled by default			
+SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "DisableStoreApps" -Value "1" 
+Turn off Store, left disabled by default
+SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "RemoveWindowsStore" -Value "1" 
+
+Write-Output "Setting current network profile to private" | TimeStamp
+Set-NetConnectionProfile -NetworkCategory Private
+
+Write-Output "Removing memory dumping, event logging, and automatic restarts on operating system crashes" | TimeStamp
+SetReg -Path "HKLM:\SYSTEM\CurrentControlSet\Control\CrashControl" -Name "LogEvent" -Value "0"
+SetReg -Path "HKLM:\SYSTEM\CurrentControlSet\Control\CrashControl" -Name "CrashDumpEnabled" -Value "0"
+
+Write-Output "Unpinning all Taskbar icons. Pin back the ones you want" | TimeStamp
+Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Taskband" -Name "Favorites" -Type Binary -Value ([byte[]](255))
+Remove-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Taskband" -Name "FavoritesResolve" -ErrorAction SilentlyContinue
+
+# These services don't seem to be installed in W10v1803
+$Services += "Homegroupprovider"
+$Services += "Wmpnetworksvc"
+
+#>
 
 <#######</Body>#######>
 <#######</Script>#######>
