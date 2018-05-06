@@ -138,7 +138,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
     End
     {
-        If ($EnableLogging)
+        If ($EnabledLogging)
         {
             Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
             Write-Output "####################</Script>####################"

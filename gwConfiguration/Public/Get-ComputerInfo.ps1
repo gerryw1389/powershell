@@ -325,7 +325,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {
         # I prefer to check the log file instead of showing the output on the screen so I commented out. My log command outputs to screen and log file.
         # Write-Output $ComputerObjects
-        If ($EnableLogging)
+        If ($EnabledLogging)
         {
             Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
             Write-Output "####################</Script>####################"

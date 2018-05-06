@@ -177,7 +177,7 @@ Write-Outputs off Server01 and Server02 | TimeStamp
 
     End
     {
-        If ($EnableLogging)
+        If ($EnabledLogging)
         {
             Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
             Write-Output "####################</Script>####################"

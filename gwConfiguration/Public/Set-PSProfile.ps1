@@ -246,7 +246,7 @@ If you are running as admin, it will also put an [Admin] in front on the first l
 
     End
     {
-        If ($EnableLogging)
+        If ($EnabledLogging)
         {
             Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
             Write-Output "####################</Script>####################"

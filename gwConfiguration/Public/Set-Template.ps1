@@ -918,7 +918,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Enable-ComputerRestore -Drive $env:systemdrive -Verbose
         Checkpoint-Computer -Description "Default Config" -RestorePointType "MODIFY_SETTINGS" -Verbose
         
-        If ($EnableLogging)
+        If ($EnabledLogging)
         {
             Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
             Write-Output "####################</Script>####################"

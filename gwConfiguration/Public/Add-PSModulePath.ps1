@@ -100,7 +100,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Write-Output "Make sure to restart powershell to see the new module path. Run '`$env:psmodulepath -split ';' to check" | Timestamp
         Write-Output "For a GUI version, run sysdm.cpl and go to Advanced - Environmental Variables - PSModulePath " | Timestamp
         
-        If ($EnableLogging)
+        If ($EnabledLogging)
         {
             Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
             Write-Output "####################</Script>####################"
