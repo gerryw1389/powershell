@@ -190,7 +190,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         $Bodyhtml = Convertto-Html -Head $Style -Body $Html -Title "Replication Report" | Out-String
 
         Send-Email $Bodyhtml
-        Write-Output "Email Sent"  | TimeStamp
+        Write-Output "Email Sent" | TimeStamp
     }
 
     End

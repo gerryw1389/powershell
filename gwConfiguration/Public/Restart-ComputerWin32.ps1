@@ -36,9 +36,12 @@ Write-Outputs off Server01 and Server02 | TimeStamp
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param 
     (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)][string[]]$computerName,
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)][string[]]$computerName,
+
+        [Parameter(Position = 1, Mandatory = $true)][System.Management.Automation.Credential()]
+        $Credential = [System.Management.Automation.PSCredential]::Empty,
      
-        [parameter(Mandatory = $true)][string]
+        [parameter(Position = 2, Mandatory = $true)][string]
         [ValidateSet("Restart", "LogOff", "Shutdown", "PowerOff")]
         $Action,
      
@@ -132,16 +135,39 @@ Write-Outputs off Server01 and Server02 | TimeStamp
     {
         Try
         {
+    
             ForEach ($Computer in $ComputerName)
             {
-                Write-Output "Attempting to connect to $Computer" | TimeStamp
-     
-                If ($Pscmdlet.ShouldProcess($Computer, "$Action"))
+    
+                If (!([String]::IsNullOrWhiteSpace($Computer)))
                 {
-                    Get-Wmiobject Win32_Operatingsystem -Computername $Computer |
-                        Invoke-Wmimethod -Name Win32shutdown -Argumentlist $_Action
+                    if (Test-Connection -Quiet -Count 1 -Computer $Computer)
+                    {
+                        Write-Output "Attempting to connect to $Computer" | TimeStamp
+    
+                        If ($Pscmdlet.ShouldProcess($Computer, "$Action"))
+                        {
+        
+                            # WMI Call - we don't want this!
+                            #Get-Wmiobject Win32_Operatingsystem -Computername $Computer |
+                            #    Invoke-Wmimethod -Name Win32shutdown -Argumentlist $_Action
+                            # First, let's find the methods using CIM: (Get-CIMClass win32_operatingsystem).CimClassMethods
+                            $CimSession = Get-LHSCimSession -ComputerName $Computer -Credential $Credential
+                            Invoke-CimMethod -MethodName Win32Shutdown -ClassName Win32_OperatingSystem -Arguments @{ Flags = $_action } -CimSession $CimSession 
+                        }
+        
+                    }
+                    Else
+                    {
+                        Write-Output "Computer was not online" | TimeStamp
+                    }
+                }
+                Else
+                {
+                    Write-Output "Computer name was in an invalid format" | TimeStamp
                 }
             }
+    
         }
         Catch
         {

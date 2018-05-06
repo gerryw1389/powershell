@@ -122,7 +122,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             # Checks For The Required Paths Before Attempting Changes.
             If (!$(Test-Path $Notepad) -Or !$(Test-Path $Notepadplus))
             {
-                Write-Output "Checking For The Required Paths Before Attempting Changes."  | TimeStamp
+                Write-Output "Checking For The Required Paths Before Attempting Changes." | TimeStamp
                 Continue
             }
     
