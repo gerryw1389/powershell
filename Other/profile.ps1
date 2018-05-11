@@ -57,6 +57,21 @@ Function Set-Console
     $Host.PrivateData.VerboseBackgroundColor = $Background
     $Host.PrivateData.ProgressForegroundColor = $Messages
     $Host.PrivateData.ProgressBackgroundColor = $Background
+	
+	$Buffer = $Host.Ui.Rawui.Buffersize
+	$Buffer.Width = 171
+	$Buffer.Height = 3000
+	$Host.Ui.Rawui.Buffersize = $Buffer
+
+	$Size = $Host.Ui.Rawui.Windowsize
+	$Size.Width = 171
+	$Size.Height = 34
+	$Host.Ui.Rawui.Windowsize = $Size
+
+	$Position = $Host.Ui.Rawui.Windowposition
+	$Host.Ui.Rawui.Windowposition.X = 0
+	$Host.Ui.Rawui.Windowposition.Y = 51
+	$Host.Ui.Rawui.Windowposition = $Position
     Clear-Host
 
     If (-not ("Windows.Native.Kernel32" -as [type]))
