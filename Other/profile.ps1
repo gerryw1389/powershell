@@ -64,8 +64,8 @@ Function Set-Console
 	$Host.Ui.Rawui.Buffersize = $Buffer
 
 	$Size = $Host.Ui.Rawui.Windowsize
-	$Size.Width = 171
-	$Size.Height = 34
+	$Size.Width = 150
+	$Size.Height = 26
 	$Host.Ui.Rawui.Windowsize = $Size
 
 	$Position = $Host.Ui.Rawui.Windowposition
