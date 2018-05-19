@@ -40,7 +40,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     Begin
     {   
     
-        Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
         If ($($Logfile.Length) -gt 1)
         {
             $EnabledLogging = $True
@@ -86,15 +85,15 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         Function Write-TestFiles
         {
-            New-Item -Path "C:\scripts" -Name "g" -ItemType Directory
-            New-Item -Path "C:\scripts\g" -Name "1.ps1" -ItemType File
-            New-Item -Path "C:\scripts\g" -Name "2.ps1" -ItemType File
-            New-Item -Path "C:\scripts\g" -Name "h" -ItemType Directory
-            New-Item -Path "C:\scripts\g\h" -Name "1.ps1" -ItemType File
-            New-Item -Path "C:\scripts\g\h" -Name "2.ps1" -ItemType File
-            New-Item -Path "C:\scripts\g\h" -Name "i" -ItemType Directory
-            New-Item -Path "C:\scripts\g\h\i" -Name "1.ps1" -ItemType File
-            New-Item -Path "C:\scripts\g\h\i" -Name "2.ps1" -ItemType File
+            New-Item -Path "C:\scripts" -Name "g" -ItemType Directory -Force | Out-Null
+            New-Item -Path "C:\scripts\g" -Name "1.ps1" -ItemType File -Force | Out-Null
+            New-Item -Path "C:\scripts\g" -Name "2.ps1" -ItemType File -Force | Out-Null
+            New-Item -Path "C:\scripts\g" -Name "h" -ItemType Directory -Force | Out-Null
+            New-Item -Path "C:\scripts\g\h" -Name "1.ps1" -ItemType File -Force | Out-Null
+            New-Item -Path "C:\scripts\g\h" -Name "2.ps1" -ItemType File -Force | Out-Null
+            New-Item -Path "C:\scripts\g\h" -Name "i" -ItemType Directory -Force | Out-Null
+            New-Item -Path "C:\scripts\g\h\i" -Name "1.ps1" -ItemType File -Force | Out-Null
+            New-Item -Path "C:\scripts\g\h\i" -Name "2.ps1" -ItemType File -Force | Out-Null
             $Path = "C:\scripts\g"
         }
 

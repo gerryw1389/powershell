@@ -31,7 +31,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
     Begin
     {
-        Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
         If ($($Logfile.Length) -gt 1)
         {
             $EnabledLogging = $True
@@ -75,6 +74,17 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
         }
 
+        # Load the required module(s) 
+        If (-not(Get-module helpers)) 
+        {
+            Import-Module "$Psscriptroot\..\Private\helpers.psm1"
+        }
+        Else
+        {
+            Write-Output "Module was not found, please make sure the module exists! Exiting function." | Timestamp
+            Exit 1
+        }
+        
         Function Set-2013Old
         {
             $registryPath = "HKCU:\SOFTWARE\Microsoft\Office\15.0\Outlook\AutoDiscover"

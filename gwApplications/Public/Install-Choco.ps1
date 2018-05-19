@@ -39,9 +39,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
     Begin
     {
-        Import-Module PackageManagement
-    
-        Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
+           
         If ($($Logfile.Length) -gt 1)
         {
             $EnabledLogging = $True
@@ -83,6 +81,17 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             Start-Transcript -Path $Logfile -Append 
             Write-Output "####################<Script>####################"
             Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
+        }
+     
+        # Load the required module(s)        
+        If (-not(Get-module PackageManagement)) 
+        {
+            Import-Module PackageManagement
+        }
+        Else
+        {
+            Write-Output "Module was not found, please make sure the module exists! Exiting function." | Timestamp
+            Exit 1
         }
 
     }

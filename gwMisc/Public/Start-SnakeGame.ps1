@@ -46,7 +46,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     
     Begin
     {   
-        Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
         If ($($Logfile.Length) -gt 1)
         {
             $EnabledLogging = $True
@@ -615,8 +614,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     }
 
 }
-
-# Start-SnakeGame
 
 <#######</Body>#######>
 <#######</Script>#######>

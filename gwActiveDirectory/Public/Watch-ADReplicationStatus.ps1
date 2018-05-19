@@ -53,7 +53,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             $Smtpclient.Send($Mailmessage)
         }
 
-        Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
         If ($($Logfile.Length) -gt 1)
         {
             $EnabledLogging = $True
@@ -101,7 +100,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
     Process
     {    
-        $Result = Convertfrom-Csv -Inputobject (Repadmin.Exe /Showrepl * /Csv) | 
+        $Result = Convertfrom-Csv -Inputobject (repadmin.exe /showrepl * /csv) | 
             Where-Object { $_.Showrepl_Columns -Ne 'Showrepl_Info'} | Out-String
 
         If ($Result -Ne "")
@@ -126,9 +125,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         }
     }
 
-} 
-
-# Watch-ADReplicationStatus
+}
 
 <#######</Body>#######>
 <#######</Script>#######>

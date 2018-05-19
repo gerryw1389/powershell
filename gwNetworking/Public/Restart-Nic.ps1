@@ -19,8 +19,8 @@ Mandatory parameter that specifies the name of the NICs you want to restart.
 Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
 NOTE: If you wish to delete the logfile, I have updated my scripts to where they should still run fine with no logging.
 .Example
-Set-Template
-Usually same as synopsis.
+Restart-NIC -NetAdapter "LAN"
+Restarts the LAN network adapter.
 .Notes
 2017-10-26: v1.0 Initial script 
 .Functionality
@@ -38,7 +38,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     
     Begin
     {   
-        Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
+        
         If ($($Logfile.Length) -gt 1)
         {
             $EnabledLogging = $True
@@ -104,8 +104,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     }
     
 }
-
-# Restart-NIC -NetAdapter "vEthernet (BridgedNet)", "Ethernet 5"
 
 <#######</Body>#######>
 <#######</Script>#######>

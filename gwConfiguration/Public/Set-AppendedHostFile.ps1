@@ -11,7 +11,7 @@ Function Set-AppendedHostFile
 {
     <#
 .Synopsis
-Downloads lists of "Blacklisted"" Websites from three sources (below) and APPENDS them to your current Windows Host File.
+Downloads lists of "Blacklisted" Websites from three sources (below) and APPENDS them to your current Windows Host File.
 .Description
 Downloads lists of "Blacklisted" Websites from three sources (below) and APPENDS them to your current Windows Host File.
 # http://winhelp2002.mvps.org/hosts.txt
@@ -41,7 +41,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
     Begin
     {
-        Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
         If ($($Logfile.Length) -gt 1)
         {
             $EnabledLogging = $True
@@ -90,21 +89,21 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {    
         # Get Hostfile Values From Winhelp2002.Mvps.Org, Github, And Someonewhocares.Org And Store Them In Separate Text Files
         $Hfv = Invoke-Webrequest "http://winhelp2002.mvps.org/hosts.txt"
-        New-Item -Itemtype File -Path C:\Scripts\Hfv.Txt -Value $Hfv.Content
-        Write-Output "Created C:\Scripts\hfv.txt from winhelp2002" | TimeStamp
+        New-Item -Itemtype File -Path "$PSScriptRoot\Hfv.txt" -Value $Hfv.Content  | Out-Null
+        Write-Output "Created $PSScriptRoot hfv.txt from winhelp2002" | TimeStamp
         $Hfv2 = Invoke-Webrequest "https://raw.githubusercontent.com/stevenblack/hosts/master/hosts"
-        New-Item -Itemtype File -Path C:\Scripts\Hfv2.Txt -Value $Hfv2.Content
-        Write-Output "Created C:\Scripts\hfv2.txt from Github" | TimeStamp
+        New-Item -Itemtype File -Path "$PSScriptRoot\Hfv2.txt" -Value $Hfv2.Content  | Out-Null
+        Write-Output "Created $PSScriptRoot hfv2.txt from Github" | TimeStamp
         $Hfv3 = Invoke-Webrequest "http://someonewhocares.org/hosts/"
-        New-Item -Itemtype File -Path C:\Scripts\Hfv3.Txt -Value $Hfv3.Content
-        Write-Output "Created C:\Scripts\hfv3.txt from someonewhocares.org" | TimeStamp
+        New-Item -Itemtype File -Path "$PSScriptRoot\Hfv3.txt" -Value $Hfv3.Content  | Out-Null
+        Write-Output "Created $PSScriptRoot hfv3.txt from someonewhocares.org" | TimeStamp
         # Combine The Files
 
-        $Merged = Get-Content C:\Scripts\Hfv.Txt
-        $Merged2 = Get-Content C:\Scripts\Hfv2.Txt | Select-Object -Skip 67
-        $Merged3 = Get-Content C:\Scripts\Hfv3.Txt | Select-Object -Skip 117
+        $Merged = Get-Content "$PSScriptRoot\Hfv.txt"
+        $Merged2 = Get-Content "$PSScriptRoot\Hfv2.txt" | Select-Object -Skip 67
+        $Merged3 = Get-Content "$PSScriptRoot\Hfv3.txt" | Select-Object -Skip 117
         $Total = $Merged + $Merged2 + $Merged3
-        $Total | Out-File Combined.Txt
+        $Total | Out-File "$PSScriptRoot\combined.txt"
 
         # Modify The File
         $A = @"
@@ -116,25 +115,25 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 # Entries Below
 "@
         Write-Output "Cleaning The File By Removing Anything That Is Not A 0 Or 1" | TimeStamp
-        $B = Get-Content Combined.Txt | Where-Object { $_ -Match "^0" -Or $_ -Match "^1"}
+        $B = Get-Content "$PSScriptRoot\combined.txt" | Where-Object { $_ -Match "^0" -Or $_ -Match "^1"}
         $C = -Join $A, $B
         Write-Output "Replace All 127.0.0.1 With 0.0.0.0" | TimeStamp
         $D = $C.Replace("127.0.0.1", "0.0.0.0")
 
         Write-Output "Sort Alphabetically And Remove Duplicates" | TimeStamp
         $E = $D | Sort-Object | Get-Unique
-        $E | Out-File Host.Txt
+        $E | Out-File "$PSScriptRoot\host.txt"
 
         Write-Output "Appending To The Current Windows Host File" | TimeStamp
         Add-Content -Value $E -Path "$($Env:Windir)\System32\Drivers\Etc\Hosts"
 
         # Clean Up
-        Remove-Item -Path C:\Scripts\Combined.Txt
-        Remove-Item -Path C:\Scripts\Hfv.Txt
-        Remove-Item -Path C:\Scripts\Hfv2.Txt
-        Remove-Item -Path C:\Scripts\Hfv3.Txt
-        Remove-Item -Path C:\Scripts\Host.Txt
         Write-Output "Deleting Txt Files Created By Script" | TimeStamp
+        Remove-Item -Path "$PSScriptRoot\combined.txt"
+        Remove-Item -Path "$PSScriptRoot\Hfv.txt"
+        Remove-Item -Path "$PSScriptRoot\Hfv2.txt"
+        Remove-Item -Path "$PSScriptRoot\Hfv3.txt"
+        Remove-Item -Path "$PSScriptRoot\host.txt"
     }
 
     End

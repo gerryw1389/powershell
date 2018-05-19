@@ -53,7 +53,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             $Smtpclient.Send($Mailmessage)
         }
    
-        Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
         If ($($Logfile.Length) -gt 1)
         {
             $EnabledLogging = $True
@@ -62,8 +61,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         {
             $EnabledLogging = $False
         }
-    
-    
+        
         Filter Timestamp
         {
             "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $_"

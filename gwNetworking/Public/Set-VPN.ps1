@@ -82,8 +82,15 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         $VpnName = "Datacenter"
         $Pre = Read-Host -Prompt "Enter Preshared Key"
 
-        $VPN = Add-Vpnconnection -Name $VpnName -Serveraddress "server.domain.com" -Tunneltype L2tp -Encryptionlevel Required `
-            -Authenticationmethod Mschapv2 -L2tppsk $Pre -Remembercredential -Passthru
+        $Params = @{}
+        $Params.Name = $VpnName
+        $Params.ServerAddress = "server.domain.com"
+        $Params.TunnelType = "L2TP"
+        $Params.EncryptionLevel = "Required"
+        $Params.AuthenicationMethod = "MSChapv2"
+        $Params.L2tppsk = $Pre
+        
+        $VPN = Add-Vpnconnection @Params -Remembercredential -Passthru
 
         Start-Sleep 3
 
@@ -129,7 +136,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             Exit
         }
 	
-	
         If ($EnabledLogging)
         {
             Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
@@ -139,8 +145,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     }
 
 }
-
-# Set-VPN
 
 <#######</Body>#######>
 <#######</Script>#######>

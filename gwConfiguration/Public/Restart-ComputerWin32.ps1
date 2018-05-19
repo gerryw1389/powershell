@@ -53,7 +53,6 @@ Write-Outputs off Server01 and Server02 | TimeStamp
     
     Begin
     {
-        Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
         If ($($Logfile.Length) -gt 1)
         {
             $EnabledLogging = $True
@@ -147,13 +146,20 @@ Write-Outputs off Server01 and Server02 | TimeStamp
     
                         If ($Pscmdlet.ShouldProcess($Computer, "$Action"))
                         {
-        
-                            # WMI Call - we don't want this!
-                            #Get-Wmiobject Win32_Operatingsystem -Computername $Computer |
-                            #    Invoke-Wmimethod -Name Win32shutdown -Argumentlist $_Action
-                            # First, let's find the methods using CIM: (Get-CIMClass win32_operatingsystem).CimClassMethods
-                            $CimSession = Get-LHSCimSession -ComputerName $Computer -Credential $Credential
-                            Invoke-CimMethod -MethodName Win32Shutdown -ClassName Win32_OperatingSystem -Arguments @{ Flags = $_action } -CimSession $CimSession 
+                            Try
+                            {
+                                $Options = New-CimSessionOption -Protocol WSMAN
+                                $CimSession = New-CimSession -ComputerName $Computer -Credential $Credential -SessionOption $Options -ErrorAction Stop
+                                Write-Output "Using protocol: WSMAN" | Timestamp
+                            }
+                            Catch
+                            {
+                                $Options = New-CimSessionOption -Protocol DCOM
+                                $CimSession = New-CimSession -ComputerName $Computer -Credential $Credential -SessionOption $Options
+                                Write-Output "Using protocol: DCOM" | Timestamp
+                            }
+                            Invoke-CimMethod -MethodName Win32Shutdown -ClassName Win32_OperatingSystem -Arguments @{ Flags = $_action } -CimSession $CimSession
+                            Remove-CimSession -CimSession $CimSession  
                         }
         
                     }

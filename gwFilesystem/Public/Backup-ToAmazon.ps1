@@ -57,15 +57,34 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     
     Begin
     {
-        Import-Module pscx
-        Import-Module "C:\Program Files (x86)\AWS Tools\PowerShell\AWSPowerShell\AWSPowerShell.psd1"
+
+        # Load the required module(s) 
+        If (-not(Get-module pscx)) 
+        {
+            Import-Module pscx
+        }
+        Else
+        {
+            Write-Output "Module was not found, please make sure the module exists! Exiting function." | Timestamp
+            Exit 1
+        }
+
+        # Load the required module(s) 
+        If (-not(Get-module AWSPowerShell)) 
+        {
+            Import-Module "C:\Program Files (x86)\AWS Tools\PowerShell\AWSPowerShell\AWSPowerShell.psd1"
+        }
+        Else
+        {
+            Write-Output "Module was not found, please make sure the module exists! Exiting function." | Timestamp
+            Exit 1
+        }
 
         Set-AWSCredentials -AccessKey $AKey -SecretKey $SKey
  
         Set-Location $Source
         $Source = Get-Childitem $Source | Where-Object { $_.PSisContainer }
     
-        Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
         If ($($Logfile.Length) -gt 1)
         {
             $EnabledLogging = $True

@@ -11,9 +11,9 @@ Function Clear-TempFiles
 {
     <#
 .Synopsis
-Clears temp files from the system. It does Windows temp, user temp, browsers, runs Diskcleanup, and empties the recycle bin.
+Clears temp files from the system. It does Windows temp, user temp, browsers, runs Diskcleanup, and emptys the recycle bin.
 .Description
-Clears temp files from the system. It does Windows temp, user temp, browsers, runs Diskcleanup, and empties the recycle bin.
+Clears temp files from the system. It does Windows temp, user temp, browsers, runs Diskcleanup, and emptys the recycle bin.
 .Parameter Logfile
 Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
 NOTE: If you wish to delete the logfile, I have updated my scripts to where they should still run fine with no logging.
@@ -46,7 +46,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
                 Format-Table -Autosize
         }
 
-        Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
         If ($($Logfile.Length) -gt 1)
         {
             $EnabledLogging = $True
@@ -152,7 +151,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         # $file = [io.file]::Create($path)
         # $file.SetLength(1gb)
         # $file.Close()
-        # Then delete so it is sitting in Recycle Bin
 
     }
 

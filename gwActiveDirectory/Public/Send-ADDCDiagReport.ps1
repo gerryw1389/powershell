@@ -40,8 +40,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     
     Begin
     {
-        Import-Module Activedirectory
-    
         Function Send-Email ([String] $Body)
         {
             $Mailmessage = New-Object System.Net.Mail.Mailmessage
@@ -70,7 +68,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             $Newname 
         }
     
-        Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
         If ($($Logfile.Length) -gt 1)
         {
             $EnabledLogging = $True
@@ -79,7 +76,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         {
             $EnabledLogging = $False
         }
-    
     
         Filter Timestamp
         {
@@ -114,6 +110,17 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             Write-Output "####################<Script>####################"
             Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
         } 
+
+        # Load the required module(s)        
+        If (-not(Get-module ActiveDirectory)) 
+        {
+            Import-Module ActiveDirectory
+        }
+        Else
+        {
+            Write-Output "Module was not found, please make sure the module exists! Exiting function." | Timestamp
+            Exit 1
+        }
     
     }
     

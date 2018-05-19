@@ -45,7 +45,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         # Edit these extensions to the type of files you want to add content to.
         $Include = @("*.txt", "*.ps1", "*.log")
     
-        Import-Module -Name "$Psscriptroot\..\Private\helpers.psm1" 
         If ($($Logfile.Length) -gt 1)
         {
             $EnabledLogging = $True
