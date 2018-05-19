@@ -27,7 +27,6 @@ What the script does is:
 
     Process
     {
-
         [Net.ServicePointManager]::SecurityProtocol = "Tls12, Tls11, Tls, Ssl3"
 
         $Path = "$Env:UserProfile\Downloads" + "\Temp"

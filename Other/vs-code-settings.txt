@@ -1,0 +1,12 @@
+// Place your settings in this file to overwrite the default settings
+{
+    "files.hotExit": "off",
+    "editor.acceptSuggestionOnEnter": false,
+    "editor.autoClosingBrackets": false,
+    "editor.cursorStyle": "line",
+    "powershell.codeFormatting.ignoreOneLineBlock": false,
+    "powershell.codeFormatting.openBraceOnSameLine": false,
+    "terminal.integrated.cursorStyle": "underline"
+}
+
+# format code (shift+alt+f)

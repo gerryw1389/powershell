@@ -81,12 +81,18 @@ Function Set-RegEntry
     {
         New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT | Out-Null
     }
-
-    Write-Output "Setting $Path\$Name to value: $Value" | TimeStamp
-    
+       
     If ($PropertyType -eq "Binary")
     {
-        $CurrentValue = ((Get-Item -Path $Path).GetValue($Name))
+        # Try to get the regentry's current value. If it fails to retrieve it (either wrong value or doesn't exist), just create it. 
+        Try
+        {
+            $CurrentValue = ((Get-Item -Path $Path -ErrorAction Stop ).GetValue($Name))
+        }
+        Catch
+        {
+            $CurrentValue = ''
+        }
         $CurrentRegValue = Out-String -InputObject $CurrentValue
         $RegValue = Out-String -InputObject $Value
         If ($CurrentRegValue -eq $RegValue)
@@ -102,12 +108,20 @@ Function Set-RegEntry
             $Hex = $Value.Split(',') | ForEach-Object -Process { "0x$_" }
             New-ItemProperty -Path $Path -Name $Name -Value ([byte[]]$Hex) -PropertyType $PropertyType -Force | Out-Null
             Write-Output "Added key: $Path\$Name to value: $Value" | TimeStamp
+
         }
+        
     }
     Else
     {
-        
-        $CurrentValue = ((Get-Item -Path $Path).GetValue($Name))
+        Try
+        {
+            $CurrentValue = ((Get-Item -Path $Path -ErrorAction Stop ).GetValue($Name))
+        }
+        Catch
+        {
+            $CurrentValue = ''
+        }
         $CurrentRegValue = Out-String -InputObject $CurrentValue
         $RegValue = Out-String -InputObject $Value
         If ($CurrentRegValue -eq $RegValue)
@@ -116,12 +130,13 @@ Function Set-RegEntry
         }
         Else
         {
-        If (!(Test-Path $Path))
+            If (!(Test-Path $Path))
             {
                 New-Item -Path $Path -Force | Out-Null
             }
             New-Itemproperty -Path $Path -Name $Name -Value $Value -Propertytype $PropertyType -Force | Out-Null
             Write-Output "Added key: $Path\$Name to value: $Value" | TimeStamp
+
         }
     }
 }

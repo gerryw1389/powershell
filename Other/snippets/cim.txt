@@ -1,0 +1,37 @@
+Get-CimInstance -> Gets instances of a class.
+New-CimInstance -> Creates a new instance of a class.
+Remove-CimInstance -> Removes one of more instances of a class.
+Set-CimInstance -> Modifies one or more instances of a class.
+Get-CimAssociatedInstance -> Gets all the associated instances for a particular instance.
+Invoke-CimMethod -> Invokes instance or static method of a class.
+Get-CimClass -> Gets class schema of a CIM class.
+Register-CimIndicationEvent -> Helps subscribe to events.
+New-CimSession -> Creates a CIM Session with local or a remote machine
+Get-CimSession -> Gets a list of CIM Sessions that have been made.
+Remove-CimSession -> Removes CimSessions that are there on a machine.
+New-CimSessionOption -> Creates a set of options that can be used while creating a CIM session.
+
+Commands = Old -> New
+Get-WmiObject -> Get-CimInstance
+Get-WmiObject -list -> Get-CimClass
+Set-WmiInstance -> Set-CimInstance
+Set-WmiInstance –PutType CreateOnly -> New-CimInstance
+Remove-WmiObject -> Remove-CimInstance
+Invoke-WmiMethod -> Invoke-CimMethod
+
+WSMan:
+Test-WSMan
+Get-WSManInstance
+Set-WSManInstance
+New-WSManInstance
+Remove-WSManInstance
+Invoke-WSManAction
+
+Cmdlets for Configuring WSMan Session:
+Connect-WSMan
+Disconnect-WSMan
+New-WSManSessionOption
+Set-WSManQuickConfig
+Get-WSManCredSSP
+Enable-WSManCredSSP
+Disable-WSManCredSSP
