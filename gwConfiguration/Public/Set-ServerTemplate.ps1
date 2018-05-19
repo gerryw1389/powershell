@@ -79,13 +79,13 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
         }
         # Load the required module(s) 
-        If (-not(Get-module helpers)) 
+        Try
         {
-            Import-Module "$Psscriptroot\..\Private\helpers.psm1"
+            Import-Module "$Psscriptroot\..\Private\helpers.psm1" -ErrorAction Stop
         }
-        Else
+        Catch
         {
-            Write-Output "Module was not found, please make sure the module exists! Exiting function." | Timestamp
+            Write-Output "Module 'Helpers' was not found, stopping script" | Timestamp
             Exit 1
         }
     }
@@ -655,7 +655,16 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Set-NetConnectionProfile -NetworkCategory Private
 
         Write-Output "Configuring To Allow Pings, RDP, WMI, and File and Printer Sharing Through Firewall" | TimeStamp
-        Import-Module NetSecurity
+        
+        Try
+        {
+            Import-Module NetSecurity -ErrorAction Stop
+        }
+        Catch
+        {
+            Write-Output "Module 'NetSecurity' was not found, stopping script" | Timestamp
+            Exit 1
+        }
 
         Write-Output "Setting RDP to allow inbound connections" | TimeStamp
         $Params = @{}

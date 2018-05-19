@@ -84,13 +84,13 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         }
 
         # Load the required module(s) 
-        If (-not(Get-module UpdateServices)) 
+        Try
         {
-            Import-Module UpdateServices
+            Import-Module UpdateServices -ErrorAction Stop
         }
-        Else
+        Catch
         {
-            Write-Output "Module was not found, please make sure the module exists! Exiting function." | Timestamp
+            Write-Output "Module 'UpdateServices' was not found, stopping script" | Timestamp
             Exit 1
         }
     }

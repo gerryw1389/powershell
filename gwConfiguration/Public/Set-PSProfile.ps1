@@ -13,7 +13,10 @@ Function Set-PSProfile
 .Synopsis
 This function creates my PS profile.
 .Description
-This function creates my PS profile.
+This function creates my PS profile. It does the following:
+Downloads my Github PSProfile and sets it for each of my PS Profiles. This includes setting the title, font, and color settings.
+It sets registry settings to make the cursor an underscore.
+It verifies that I have required modules prior
 .Parameter Logfile
 Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
 NOTE: If you wish to delete the logfile, I have updated my scripts to where they should still run fine with no logging.
@@ -79,6 +82,103 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             Write-Output "####################<Script>####################"
             Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
         }   
+
+        # Load the required module(s) 
+        Try
+        {
+            Import-Module "$Psscriptroot\..\Private\helpers.psm1" -ErrorAction Stop
+        }
+        Catch
+        {
+            Write-Output "Module 'Helpers' was not found, stopping script" | Timestamp
+            Exit 1
+        }
+
+        Function Set-ProfileRegSettings
+        {
+            Write-Output "Setting console related registry settings" | Timestamp
+
+            SetReg -Path "HKCU:\Console" -Name "CtrlKeyShortcutsDisabled" -Value "0x00000000"
+            SetReg -Path "HKCU:\Console" -Name "CursorSize" -Value "0x00000019"
+            SetReg -Path "HKCU:\Console" -Name "EnableColorSelection" -Value "0x00000000"
+            SetReg -Path "HKCU:\Console" -Name "ExtendedEditKey" -Value "0x00000001"
+            SetReg -Path "HKCU:\Console" -Name "ExtendedEditKeyCustom" -Value "0x00000000"
+            SetReg -Path "HKCU:\Console" -Name "FilterOnPaste" -Value "0x00000001"
+            SetReg -Path "HKCU:\Console" -Name "ForceV2" -Value "0x00000001"
+            SetReg -Path "HKCU:\Console" -Name "FullScreen" -Value "0x00000000"
+            SetReg -Path "HKCU:\Console" -Name "HistoryBufferSize" -Value "0x00000032"
+            SetReg -Path "HKCU:\Console" -Name "HistoryNoDup" -Value "0x00000000"
+            SetReg -Path "HKCU:\Console" -Name "InsertMode" -Value "0x00000001"
+            SetReg -Path "HKCU:\Console" -Name "LineSelection" -Value "0x00000001"
+            SetReg -Path "HKCU:\Console" -Name "LineWrap" -Value "0x00000001"
+            SetReg -Path "HKCU:\Console" -Name "LoadConIme" -Value "0x00000001"
+            SetReg -Path "HKCU:\Console" -Name "NumberOfHistoryBuffers" -Value "0x00000004"
+            SetReg -Path "HKCU:\Console" -Name "QuickEdit" -Value "0x00000001"
+            SetReg -Path "HKCU:\Console" -Name "ScreenBufferSize" -Value "0x23290078"
+            SetReg -Path "HKCU:\Console" -Name "ScrollScale" -Value "0x00000001"
+            SetReg -Path "HKCU:\Console" -Name "TrimLeadingZeros" -Value "0x00000000"
+            SetReg -Path "HKCU:\Console" -Name "WindowAlpha" -Value "0x000000ff"
+            SetReg -Path "HKCU:\Console" -Name "WindowSize" -Value "0x001e0078"
+            SetReg -Path "HKCU:\Console" -Name "WordDelimiters" -Value "0x00000000"
+            SetReg -Path "HKCU:\Console" -Name "FaceName" -PropertyType "String" -Value "Consolas"
+            SetReg -Path "HKCU:\Console" -Name "FontFamily" -Value "0x00000036"
+            SetReg -Path "HKCU:\Console" -Name "FontSize" -Value "0x00140000"
+            SetReg -Path "HKCU:\Console" -Name "FontWeight" -Value "0x00000190"
+            SetReg -Path "HKCU:\Console" -Name "PopupColors" -Value "0x0000000a"
+            SetReg -Path "HKCU:\Console" -Name "ScreenColors" -Value "0x0000000a"
+            SetReg -Path "HKCU:\Console" -Name "ColorTable00" -Value "0x00000000"
+            SetReg -Path "HKCU:\Console" -Name "ColorTable01" -Value "0x00800000"
+            SetReg -Path "HKCU:\Console" -Name "ColorTable02" -Value "0x00008000"
+            SetReg -Path "HKCU:\Console" -Name "ColorTable03" -Value "0x00808000"
+            SetReg -Path "HKCU:\Console" -Name "ColorTable04" -Value "0x00000080"
+            SetReg -Path "HKCU:\Console" -Name "ColorTable05" -Value "0x00800080"
+            SetReg -Path "HKCU:\Console" -Name "ColorTable06" -Value "0x00008080"
+            SetReg -Path "HKCU:\Console" -Name "ColorTable07" -Value "0x00c0c0c0"
+            SetReg -Path "HKCU:\Console" -Name "ColorTable08" -Value "0x00808080"
+            SetReg -Path "HKCU:\Console" -Name "ColorTable09" -Value "0x00ff0000"
+            SetReg -Path "HKCU:\Console" -Name "ColorTable10" -Value "0x0000ff00"
+            SetReg -Path "HKCU:\Console" -Name "ColorTable11" -Value "0x00ffff00"
+            SetReg -Path "HKCU:\Console" -Name "ColorTable12" -Value "0x000000ff"
+            SetReg -Path "HKCU:\Console" -Name "ColorTable13" -Value "0x00ff00ff"
+            SetReg -Path "HKCU:\Console" -Name "ColorTable14" -Value "0x0000ffff"
+            SetReg -Path "HKCU:\Console" -Name "ColorTable15" -Value "0x00ffffff"
+            SetReg -Path "HKCU:\Console" -Name "CurrentPage" -Value "0x00000003"
+
+            SetReg -Path "HKCU:\Console\%SystemRoot%_System32_WindowsPowerShell_v1.0_powershell.exe" -Name "ColorTable05" -Value "0x00562401"
+            SetReg -Path "HKCU:\Console\%SystemRoot%_System32_WindowsPowerShell_v1.0_powershell.exe" -Name "ColorTable06" -Value "0x00f0edee"
+            SetReg -Path "HKCU:\Console\%SystemRoot%_System32_WindowsPowerShell_v1.0_powershell.exe" -Name "ScreenBufferSize" -Value "0x0bb80078"
+            SetReg -Path "HKCU:\Console\%SystemRoot%_System32_WindowsPowerShell_v1.0_powershell.exe"-Name "WindowSize" -Value "0x00320078"
+            SetReg -Path "HKCU:\Console\%SystemRoot%_System32_WindowsPowerShell_v1.0_powershell.exe" -Name "FaceName" -PropertyType "String" -Value "Consolas"
+            SetReg -Path "HKCU:\Console\%SystemRoot%_System32_WindowsPowerShell_v1.0_powershell.exe" -Name "FontSize" -Value "0x00140009"
+
+            SetReg -Path "HKCU:\Console\%SystemRoot%_SysWOW64_WindowsPowerShell_v1.0_powershell.exe" -Name "ColorTable05" -Value "0x00562401"
+            SetReg -Path "HKCU:\Console\%SystemRoot%_SysWOW64_WindowsPowerShell_v1.0_powershell.exe" -Name "ColorTable06" -Value "0x00f0edee"
+            SetReg -Path "HKCU:\Console\%SystemRoot%_SysWOW64_WindowsPowerShell_v1.0_powershell.exe" -Name  "FaceName" -PropertyType "String" -Value "Consolas"
+            SetReg -Path "HKCU:\Console\%SystemRoot%_SysWOW64_WindowsPowerShell_v1.0_powershell.exe" -Name "FontFamily" -Value "0x00000036"
+            SetReg -Path "HKCU:\Console\%SystemRoot%_SysWOW64_WindowsPowerShell_v1.0_powershell.exe" -Name "FontWeight" -Value "0x00000190"
+            SetReg -Path "HKCU:\Console\%SystemRoot%_SysWOW64_WindowsPowerShell_v1.0_powershell.exe" -Name "PopupColors" -Value "0x000000f3"
+            SetReg -Path "HKCU:\Console\%SystemRoot%_SysWOW64_WindowsPowerShell_v1.0_powershell.exe" -Name "QuickEdit" -Value "0x00000001"
+            SetReg -Path "HKCU:\Console\%SystemRoot%_SysWOW64_WindowsPowerShell_v1.0_powershell.exe" -Name "ScreenBufferSize" -Value "0x0bb80078"
+            SetReg -Path "HKCU:\Console\%SystemRoot%_SysWOW64_WindowsPowerShell_v1.0_powershell.exe" -Name "ScreenColors" -Value "0x00000056"
+            SetReg -Path "HKCU:\Console\%SystemRoot%_SysWOW64_WindowsPowerShell_v1.0_powershell.exe" -Name "WindowSize" -Value "0x00320078"
+
+            SetReg -Path "HKCU:\Software\Microsoft\Command Processor" -Name "CompletionChar" -Value "0x00000009"
+            SetReg -Path "HKCU:\Software\Microsoft\Command Processor" -Name "DefaultColor" -Value "0x00000000"
+            SetReg -Path "HKCU:\Software\Microsoft\Command Processor" -Name "EnableExtensions" -Value "0x00000001"
+            SetReg -Path "HKCU:\Software\Microsoft\Command Processor" -Name "PathCompletionChar" -Value "0x00000009"
+
+            SetReg -Path "HKLM:\Software\Microsoft\Command Processor" -Name "CompletionChar" -Value "0x00000040"
+            SetReg -Path "HKLM:\Software\Microsoft\Command Processor" -Name "DefaultColor" -Value "0x00000000"
+            SetReg -Path "HKLM:\Software\Microsoft\Command Processor" -Name "EnableExtensions" -Value "0x00000001"
+            SetReg -Path "HKLM:\Software\Microsoft\Command Processor" -Name "PathCompletionChar" -Value "0x00000040"
+        }
+        Set-ProfileRegSettings
+
+        # Moved to the begin block so it only downloads once
+        Write-Output "Downloading default profile from Github" | Timestamp
+        $URI = "https://raw.githubusercontent.com/gerryw1389/master/master/Other/psprofile.ps1"
+        $Response = Invoke-RestMethod -Method Get -Uri $URI
+        $Output = [string]::Join("`r`n", ($response))
     }
     
     Process
@@ -89,159 +189,10 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     
         ForEach ($F in $Files)
         {
-            # Remember to use the escape character "`" before every dollar sign and ` character. For example `$myVar and ``r``n (new line)
-            $val = 
-            @"
-<#######<Script>#######>
-<#######<Header>#######>
-# Name: PS Profile Script
-# Copyright: Gerry Williams (https://www.gerrywilliams.net)
-# License: MIT License (https://opensource.org/licenses/mit)
-# Script Modified from: n/a
-<#######</Header>#######>
-<#######<Body>#######>
-
-# Import Modules
-
-# Import-Module -Name gwActiveDirectory, gwApplications, gwConfiguration, gwFilesystem, gwMisc, gwNetworking, gwSecurity -Prefix gw
-
-Set-Location C:\scripts
-
-Import-Module psColor
-`$global:PSColor.File.Executable.Color = 'DarkGreen'
-
-# Preferences
-
-Function Test-IsAdmin
-{
-    <#
-    .Synopsis
-    Determines whether or not the user is a member of the local Administrators security group.
-    .Outputs
-    System.Bool
-    #>
-    [CmdletBinding()]
-    
-    `$Identity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
-    `$Principal = new-object System.Security.Principal.WindowsPrincipal(`${Identity})
-    `$IsAdmin = `$Principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
-    Write-Output -InputObject `$IsAdmin;
-}
-
-Function Set-Console
-{
-    <# 
-    .Synopsis
-    Function to set console colors just for the session.
-    .Description
-    Function to set console colors just for the session.
-    I mainly did this because darkgreen does not look too good on blue (Powershell defaults).
-    .Notes
-    2017-10-19: v1.0 Initial script 
-    #>
-    
-    `$console = `$host.UI.RawUI
-    If (Test-IsAdmin)
-    {
-    `$console.WindowTitle = "Administrator: Powershell"
-    }
-    Else
-    {
-    `$console.WindowTitle = "Powershell"
-    }
-    `$Background = "Black"
-    `$Foreground = "Green"
-    `$Messages = "DarkCyan"
-    `$Host.UI.RawUI.BackgroundColor = `$Background
-    `$Host.UI.RawUI.ForegroundColor = `$Foreground
-    `$Host.PrivateData.ErrorForegroundColor = `$Messages
-    `$Host.PrivateData.ErrorBackgroundColor = `$Background
-    `$Host.PrivateData.WarningForegroundColor = `$Messages
-    `$Host.PrivateData.WarningBackgroundColor = `$Background
-    `$Host.PrivateData.DebugForegroundColor = `$Messages
-    `$Host.PrivateData.DebugBackgroundColor = `$Background
-    `$Host.PrivateData.VerboseForegroundColor = `$Messages
-    `$Host.PrivateData.VerboseBackgroundColor = `$Background
-    `$Host.PrivateData.ProgressForegroundColor = `$Messages
-    `$Host.PrivateData.ProgressBackgroundColor = `$Background
-    Clear-Host
-}
-Set-Console
-
-Function Get-Help2
-{
-    <# 
-.Synopsis
-Launches a window in SS64.com for a selected command.
-.Description
-Launches a window in SS64.com for a selected command.
-.Example
-Get-Help Get-Process
-Opens a window in your default internet browser to ss64's page on get-process.
-.Notes
-2017-10-19: v1.0 Initial script 
-#>
-    param
-    (
-    [string]`$command
-    )
-    `$command = `$command.ToLower()
-    Start-process -filepath "https://ss64.com/ps/`$command.html"
-}
-
-Function Show-VerbList
-{
-    Get-Verb | Sort-Object -Property Verb | Out-Gridview
-}
-
-Function Prompt
-{
-    <# 
-.Synopsis
-Function to set the prompt to the date and directory on one line and just a pound sign on the second line. 
-If you are running as admin, it will also put an [Admin] in front on the first line.
-.Description
-Function to set the prompt to the date and directory on one line and just a pound sign on the second line. 
-If you are running as admin, it will also put an [Admin] in front on the first line.
-.Notes
-2017-10-26: v1.0 Initial script 
-#>
-
-    `$CurPath = `$ExecutionContext.SessionState.Path.CurrentLocation.Path
-    If (`$CurPath.ToLower().StartsWith(`$Home.ToLower()))
-    {
-    `$CurPath = "~" + `$CurPath.SubString(`$Home.Length)
-    }
-
-    `$Date = (Get-Date -Format "yyyy-MM-dd@hh:mm:sstt")
-    
-    If (Test-IsAdmin)
-    {
-    Write-Host "[`$((`$env:USERNAME.ToLower()))@`$((`$env:COMPUTERNAME.ToLower()))][`$Date][`$CurPath]" -NoNewLine 
-    "`n`$('>' * (`$nestedPromptLevel + 1)) "
-    # For a more Linux feel...
-    #Write-Host "`$((`$env:USERNAME.ToLower()))@`$((`$env:COMPUTERNAME.ToLower())):`$curPath#" -NoNewline -ForegroundColor Darkgreen
-    #Return " "
-    }
-    Else
-    {
-    Write-Host "[`$((`$env:USERNAME.ToLower()))@`$((`$env:COMPUTERNAME.ToLower()))][`$Date][`$CurPath]" -NoNewLine 
-    "`n`$('>' * (`$nestedPromptLevel + 1)) "
-    # For a more Linux feel...
-    #Write-Host "`$((`$env:USERNAME.ToLower()))@`$((`$env:COMPUTERNAME.ToLower())):`$curPath`$" -NoNewline -ForegroundColor Darkgreen
-    #Return " "
-    }
-}
-
-<#######</Body>#######>
-<#######</Script>#######>
-
-"@
-            Set-Content -Path $F -Value $val
+            Set-Content -Path $F -Value $Output
             Write-Output "Profile $F has been set" | TimeStamp
         }
     }
-
     End
     {
         If ($EnabledLogging)

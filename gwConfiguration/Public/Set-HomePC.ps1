@@ -80,19 +80,18 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
         }
 
-        # Load the required module(s) 
-        If (-not(Get-module helpers)) 
+       # Load the required module(s) 
+        Try
         {
-            Import-Module "$Psscriptroot\..\Private\helpers.psm1"
+            Import-Module "$Psscriptroot\..\Private\helpers.psm1" -ErrorAction Stop
         }
-        Else
+        Catch
         {
-            Write-Output "Module was not found, please make sure the module exists! Exiting function." | Timestamp
+            Write-Output "Module 'Helpers' was not found, stopping script" | Timestamp
             Exit 1
         }
 
     }
-    
     
     Process
     {    

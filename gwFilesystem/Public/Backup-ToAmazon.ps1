@@ -59,24 +59,24 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {
 
         # Load the required module(s) 
-        If (-not(Get-module pscx)) 
+        Try
         {
-            Import-Module pscx
+            Import-Module pscx -ErrorAction Stop
         }
-        Else
+        Catch
         {
-            Write-Output "Module was not found, please make sure the module exists! Exiting function." | Timestamp
+            Write-Output "Module 'Pscx' was not found, stopping script" | Timestamp
             Exit 1
         }
 
         # Load the required module(s) 
-        If (-not(Get-module AWSPowerShell)) 
+        Try
         {
-            Import-Module "C:\Program Files (x86)\AWS Tools\PowerShell\AWSPowerShell\AWSPowerShell.psd1"
+            Import-Module "C:\Program Files (x86)\AWS Tools\PowerShell\AWSPowerShell\AWSPowerShell.psd1" -ErrorAction Stop
         }
-        Else
+        Catch
         {
-            Write-Output "Module was not found, please make sure the module exists! Exiting function." | Timestamp
+            Write-Output "Module 'AWSPowerShell' was not found, stopping script" | Timestamp
             Exit 1
         }
 

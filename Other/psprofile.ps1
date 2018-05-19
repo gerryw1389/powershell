@@ -7,19 +7,32 @@
 <#######</Header>#######>
 <#######<Body>#######>
 
-# Import Modules
+Set-Location -Path $env:SystemDrive\
 
-# Import-Module -Name gwActiveDirectory, gwApplications, gwConfiguration, gwFilesystem, gwMisc, gwNetworking, gwSecurity -Prefix gw
-
-Set-Location -Path "c:\_gwill\temp"
-
-Import-Module PSColor
-$global:PSColor.File.Executable.Color = 'DarkGreen'
-
+# Stop the annoying bell sound
 Set-PSReadlineOption -BellStyle None
 
-# Preferences
+# Import Modules
+Try
+{
+    Import-Module gwActiveDirectory, gwApplications, gwConfiguration, gwFilesystem, gwMisc, gwNetworking, gwSecurity -Prefix gw -ErrorAction Stop
+}
+Catch
+{
+    Write-Output "Module gw* was not found, moving on."
+}
 
+Try
+{
+    Import-Module PSColor -ErrorAction Stop
+    $global:PSColor.File.Executable.Color = 'DarkGreen'
+}
+Catch
+{
+    Write-Output "Module gw* was not found, moving on."
+}
+
+# Helper
 Function Test-IsAdmin
 {
     <#
@@ -275,24 +288,25 @@ Sets the prompt to one of three choices. See comments.
     $Date = (Get-Date -Format "yyyy-MM-dd@hh:mm:sstt")
     
     # Option 1: Full brackets
-	# Write-Host "[$(($env:USERNAME.ToLower()))@$(($env:COMPUTERNAME.ToLower()))][$Date][$CurPath]" 
+    # Write-Host "[$(($env:USERNAME.ToLower()))@$(($env:COMPUTERNAME.ToLower()))][$Date][$CurPath]" 
     # "$('>' * ($nestedPromptLevel + 1)) "
-	# Return " "
+    # Return " "
     
-	# Option 2: For a more Linux feel...
+    # Option 2: For a more Linux feel...
     # Write-Host "$(($env:USERNAME.ToLower()))" -ForegroundColor Cyan -NoNewLine
-	# Write-Host "@" -ForegroundColor Gray -NoNewLine
-	# Write-Host "$(($env:COMPUTERNAME.ToLower()))" -ForegroundColor Red -NoNewLine
-	# Write-Host ":$curPath#" -ForegroundColor Gray -NoNewLine
+    # Write-Host "@" -ForegroundColor Gray -NoNewLine
+    # Write-Host "$(($env:COMPUTERNAME.ToLower()))" -ForegroundColor Red -NoNewLine
+    # Write-Host ":$curPath#" -ForegroundColor Gray -NoNewLine
     # Return " "
 	
-	# Option 3: For a minimalistic feel
-	Write-Host "[$curPath]"
+    # Option 3: For a minimalistic feel
+    Write-Host "[$curPath]"
     "$('>' * ($nestedPromptLevel + 1)) "
-	Return " "
+    Return " "
 	
 }
 
 Clear-Host
+
 <#######</Body>#######>
 <#######</Script>#######>
