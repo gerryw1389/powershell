@@ -23,15 +23,24 @@ This function will copy all folders in this script's folder to a users $PSModule
         }
 		
         $VerbosePreference = "Continue"
-        $Files = "$psscriptroot\*"
+        
+        # Need to go one level up to get other folders
+        $SourceDir = Split-Path -Path $PSScriptRoot -Parent
     }
     
     Process
     {   
         $UserModules = Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath "WindowsPowerShell\Modules"
-        Get-Childitem -Path $Files -Recurse | Unblock-File
-        Copy-Item -Path $Files -Destination $UserModules -Recurse -Verbose
+        Get-Childitem -Path $Files | Unblock-File
+        
+        # Now copy the modules to the user's modules folder.
+        Copy-Item -Path "$($SourceDir.Tostring())\*" -Destination $UserModules\ -Recurse -Verbose
+        
+        # Move third-party modules to the root so they can be discovered
+        Move-Item -Path "$UserModules\Other\third-party\PSColor" -Destination "$UserModules\PSColor" -Force
+        
         Stop-Script
+        
         $Text = "Modules have been added to your PSModulePath.`n`nPlease add the following to your profile:`n`nImport-Module -Name gwActiveDirectory, gwApplications, gwConfiguration, gwFilesystem, gwMisc, gwNetworking, gwSecurity -Prefix gw"
         [void] [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.VisualBasic")
         [Microsoft.VisualBasic.Interaction]::MsgBox($Text, "OKOnly,SystemModal,Information", "Message")
