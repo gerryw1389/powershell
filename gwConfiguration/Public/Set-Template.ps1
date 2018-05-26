@@ -470,8 +470,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessCalendar" -Value "2" 
         Write-Output "Call History" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessCallHistory" -Value "2" 
-        Write-Output "Camera" | TimeStamp
-        SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessCamera" -Value "2" 
         Write-Output "Contacts" | TimeStamp
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessContacts" -Value "2" 
         Write-Output "Email" | TimeStamp
@@ -895,6 +893,8 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 Below are features that used to work in prior versions that seem to throw errors now.
 Some are ones I never implemented anyways but you may want to:
 
+Write-Output "Disabling Let Apps Access Camera" | TimeStamp
+SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessCamera" -Value "2" 
 
 Write-Output "Disabling Delivery Optomization" | TimeStamp
 SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization" -Name "SystemSettingsDownloadMode" -Value "3"

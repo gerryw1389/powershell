@@ -41,8 +41,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         {
             $EnabledLogging = $False
         }
-        
-        
         Filter Timestamp
         {
             "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $_"
@@ -80,6 +78,8 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     
     Process
     {   
+
+        # Section 1: Get the current balance of my credit cards from credit balance alerts sent to me from my bank daily
 
         # Get Access Token
         $clientId = "883355712819-sfasdfasdfapps.googleusercontent.com";
@@ -154,7 +154,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         }
         Write-Output "Total charged: `$$Results" | Timestamp
 
-        # Generate all paydays for the year
+        # Section 2: Generate all paydays for the year
         [DateTime] $StartDate = "2018-01-05"
         [Int]$DaysToSkip = 14
         [DateTime]$EndDate = "2018-12-31"
@@ -187,66 +187,156 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         # Round up one because there is always a whole number and some change
         $DaysTilPayday = ($Span.Days + 1).ToString()
     
-        # Add in recurring bills.
+        # Section 3: Add in recurring bills.
+        
         <#
-    Bills: Day - Bill - Amount
-    1 - Internet - $105
-    14 - Hulu - $13
-    16 - Water - $90
-    16- ATT Cell - $45
-		24- Netflix - $11
-    27 - Electric - $166
-    28 - Auto Ins - $176
-    #>
+        Bills: Day - Bill - Amount
+        1 - Internet - $105
+        14 - Hulu - $13
+        16 - Water - $90
+        16 - ATT Cell - $45
+        24 - Netflix - $11
+        27 - Electric - $166
+        28 - Auto Ins - $176
+    
+        OK, so this next section looks complicated, but it's actually really easy. All you do is:
+
+        1. Create an If, Elseif, Else construct and just fill in days that that you bills come out.
+
+        1a. For example, Internet comes out on the 5th so I will say: 
+        If (($DayofMonth -ge 1) -And ($DayofMonth -le 5)) { Charge internet and add all my other bills to the $UpcomingBills variable }
+        NOTE: Keep in mind that the $UpcomingBills variable is for visual only, it doesn't add to any calculations. 
+        It is very nice to know which bills will be adding your balance each month though :)
+
+        2. I would copy and paste your first bill and fill all the remainder for the month with all your bills like:
+
+        2a. Copy and paste like 6 times.
+        If (($DayofMonth -ge 1) -And ($DayofMonth -le 5))
+        {
+        $ResultsWithBills = $Results + 105
+        $UpcomingBills = '5 - Internet - $105<br>'
+        $UpcomingBills = '14 - Hulu - $13<br>'
+        $UpcomingBills += '16 - Water - $90<br>'
+        $UpcomingBills += '16 - ATT Cell - $45<br>'
+        $UpcomingBills += '24 - Netflix - $11<br>'
+        $UpcomingBills += '27 - Electric - $166<br>'
+        $UpcomingBills += '27 - Plex - $15<br>'
+        $UpcomingBills += '28 - Auto Ins. - $176'
+        }
+
+        3. Next, just go through and change the dates and then take the balance of the top bill and add it to: $ResultsWithBills = $Results + (Enter your bill amount here)
+
+        4. Lastly, just remove that entry from the top $UpcomingBills variable. For example, the next one on my list:
+        ElseIf (($DayofMonth -ge 14) -And ($DayofMonth -le 15))
+        {
+            $ResultsWithBills = $Results + 13
+            $UpcomingBills = '16 - Water - $90<br>'
+            $UpcomingBills += '16 - ATT Cell - $45<br>'
+            $UpcomingBills += '24 - Netflix - $11<br>'
+            $UpcomingBills += '27 - Electric - $166<br>'
+            $UpcomingBills += '27 - Plex - $15<br>'
+            $UpcomingBills += '28 - Auto Ins. - $176'
+        }
+
+        4a. See all I did here is remove the line: $UpcomingBills = '14 - Hulu - $13<br>' and instead, added to the balance: $ResultsWithBills = $Results + 13
+
+        5. Just cycle down until you have no bills left:
+        Elseif (($DayofMonth -ge 30) -And ($DayofMonth -le 31))
+        {
+            $ResultsWithBills = $Results
+            $UpcomingBills = 'None'
+        }
+        #>
     
         $DayofMonth = $($(Get-Date).Day)
-        # Ignore Internet because it's already charged. Add Internet Streaming + Water bills until they are paid.
-        If (($DayofMonth -ge 1) -And ($DayofMonth -le 13))
+
+        # Charge internet on the first
+        If (($DayofMonth -ge 1) -And ($DayofMonth -le 5))
         {
-            $ResultsWithBills = $Results + 103
+            $ResultsWithBills = $Results + 105
             $UpcomingBills = '14 - Hulu - $13<br>'
             $UpcomingBills += '16 - Water - $90<br>'
+            $UpcomingBills += '16 - ATT Cell - $45<br>'
+            $UpcomingBills += '24 - Netflix - $11<br>'
+            $UpcomingBills += '27 - Electric - $166<br>'
+            $UpcomingBills += '28 - Auto Ins. - $176'
         }
-        # Bills should be paid by now, don't add anything
-        If (($DayofMonth -ge 14) -And ($DayofMonth -le 15))
+
+        # Credit cards paid off monthly on the fifth and next bill isn't until 14th, so no charge here.
+        ElseIf (($DayofMonth -ge 6) -And ($DayofMonth -le 13))
+        {
+            $ResultsWithBills = $Results
+            $UpcomingBills = '14 - Hulu - $13<br>'
+            $UpcomingBills += '16 - Water - $90<br>'
+            $UpcomingBills += '16 - ATT Cell - $45<br>'
+            $UpcomingBills += '24 - Netflix - $11<br>'
+            $UpcomingBills += '27 - Electric - $166<br>'
+            $UpcomingBills += '28 - Auto Ins. - $176'
+        }
+
+        ElseIf (($DayofMonth -ge 14) -And ($DayofMonth -le 15))
+        {
+            $ResultsWithBills = $Results + 13
+            $UpcomingBills = '16 - Water - $90<br>'
+            $UpcomingBills += '16 - ATT Cell - $45<br>'
+            $UpcomingBills += '24 - Netflix - $11<br>'
+            $UpcomingBills += '27 - Electric - $166<br>'
+            $UpcomingBills += '28 - Auto Ins. - $176'
+        }
+
+        ElseIf (($DayofMonth -ge 16) -And ($DayofMonth -le 17))
+        {
+            $ResultsWithBills = $Results + 135
+            $UpcomingBills = '24 - Netflix - $11<br>'
+            $UpcomingBills += '27 - Electric - $166<br>'
+            $UpcomingBills += '28 - Auto Ins. - $176'
+        }
+
+        ElseIf (($DayofMonth -ge 18) -And ($DayofMonth -le 23))
+        {
+            $ResultsWithBills = $Results
+            $UpcomingBills = '24 - Netflix - $11<br>'
+            $UpcomingBills += '27 - Electric - $166<br>'
+            $UpcomingBills += '28 - Auto Ins. - $176'
+        }
+
+        ElseIf (($DayofMonth -ge 24) -And ($DayofMonth -le 25))
+        {
+            $ResultsWithBills = $Results + 11
+            $UpcomingBills = '27 - Electric - $166<br>'
+            $UpcomingBills += '28 - Auto Ins. - $176'
+        }
+
+        ElseIf (($DayofMonth -ge 26) -And ($DayofMonth -le 27))
+        {
+            $ResultsWithBills = $Results + 166
+            $UpcomingBills = '28 - Auto Ins. - $176'
+        }
+
+        Elseif (($DayofMonth -ge 28) -And ($DayofMonth -le 29))
+        {
+            $ResultsWithBills = $Results + 176
+            $UpcomingBills += 'None'
+        }
+
+        Elseif (($DayofMonth -ge 30) -And ($DayofMonth -le 31))
+        {
+            $ResultsWithBills = $Results
+            $UpcomingBills += 'None'
+        }
+
+        # If nothing matches (which it should seeing as there is always 1-31 days in a month), just add nothing to the balance.
+        Else
         {
             $ResultsWithBills = $Results
         }
-        # Still have rest of the months bills coming, credit card should be paid off (hopefully)
-        If (($DayofMonth -ge 16) -And ($DayofMonth -le 22))
-        {
-            $ResultsWithBills = $Results + 398
-            $UpcomingBills = '16- ATT Cell - $45<br>'
-            $UpcomingBills += '24- Netflix - $11<br>'
-            $UpcomingBills += '27 - Electric - $166<br>'
-            $UpcomingBills += '28 - Auto Ins. - $176'
-        }
-        # Take off Internet Streaming and Cell Phone from the balance
-        If (($DayofMonth -ge 23) -And ($DayofMonth -le 26))
-        {
-            $ResultsWithBills = $Results + 342
-            $UpcomingBills += '27 - Electric - $166<br>'
-            $UpcomingBills += '28 - Auto Ins. - $176'
-        }
-        # Take off Electric
-        If (($DayofMonth -ge 27) -And ($DayofMonth -le 28))
-        {
-            $ResultsWithBills = $Results + 176
-            $UpcomingBills += '28 - Auto Ins. - $176'
-        }
-        # Finally, take off Auto Ins
-        If (($DayofMonth -ge 28) -And ($DayofMonth -le 31))
-        {
-            $ResultsWithBills = $Results + 105
-            $UpcomingBills = '1 - ATT Internet - $105'
-        }
 
-        $Budget = 1200 - $Results
-        $RealisticBudget = 1200 - $ResultsWithBills
+        $Budget = 2400 - $Results
+        $RealisticBudget = 2400 - $ResultsWithBills
         Write-Output "Budget: `$$Budget" | Timestamp
         Write-Output "RealisticBudget: `$$RealisticBudget" | Timestamp
-        ###########
-
+        
+        # Section 4: Send email with all these results 
         # Build creds
         $User = "me@gmail.com"
         # $PasswordFile = "$Psscriptroot\AESpassword.txt"
@@ -309,6 +399,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
     End
     {
+        # Section 5: Clean up
         # Get all emails and put them in the trash so that we don't have too many messages to go through tomorrow
         $Request = Invoke-WebRequest -Uri "https://www.googleapis.com/gmail/v1/users/me/messages?access_token=$accesstoken" -Method Get | ConvertFrom-Json
         $messages = $($Request.messages)
