@@ -81,8 +81,10 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         # Section 1: Get the current balance of my credit cards from credit balance alerts sent to me from my bank daily
 
+        # Please see https://www.gerrywilliams.net/2018/01/using-powershell-to-access-gmail-api/ on how to do this section
+        # Note this is made up - you will need to generate your own!
         # Get Access Token
-        $clientId = "883355712819-sfasdfasdfapps.googleusercontent.com";
+        $clientId = "883355712819-sfasdfasdfapps.googleusercontent.com"; 
         $secret = "fOjIP3IQnfqX4asdasdf";
         $redirectURI = "urn:ietf:wg:oauth:2.0:oob";
         $refreshToken = "1/nclSRpl4oFD1o_adsfGHeyvrT2DMGYeMZ_IbJ3f8";
@@ -187,7 +189,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         # Round up one because there is always a whole number and some change
         $DaysTilPayday = ($Span.Days + 1).ToString()
     
-        # Section 3: Add in recurring bills. See my blog post for a description.
+        # Section 3: Add in recurring bills. See https://www.gerrywilliams.net/2018/02/ps-send-me-my-credit-balance/ for a description.
         $DayofMonth = $($(Get-Date).Day)
 
         If ($DayofMonth -eq 5)
@@ -325,7 +327,8 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             $SMTPPort = "587"
             Send-MailMessage -From $From -to $To -Subject $Subject -Body $Body -BodyAsHTML -SmtpServer $SMTPServer -port $SMTPPort -UseSsl -Credential $Creds
             Write-Output "Sent email $From to $To" | TimeStamp
-		
+        
+            # Send me a text message as well
             $From = "me1@gmail.com"
             $To = "8170000000@txt.att.net"
             $Subject = "Budget"
@@ -364,7 +367,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     End
     {
         # Section 5: Clean up
-        # Get all emails and put them in the trash so that we don't have too many messages to go through tomorrow
+        # Get all emails and put them in the trash so that we don't have the same messages to go through tomorrow.
         $Request = Invoke-WebRequest -Uri "https://www.googleapis.com/gmail/v1/users/me/messages?access_token=$accesstoken" -Method Get | ConvertFrom-Json
         $messages = $($Request.messages)
         Write-Output "Found $($messages.count) messages to delete" | Timestamp
