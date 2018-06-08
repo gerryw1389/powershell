@@ -6,7 +6,13 @@
     "editor.cursorStyle": "line",
     "powershell.codeFormatting.ignoreOneLineBlock": false,
     "powershell.codeFormatting.openBraceOnSameLine": false,
-    "terminal.integrated.cursorStyle": "underline"
+    "terminal.integrated.cursorStyle": "underline",
+    "git.autoRepositoryDetection": false,
+    "git.autorefresh": false,
+    "git.decorations.enabled": false,
+    "git.confirmSync": false,
+    "git.detectSubmodules": false,
+    "git.enabled": false
 }
 
 # format code (shift+alt+f)

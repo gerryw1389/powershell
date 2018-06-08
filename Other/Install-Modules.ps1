@@ -37,7 +37,11 @@ This function will copy all folders in this script's folder to a users $PSModule
         Copy-Item -Path "$($SourceDir.Tostring())\*" -Destination $UserModules\ -Recurse -Verbose
         
         # Move third-party modules to the root so they can be discovered
-        Move-Item -Path "$UserModules\Other\third-party\PSColor" -Destination "$UserModules\PSColor" -Force
+        $Folders = Get-ChildItem -Path "$UserModules\Other\third-party" -Directory
+        Foreach ($Folder in $Folders)
+        {
+            Move-Item -Path $($Folder.Fullname) -Destination "$UserModules\$($Folder.Basename)" -Force | Out-Null
+        }
         
         Stop-Script
         

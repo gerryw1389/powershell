@@ -285,14 +285,13 @@ Sets the prompt to one of three choices. See comments.
         $CurPath = "~" + $CurPath.SubString($Home.Length)
     }
 
-    $Date = (Get-Date -Format "yyyy-MM-dd@hh:mm:sstt")
-    
     # Option 1: Full brackets
+    # $Date = (Get-Date -Format "yyyy-MM-dd@hh:mm:sstt")
     # Write-Host "[$(($env:USERNAME.ToLower()))@$(($env:COMPUTERNAME.ToLower()))][$Date][$CurPath]" 
     # "$('>' * ($nestedPromptLevel + 1)) "
     # Return " "
     
-    # Option 2: For a more Linux feel...
+    # Option 2: For a more Linux feel
     # Write-Host "$(($env:USERNAME.ToLower()))" -ForegroundColor Cyan -NoNewLine
     # Write-Host "@" -ForegroundColor Gray -NoNewLine
     # Write-Host "$(($env:COMPUTERNAME.ToLower()))" -ForegroundColor Red -NoNewLine
