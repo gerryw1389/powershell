@@ -31,7 +31,7 @@ This function will copy all folders in this script's folder to a users $PSModule
     Process
     {   
         $UserModules = Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath "WindowsPowerShell\Modules"
-        Get-Childitem -Path $Files | Unblock-File
+        Get-Childitem -Path $SourceDir -Recurse | Unblock-File
         
         # Now copy the modules to the user's modules folder.
         Copy-Item -Path "$($SourceDir.Tostring())\*" -Destination $UserModules\ -Recurse -Verbose
