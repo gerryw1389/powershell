@@ -36,104 +36,235 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
    
     Begin
     {
+        <#######<Default Begin Block>#######>
+        # Set logging globally if it has any value in the parameter so helper functions can access it.
         If ($($Logfile.Length) -gt 1)
         {
-            $EnabledLogging = $True
+            $Global:EnabledLogging = $True
+            New-Variable -Scope Global -Name Logfile -Value $Logfile
         }
         Else
         {
-            $EnabledLogging = $False
+            $Global:EnabledLogging = $False
         }
         
-        Filter Timestamp
+        # If logging is enabled, create functions to start the log and stop the log.
+        If ($Global:EnabledLogging)
         {
-            "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $_"
-        }
-
-        If ($EnabledLogging)
-        {
-            # Create parent path and logfile if it doesn't exist
-            $Regex = '([^\\]*)$'
-            $Logparent = $Logfile -Replace $Regex
-            If (!(Test-Path $Logparent))
+            Function Start-Log
             {
-                New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
-            }
-            If (!(Test-Path $Logfile))
-            {
-                New-Item -Itemtype File -Path $Logfile -Force | Out-Null
-            }
+                <#
+                .Synopsis
+                Function to write the opening part of the logfile.
+                .Description
+                Function to write the opening part of the logfil.
+                It creates the directory if it doesn't exists and then the log file automatically.
+                It checks the size of the file if it already exists and clears it if it is over 10 MB.
+                If it exists, it creates a header. This function is best placed in the "Begin" block of a script.
+                .Notes
+                NOTE: The function requires the Write-ToString function.
+                2018-06-13: v1.1 Brought back from previous helper.psm1 files.
+                2017-10-19: v1.0 Initial function
+                #>
+                [CmdletBinding()]
+                Param
+                (
+                    [Parameter(Mandatory = $True)]
+                    [String]$Logfile
+                )
+                # Create parent path and logfile if it doesn't exist
+                $Regex = '([^\\]*)$'
+                $Logparent = $Logfile -Replace $Regex
+                If (!(Test-Path $Logparent))
+                {
+                    New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+                }
+                If (!(Test-Path $Logfile))
+                {
+                    New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+                }
     
-            # Clear it if it is over 10 MB
-            $Sizemax = 10
-            $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
-            $Sizemb = "{0:N2}" -F ($Size.Sum / 1mb) + "Mb"
-            If ($Sizemb -Ge $Sizemax)
-            {
-                Get-Childitem $Logfile | Clear-Content
-                Write-Verbose "Logfile has been cleared due to size"
+                # Clear it if it is over 10 MB
+                [Double]$Sizemax = 10485760
+                $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+                If ($($Size.Sum -ge $SizeMax))
+                {
+                    Get-Childitem $Logfile | Clear-Content
+                    Write-Verbose "Logfile has been cleared due to size"
+                }
+                Else
+                {
+                    Write-Verbose "Logfile was less than 10 MB"   
+                }
+                # Start writing to logfile
+                Start-Transcript -Path $Logfile -Append 
+                Write-ToString "####################<Script>####################"
+                Write-ToString "Script Started on $env:COMPUTERNAME"
             }
-            # Start writing to logfile
-            Start-Transcript -Path $Logfile -Append 
-            Write-Output "####################<Script>####################"
-            Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
+            Start-Log
+
+            Function Stop-Log
+            {
+                <# 
+                    .Synopsis
+                    Function to write the closing part of the logfile.
+                    .Description
+                    Function to write the closing part of the logfile.
+                    This function is best placed in the "End" block of a script.
+                    .Notes
+                    NOTE: The function requires the Write-ToString function.
+                    2018-06-13: v1.1 Brought back from previous helper.psm1 files.
+                    2017-10-19: v1.0 Initial function 
+                    #>
+                [CmdletBinding()]
+                Param
+                (
+                    [Parameter(Mandatory = $True)]
+                    [String]$Logfile
+                )
+                Write-ToString "Script Completed on $env:COMPUTERNAME"
+                Write-ToString "####################</Script>####################"
+                Stop-Transcript
+            }
         }
 
-        # Load the required module(s) 
+        # Declare a Write-ToString function that doesn't depend if logging is enabled or not.
+        Function Write-ToString
+        {
+            <# 
+        .Synopsis
+        Function that takes an input object, converts it to text, and sends it to the screen, a logfile, or both depending on if logging is enabled.
+        .Description
+        Function that takes an input object, converts it to text, and sends it to the screen, a logfile, or both depending on if logging is enabled.
+        .Parameter InputObject
+        This can be any PSObject that will be converted to string.
+        .Parameter Color
+        The color in which to display the string on the screen.
+        Valid options are: Black, Blue, Cyan, DarkBlue, DarkCyan, DarkGray, DarkGreen, DarkMagenta, DarkRed, DarkYellow, Gray, Green, Magenta, 
+        Red, White, and Yellow.
+        .Example 
+        Write-ToString "Hello Hello"
+        If $Global:EnabledLogging is set to true, this will create an entry on the screen and the logfile at the same time. 
+        If $Global:EnabledLogging is set to false, it will just show up on the screen in default text colors.
+        .Example 
+        Write-ToString "Hello Hello" -Color "Yellow"
+        If $Global:EnabledLogging is set to true, this will create an entry on the screen colored yellow and to the logfile at the same time. 
+        If $Global:EnabledLogging is set to false, it will just show up on the screen colored yellow.
+        .Example 
+        Write-ToString (cmd /c "ipconfig /all") -Color "Yellow"
+        If $Global:EnabledLogging is set to true, this will create an entry on the screen colored yellow that shows the computer's IP information.
+        The same copy will be in the logfile. 
+        The whole point of converting to strings is this works best with tables and such that usually distort in logfiles.
+        If $Global:EnabledLogging is set to false, it will just show up on the screen colored yellow.
+        .Notes
+        2018-06-13: v1.0 Initial function
+        #>
+            Param
+            (
+                [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+                [PSObject]$InputObject,
+                
+                [Parameter(Mandatory = $False, Position = 1)]
+                [Validateset("Black", "Blue", "Cyan", "Darkblue", "Darkcyan", "Darkgray", "Darkgreen", "Darkmagenta", "Darkred", `
+                        "Darkyellow", "Gray", "Green", "Magenta", "Red", "White", "Yellow")]
+                [String]$Color,
+
+                [Parameter(Mandatory = $False, Position = 2)]
+                [String]$Logfile
+            )
+            
+            $ConvertToString = Out-String -InputObject $InputObject -Width 100
+            If ($Global:EnabledLogging)
+            {
+                # If logging is enabled and a color is defined, send to screen and logfile.
+                If ($($Color.Length -gt 0))
+                {
+                    $previousForegroundColor = $Host.PrivateData.VerboseForegroundColor
+                    $Host.PrivateData.VerboseForegroundColor = $Color
+                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+                    Write-ToString "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString" | Out-File -Encoding ASCII -FilePath $Logfile -Append
+                    $Host.PrivateData.VerboseForegroundColor = $previousForegroundColor
+                }
+                # If not, still send to logfile, but use default colors.
+                Else
+                {
+                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+                    Write-ToString "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString" | Out-File -Encoding ASCII -FilePath $Logfile -Append
+                }
+            }
+            # If logging isn't enabled, just send the string to the screen.
+            Else
+            {
+                If ($($Color.Length -gt 0))
+                {
+                    $previousForegroundColor = $Host.PrivateData.VerboseForegroundColor
+                    $Host.PrivateData.VerboseForegroundColor = $Color
+                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+                    $Host.PrivateData.VerboseForegroundColor = $previousForegroundColor
+                }
+                Else
+                {
+                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+                }
+            }
+        }
+        <#######</Default Begin Block>#######>
+
+        # Load the required module(s)
         Try
         {
             Import-Module "$Psscriptroot\..\Private\helpers.psm1" -ErrorAction Stop
         }
         Catch
         {
-            Write-Output "Module 'Helpers' was not found, stopping script" | Timestamp
+            Write-ToString "Module 'Helpers' was not found, stopping script"
             Exit 1
         }
     }
     
     Process
     {    
-        Write-Output "Setting User Privacy Settings" | TimeStamp
+        Write-ToString "Setting User Privacy Settings"
 
-        Write-Output "Removing App Telemetry Settings for..." | TimeStamp
-        Write-Output "Location" | TimeStamp
+        Write-ToString "Removing App Telemetry Settings for..."
+        Write-ToString "Location"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Sensor\Permissions\{BFA794E4-F964-4FDB-90F6-51056BFE4B44}" -Name "SensorPermissionState" -Value "0"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\{BFA794E4-F964-4FDB-90F6-51056BFE4B44}" -Name "Value" -Value "Deny" -PropertyType "String"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\{E6AD100E-5F4E-44CD-BE0F-2265D88D14F5}" -Name "Value" -Value "Deny" -PropertyType "String"
-        Write-Output "Camera" | TimeStamp
+        Write-ToString "Camera"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\{E5323777-F976-4f5b-9B55-B94699C46E44}" -Name "Value" -Value "Deny" -PropertyType "String"
-        Write-Output "Calendar" | TimeStamp
+        Write-ToString "Calendar"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\{D89823BA-7180-4B81-B50C-7E471E6121A3}" -Name "Value" -Value "Deny" -PropertyType "String"
-        Write-Output "Contacts" | TimeStamp
+        Write-ToString "Contacts"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\{7D7E8402-7C54-4821-A34E-AEEFD62DED93}" -Name "Value" -Value "Deny" -PropertyType "String"
-        Write-Output "Notifications" | TimeStamp
+        Write-ToString "Notifications"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\{52079E78-A92B-413F-B213-E8FE35712E72}" -Name "Value" -Value "Deny" -PropertyType "String"
-        Write-Output "Microphone" | TimeStamp
+        Write-ToString "Microphone"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\{2EEF81BE-33FA-4800-9670-1CD474972C3F}" -Name "Value" -Value "Deny" -PropertyType "String"
-        Write-Output "Account Info" | TimeStamp
+        Write-ToString "Account Info"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\{C1D23ACC-752B-43E5-8448-8D0E519CD6D6}" -Name "Value" -Value "Deny" -PropertyType "String"
-        Write-Output "Call history" | TimeStamp
+        Write-ToString "Call history"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\{8BC668CF-7728-45BD-93F8-CF2B3B41D7AB}" -Name "Value" -Value "Deny" -PropertyType "String"
-        Write-Output "Email, may break the Mail app?" | TimeStamp
+        Write-ToString "Email, may break the Mail app?"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\{9231CB4C-BF57-4AF3-8C55-FDA7BFCC04C5}" -Name "Value" -Value "Deny" -PropertyType "String"
-        Write-Output "TXT/MMS" | TimeStamp
+        Write-ToString "TXT/MMS"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\{992AFA70-6F47-4148-B3E9-3003349C1548}" -Name "Value" -Value "Deny" -PropertyType "String"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\{21157C1F-2651-4CC1-90CA-1F28B02263F6}" -Name "Value" -Value "Deny" -PropertyType "String"
-        Write-Output "Radios" | TimeStamp
+        Write-ToString "Radios"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\{A8804298-2D5F-42E3-9531-9C8C39EB29CE}" -Name "Value" -Value "Deny" -PropertyType "String"
 
-        Write-Output "Disabling Notifications for lockscreen" | TimeStamp
+        Write-ToString "Disabling Notifications for lockscreen"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Notifications\Settings" -Name "NOC_GLOBAL_SETTING_ALLOW_TOASTS_ABOVE_LOCK" -Value "0"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Notifications\Settings" -Name "NOC_GLOBAL_SETTING_ALLOW_CRITICAL_TOASTS_ABOVE_LOCK" -Value "0"
 		
-        Write-Output "Disabling Notifications" | TimeStamp
+        Write-ToString "Disabling Notifications"
         $RegPaths = Get-ChildItem -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Notifications\Settings" 
         ForEach ($RegPath in $RegPaths) 
         {
             SetReg -Path $RegPath.PsPath -Name "Enabled" -Value "0"
         }
     
-        Write-Output "Lockscreen suggestions, rotating pictures" | TimeStamp
+        Write-ToString "Lockscreen suggestions, rotating pictures"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SoftLandingEnabled" -Value "0"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "RotatingLockScreenEnabled" -Value "0"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "RotatingLockScreenOverlayEnabled" -Value "0"
@@ -142,37 +273,37 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SubscribedContent-338389Enabled" -Value "0"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SubscribedContent-338393Enabled" -Value "0"
     
-        Write-Output "Disabling Welcome Experience Notification" | TimeStamp
+        Write-ToString "Disabling Welcome Experience Notification"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SubscribedContent-310093Enabled" -Value "0"
 
-        Write-Output "Preinstalled apps, Minecraft Twitter etc all that - Enterprise only it seems" | TimeStamp
+        Write-ToString "Preinstalled apps, Minecraft Twitter etc all that - Enterprise only it seems"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "PreInstalledAppsEnabled" -Value "0"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "PreInstalledAppsEverEnabled" -Value "0"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "OEMPreInstalledAppsEnabled" -Value "0"
     
-        Write-Output "Stop MS shoehorning apps quietly into your profile" | TimeStamp
+        Write-ToString "Stop MS shoehorning apps quietly into your profile"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SilentInstalledAppsEnabled" -Value "0"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "ContentDeliveryAllowed" -Value "0"
 
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SubscribedContentEnabled" -Value "0"
     
-        Write-Output "Ads in File Explorer" | TimeStamp
+        Write-ToString "Ads in File Explorer"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "ShowSyncProviderNotifications" -Value "0"
     
-        Write-Output "Disabling auto update and download of Windows Store Apps - enable if you are not using the store" | TimeStamp
+        Write-ToString "Disabling auto update and download of Windows Store Apps - enable if you are not using the store"
         SetReg -Path "HKCU:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "AutoDownload" -Value "2"
     
-        Write-Output "Let websites provide local content by accessing language list" | TimeStamp
+        Write-ToString "Let websites provide local content by accessing language list"
         SetReg -Path "HKCU:\Control Panel\International\User Profile" -Name "HttpAcceptLanguageOptOut" -Value "1"
     
-        Write-Output "Let apps share and sync non-explicitly paired wireless devices over uPnP" | TimeStamp
+        Write-ToString "Let apps share and sync non-explicitly paired wireless devices over uPnP"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\LooselyCoupled" -Name "Value" -Value "Deny" -PropertyType "String"
     
-        Write-Output "Don't ask for feedback" | TimeStamp
+        Write-ToString "Don't ask for feedback"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Siuf\Rules" -Name "NumberOfSIUFInPeriod" -Value "0" 
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Siuf\Rules" -Name "PeriodInNanoSeconds" -Value "0" 
     
-        Write-Output "Stopping Cortana/Microsoft from getting to know you" | TimeStamp
+        Write-ToString "Stopping Cortana/Microsoft from getting to know you"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Personalization\Settings" -Name "AcceptedPrivacyPolicy" -Value "0" 
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\SettingSync\Groups\Language" -Name "Enabled" -Value "0" 
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\InputPersonalization" -Name "RestrictImplicitTextCollection" -Value "1" 
@@ -180,7 +311,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\InputPersonalization\TrainedDataStore" -Name "HarvestContacts" -Value "0" 
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Input\TIPC" -Name "Enabled" -Value "0" 
     
-        Write-Output "Disabling Cortana and Bing search user settings" | TimeStamp
+        Write-ToString "Disabling Cortana and Bing search user settings"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "CortanaEnabled" -Value "0" 
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "BingSearchEnabled" -Value "0" 
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "DeviceHistoryEnabled" -Value "0"
@@ -188,28 +319,28 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         $Build = (Get-CimInstance -ClassName CIM_OperatingSystem).Buildnumber
         If ($Build -like "17*")
         {
-            Write-Output "New Build detected: Blocking Internet Search via Windows Search" | TimeStamp
+            Write-ToString "New Build detected: Blocking Internet Search via Windows Search"
             SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "BingSearchEnabled" -Value "0"
             SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "AllowSearchToUseLocation" -Value "0"
             SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "CortanaConsent" -Value "0"
         }
     
-        Write-Output "Below takes search bar off the taskbar, personal preference" | TimeStamp
+        Write-ToString "Below takes search bar off the taskbar, personal preference"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Value "0"
     
-        Write-Output "Stop Cortana from remembering history" | TimeStamp
+        Write-ToString "Stop Cortana from remembering history"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "HistoryViewEnabled" -Value "0"
 
-        Write-Output "Disabling Shared Experiences" | TimeStamp
+        Write-ToString "Disabling Shared Experiences"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\CDP" -Name "RomeSdkChannelUserAuthzPolicy" -Value "0"
     
-        Write-Output "Disabling Bing In Start Menu and Cortana In Search" | TimeStamp
+        Write-ToString "Disabling Bing In Start Menu and Cortana In Search"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo" -Name "Enabled" -Value "0"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Privacy" -Name "TailoredExperiencesWithDiagnosticDataEnabled" -Value "0"
     
         Function Remove-AutoLogger
         {
-            Write-Output "Removing Autologger File And Restricting Directory" | TimeStamp
+            Write-ToString "Removing Autologger File And Restricting Directory"
     
             $autoLoggerDir = "$env:PROGRAMDATA\Microsoft\Diagnosis\ETLLogs\AutoLogger"
             If (Test-Path "$autoLoggerDir\AutoLogger-Diagtrack-Listener.etl")
@@ -220,56 +351,56 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         } 
         Remove-AutoLogger
 
-        Write-Output "Setting Global User Settings" | TimeStamp
+        Write-ToString "Setting Global User Settings"
     
-        Write-Output "Setting Visual Style to best visual" | TimeStamp
+        Write-ToString "Setting Visual Style to best visual"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name "VisualFXSetting" -Value "1"
 
-        Write-Output "Disabling Autoplay" | TimeStamp
+        Write-ToString "Disabling Autoplay"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers" -Name "DisableAutoplay" -Value "1"
 
-        Write-Output "Disabling Auto Update And Download Of Windows Store Apps" | TimeStamp
+        Write-ToString "Disabling Auto Update And Download Of Windows Store Apps"
         SetReg -Path "HKCU:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "AutoDownload" -Value "2"
 
-        Write-Output "Setting Explorer Default To This PC" | TimeStamp
+        Write-ToString "Setting Explorer Default To This PC"
         SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "LaunchTo" -Value "1"
 
-        Write-Output "Setting Explorer Default To Show File Extensions" | TimeStamp
+        Write-ToString "Setting Explorer Default To Show File Extensions"
         SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HideFileExt" -Value "0"
 
-        Write-Output "Setting Checkboxes in Explorer" | TimeStamp
+        Write-ToString "Setting Checkboxes in Explorer"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "AutoCheckSelect" -Value "1"
 		
-        Write-Output "Setting Windows to not track app launches" | TimeStamp
+        Write-ToString "Setting Windows to not track app launches"
         SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Start_TrackProgs" -Value "0"
 
-        Write-Output "Setting Windows Powershell to default on Win X Menu" | TimeStamp
+        Write-ToString "Setting Windows Powershell to default on Win X Menu"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "DontUsePowerShellOnWinX" -Value "0"
     
-        Write-Output "Unchecking Show Recently Used Files In Quick Access" | TimeStamp
+        Write-ToString "Unchecking Show Recently Used Files In Quick Access"
         SetReg -Path "HKCU:\Software\Microsoft\Windows\Currentversion\Explorer" -Name "ShowRecent" -Value "0"
 
-        Write-Output "Unchecking Show Frequently Used Folders In Quick Access" | TimeStamp
+        Write-ToString "Unchecking Show Frequently Used Folders In Quick Access"
         SetReg -Path "HKCU:\Software\Microsoft\Windows\Currentversion\Explorer" -Name "ShowFrequent" -Value "0"
 
-        Write-Output "Disabling AeroShake" | TimeStamp
+        Write-ToString "Disabling AeroShake"
         SetReg -Path "HKCU:\Software\Policies\Microsoft\Windows\Explorer" -Name "NoWindowMinimizingShortcuts" -Value "1"
 
-        Write-Output "Hiding Cortana" | TimeStamp
+        Write-ToString "Hiding Cortana"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Value "0"
 
-        Write-Output "Disabling Sticky keys prompt" | TimeStamp
+        Write-ToString "Disabling Sticky keys prompt"
         SetReg -Path "HKCU:\Control Panel\Accessibility\StickyKeys" -Name "Flags" -Value "506" -PropertyType "String"
 
-        Write-Output "Disabling TaskBar People Icon" | TimeStamp
+        Write-ToString "Disabling TaskBar People Icon"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People" -Name "PeopleBand" -Value "0"
 		
-        Write-Output "Disabling Taskview on Taskbar" | Timestamp
+        Write-ToString "Disabling Taskview on Taskbar"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -Value "0"
 
         Function Set-DesktopIcons
         {
-            Write-Output "Setting Desktop Icons: My PC, User Files, and Recycle Bin on Desktop / Remove OneDrive" | TimeStamp
+            Write-ToString "Setting Desktop Icons: My PC, User Files, and Recycle Bin on Desktop / Remove OneDrive"
     
             # Make Sure Hide Desktop Icons Is Off
             SetReg -Path "HKCU:\Software\Microsoft\Windows\Currentversion\Explorer\Advanced" -Name "Hideicons" -Value "0"
@@ -286,7 +417,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         Function Remove-UserFoldersFromExplorer
         {
-            Write-Output "Removing User Folders From This PC" | TimeStamp
+            Write-ToString "Removing User Folders From This PC"
             # Documents
             $Params = @{}
             $Params.Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions\{f42ee2d3-909f-4907-8871-4c22fc0bf756}\PropertyBag"
@@ -460,142 +591,142 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Remove-UserFoldersFromExplorer
 
     
-        Write-Output "Setting System Privacy Settings" | TimeStamp
+        Write-ToString "Setting System Privacy Settings"
     
         # Local Group Policy Settings - Can be adjusted in GPedit.msc in Pro+ editions. Local Policy/Computer Config/Admin Templates/Windows Components			
-        Write-Output "Removing App Telemetry Settings for..." | TimeStamp
-        Write-Output "Account Info" | TimeStamp
+        Write-ToString "Removing App Telemetry Settings for..."
+        Write-ToString "Account Info"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessAccountInfo" -Value "2" 
-        Write-Output "Calendar" | TimeStamp
+        Write-ToString "Calendar"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessCalendar" -Value "2" 
-        Write-Output "Call History" | TimeStamp
+        Write-ToString "Call History"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessCallHistory" -Value "2" 
-        Write-Output "Contacts" | TimeStamp
+        Write-ToString "Contacts"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessContacts" -Value "2" 
-        Write-Output "Email" | TimeStamp
+        Write-ToString "Email"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessEmail" -Value "2" 
-        Write-Output "Location" | TimeStamp
+        Write-ToString "Location"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessLocation" -Value "2" 
-        Write-Output "Messaging" | TimeStamp
+        Write-ToString "Messaging"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessMessaging" -Value "2" 
-        Write-Output "Microphone - This one, let the user choose" | TimeStamp
+        Write-ToString "Microphone - This one, let the user choose"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessMicrophone" -Value "0" 
-        Write-Output "Motion" | TimeStamp
+        Write-ToString "Motion"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessMotion" -Value "2" 
-        Write-Output "Notifications" | TimeStamp
+        Write-ToString "Notifications"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessNotifications" -Value "2" 
-        Write-Output "Make Phone Calls" | TimeStamp
+        Write-ToString "Make Phone Calls"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessPhone" -Value "2" 
-        Write-Output "Radios" | TimeStamp
+        Write-ToString "Radios"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessRadios" -Value "2" 
-        Write-Output "Access trusted devices" | TimeStamp
+        Write-ToString "Access trusted devices"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessTrustedDevices" -Value "2" 
-        Write-Output "Sync with devices" | TimeStamp
+        Write-ToString "Sync with devices"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsSyncWithDevices" -Value "2"
-        Write-Output "Tasks" | TimeStamp
+        Write-ToString "Tasks"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessTasks" -Value "2"
 
-        Write-Output "Application Compatibility Settings..." | TimeStamp
-        Write-Output "Turn off Application Telemetry" | TimeStamp
+        Write-ToString "Application Compatibility Settings..."
+        Write-ToString "Turn off Application Telemetry"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppCompat" -Name "AITEnable" -Value "0" 			
-        Write-Output "Turn off inventory collector" | TimeStamp
+        Write-ToString "Turn off inventory collector"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppCompat" -Name "DisableInventory" -Value "1" 
-        Write-Output "Turn off steps recorder" | TimeStamp
+        Write-ToString "Turn off steps recorder"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppCompat" -Name "DisableUAR" -Value "1" 
 
-        Write-Output "Cloud Content Settings..." | TimeStamp
-        Write-Output "Do not show Windows Tips" | TimeStamp
+        Write-ToString "Cloud Content Settings..."
+        Write-ToString "Do not show Windows Tips"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableSoftLanding" -Value "1" 
-        Write-Output "Turn off Consumer Experiences" | TimeStamp
+        Write-ToString "Turn off Consumer Experiences"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableWindowsConsumerFeatures" -Value "1" 
   
-        Write-Output "Data Collection Settings..." | TimeStamp
-        Write-Output "Set Telemetry to Basic" | TimeStamp
+        Write-ToString "Data Collection Settings..."
+        Write-ToString "Set Telemetry to Basic"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name "AllowTelemetry" -Value "0" 
         SetReg -Path "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Policies\DataCollection" -Name "AllowTelemetry" -Value "0"  
-        Write-Output "Disable pre-release features and settings" | TimeStamp
+        Write-ToString "Disable pre-release features and settings"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PreviewBuilds" -Name "EnableConfigFlighting" -Value "0" 
-        Write-Output "Do not show feedback notifications" | TimeStamp
+        Write-ToString "Do not show feedback notifications"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name "DoNotShowFeedbackNotifications" -Value "1" 
 
-        Write-Output "Delivery Optimization Settings..." | TimeStamp
+        Write-ToString "Delivery Optimization Settings..."
         # Disable DO; set to "1" to allow DO over LAN only			
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization" -Name "DODownloadMode" -Value "0" 
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config" -Name "DownloadMode" -Value "0" 
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config" -Name "DODownloadMode" -Value "0" 
     
-        Write-Output "Location and Sensors" | TimeStamp
+        Write-ToString "Location and Sensors"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors" -Name "DisableLocation" -Value "1" 
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors" -Name "DisableSensors" -Value "1" 
 
-        Write-Output "Microsoft Edge - Always send do not track" | TimeStamp
+        Write-ToString "Microsoft Edge - Always send do not track"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\MicrosoftEdge\Main" -Name "DoNotTrack" -Value "1" 
 
-        Write-Output "Disabling Cortana..." | TimeStamp
+        Write-ToString "Disabling Cortana..."
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "AllowCortana" -Value "0"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "BingSearchEnabled" -Value "0" 
-        Write-Output "Disallow Cortana on lock screen" | TimeStamp
+        Write-ToString "Disallow Cortana on lock screen"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "AllowCortanaAboveLock" -Value "0" 
-        Write-Output "Disallow web search from desktop search" | TimeStamp
+        Write-ToString "Disallow web search from desktop search"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "DisableWebSearch" -Value "1"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "AllowCloudSearch" -Value "0"
-        Write-Output "Don't search the web or display web results in search" | TimeStamp
+        Write-ToString "Don't search the web or display web results in search"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "ConnectedSearchUseWeb" -Value "0" 
 
-        Write-Output "Windows Store..." | TimeStamp
-        Write-Output "Turn off Automatic download/install of app updates" | TimeStamp
+        Write-ToString "Windows Store..."
+        Write-ToString "Turn off Automatic download/install of app updates"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "AutoDownload" -Value "2" 		
         
-        Write-Output "Sync Settings..." | TimeStamp
-        Write-Output "Do not syncanything" | TimeStamp
+        Write-ToString "Sync Settings..."
+        Write-ToString "Do not syncanything"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\SettingSync" -Name "DisableSettingSync" -Value "2" 
-        Write-Output "Disallow users to override this" | TimeStamp
+        Write-ToString "Disallow users to override this"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\SettingSync" -Name "DisableSettingSyncUserOverride" -Value "1" 
 
-        Write-Output "Windows Update Settings..." | TimeStamp
-        Write-Output "Turn off featured software notifications through WU (basically ads)" | TimeStamp
+        Write-ToString "Windows Update Settings..."
+        Write-ToString "Turn off featured software notifications through WU (basically ads)"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "EnableFeaturedSoftware" -Value "0" 
 
-        Write-Output "Disabling Wifi Sense" | TimeStamp
+        Write-ToString "Disabling Wifi Sense"
         SetReg -Path "HKLM:\Software\Microsoft\PolicyManager\default\WiFi\AllowAutoConnectToWiFiSenseHotspots" -Name "Value" -Value "0"
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\config" -Name "AutoConnectAllowedOEM" -Value "0"
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\config" -Name "WiFISenseAllowed" -Value "0"
 
-        Write-Output "Disabling Location Tracking" | TimeStamp
+        Write-ToString "Disabling Location Tracking"
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Sensor\Overrides\{BFA794E4-F964-4FDB-90F6-51056BFE4B44}" -Name "SensorPermissionState" -Value "0"
         SetReg -Path "HKLM:\System\CurrentControlSet\Services\lfsvc\Service\Configuration" -Name "Status" -Value "0"
 
-        Write-Output "Disabling Map tracking" | TimeStamp
+        Write-ToString "Disabling Map tracking"
         SetReg -Path "HKLM:\SYSTEM\Maps" -Name "AutoUpdateEnabled" -Value "0"
 
-        Write-Output "Disable Error Reporting" | TimeStamp
+        Write-ToString "Disable Error Reporting"
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting" -Name "Disabled" -Value "1"
 
-        Write-Output "Disabling advertising info and device metadata collection for this machine" | TimeStamp
+        Write-ToString "Disabling advertising info and device metadata collection for this machine"
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo" -Name "Enabled" -Value "0" 
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Device Metadata" -Name "PreventDeviceMetadataFromNetwork" -Value "1" 
     
-        Write-Output "Prevent apps on other devices from opening apps on this PC" | TimeStamp
+        Write-ToString "Prevent apps on other devices from opening apps on this PC"
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\SmartGlass" -Name "UserAuthPolicy " -Value "0"
 
-        Write-Output "Allowing SmartScreen Filter for Windows, Edge, and Store apps" | TimeStamp
+        Write-ToString "Allowing SmartScreen Filter for Windows, Edge, and Store apps"
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" -Name "SmartScreenEnabled" -PropertyType "String" -Value "Warn"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\MicrosoftEdge\PhishingFilter" -Name "EnabledV9" -Value "1"
         SetReg -Path "HKCU:\\Software\Microsoft\Windows\CurrentVersion\AppHost" -Name "EnableWebContentEvaluation" -Value "1" 
     
-        Write-Output "Prevent using sign-in info to automatically finish setting up after an update" | TimeStamp
+        Write-ToString "Prevent using sign-in info to automatically finish setting up after an update"
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name "ARSOUserConsent" -Value "2"   
     
-        Write-Output "Disable Malicious Software Removal Tool through WU, and CEIP" | TimeStamp
+        Write-ToString "Disable Malicious Software Removal Tool through WU, and CEIP"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\MRT" -Name "DontOfferThroughWUAU" -Value "1" 
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\SQMClient\Windows" -Name "CEIPEnable" -Value "0"
 
-        Write-Output "Setting System Settings" | TimeStamp
+        Write-ToString "Setting System Settings"
 
-        Write-Output "Disabling The Built-In Admin Account" | TimeStamp
+        Write-ToString "Disabling The Built-In Admin Account"
         Cmd /c "Net User Administrator /Active:No"
      
-        Write-Output "Setting Power Settings To Never Sleep" | TimeStamp
+        Write-ToString "Setting Power Settings To Never Sleep"
         cmd /c "powercfg -change -monitor-timeout-ac 0"
         cmd /c "powercfg -change -monitor-timeout-dc 0"
         cmd /c "powercfg -change -standby-timeout-ac 0"
@@ -605,7 +736,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         cmd /c "powercfg -change -hibernate-timeout-ac 0"
         cmd /c "powercfg -change -hibernate-timeout-dc 0"
 
-        Write-Output "Disabling display and sleep mode timeouts..." | TimeStamp
+        Write-ToString "Disabling display and sleep mode timeouts..."
         cmd /c "powercfg /X monitor-timeout-ac 0"
         cmd /c "powercfg /X monitor-timeout-dc 0"
         cmd /c "powercfg /X standby-timeout-ac 0"
@@ -613,33 +744,33 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         
 
-        Write-Output "Enable F8 boot menu options" | TimeStamp
+        Write-ToString "Enable F8 boot menu options"
         cmd /c "bcdedit /set `{current`} bootmenupolicy Legacy" | Out-Null
  
-        Write-Output "Setting time zone to Central Standard" | TimeStamp
+        Write-ToString "Setting time zone to Central Standard"
         $TimeZone = 'Central Standard Time'
         If ( (Get-TimeZone).StandardName -eq $TimeZone)
         {
-            Write-Output "The time zone is already set to $TimeZone." | TimeStamp
+            Write-ToString "The time zone is already set to $TimeZone."
         }
         Else
         {
             Set-TimeZone -Name $TimeZone
-            Write-Output "The time zone set to $TimeZone." | TimeStamp
+            Write-ToString "The time zone set to $TimeZone."
         }
 
-        Write-Output "Configuring To Allow Pings, RDP, WMI, and File and Printer Sharing Through Firewall" | TimeStamp
+        Write-ToString "Configuring To Allow Pings, RDP, WMI, and File and Printer Sharing Through Firewall"
         Try
         {
             Import-Module NetSecurity -ErrorAction Stop
         }
         Catch
         {
-            Write-Output "Module 'NetSecurity' was not found, stopping script" | Timestamp
+            Write-ToString "Module 'NetSecurity' was not found, stopping script"
             Exit 1
         }
 
-        Write-Output "Setting RDP to allow inbound connections" | TimeStamp
+        Write-ToString "Setting RDP to allow inbound connections"
         $Params = @{}
         $Params.DisplayName = "AllowRDP"
         $Params.Description = "Allow Remote Desktop"
@@ -652,7 +783,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         New-NetFirewallRule @Params | Out-Null
         $Params = $null
 
-        Write-Output "Setting Ping firewall rule (in/out)" | TimeStamp
+        Write-ToString "Setting Ping firewall rule (in/out)"
         $Params = @{}
         $Params.DisplayName = "AllowPingsOut"
         $Params.Description = "Allow Pings"
@@ -680,51 +811,51 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         # Some of these may be redundant, but wanted to include just in case
         # Network Discovery: netsh advfirewall firewall set rule group=”network discovery” new enable=yes
         # File and Printer Sharing: netsh firewall set service type=fileandprint mode=enable profile=all
-        Write-Output "Setting Remote Desktop firewall rule" | TimeStamp
+        Write-ToString "Setting Remote Desktop firewall rule"
         Set-NetFirewallRule -DisplayGroup "Remote Desktop" -Profile Any -Enabled True | Out-Null    
-        Write-Output "Setting Windows Management Instrumentation (WMI) firewall rule" | TimeStamp
+        Write-ToString "Setting Windows Management Instrumentation (WMI) firewall rule"
         Set-NetFirewallRule -DisplayGroup "Windows Management Instrumentation (WMI)" -Profile Any -Enabled True | Out-Null
-        Write-Output "Setting Network Discovery firewall rule" | TimeStamp
+        Write-ToString "Setting Network Discovery firewall rule"
         Set-NetFirewallRule -DisplayGroup "Network Discovery" -Profile Any -Enabled True | Out-Null
-        Write-Output "Setting File and Printer Sharing firewall rule" | TimeStamp
+        Write-ToString "Setting File and Printer Sharing firewall rule"
         Set-NetFirewallRule -DisplayGroup "File and Printer Sharing" -Profile Any -Enabled True | Out-Null
-        Write-Output "Setting Windows Remote Management firewall rule" | TimeStamp
+        Write-ToString "Setting Windows Remote Management firewall rule"
         Set-NetFirewallRule -DisplayGroup "Windows Remote Management" -Profile Any -Enabled True | Out-Null
-        Write-Output "Setting Core Networking firewall rule" | TimeStamp
+        Write-ToString "Setting Core Networking firewall rule"
         Set-NetFirewallRule -DisplayGroup "Core Networking" -Profile Any -Enabled True | Out-Null
 
-        Write-Output "Setting UAC Setting To Third Bar Down (Notify When Apps Make Changes… Don't Dim)" | TimeStamp
+        Write-ToString "Setting UAC Setting To Third Bar Down (Notify When Apps Make Changes… Don't Dim)"
         SetReg -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorAdmin" -Value "0"
         SetReg -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableInstallerDetection" -Value "0"
         SetReg -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System" -Name "PromptOnSecureDesktop" -Value "0"
         SetReg -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System" -Name "FilterAdministratorToken" -Value "0"
     
-        Write-Output "Removing memory dumping, event logging, and automatic restarts on operating system crashes" | TimeStamp
+        Write-ToString "Removing memory dumping, event logging, and automatic restarts on operating system crashes"
         SetReg -Path "HKLM:\SYSTEM\CurrentControlSet\Control\CrashControl" -Name "AutoReboot" -Value "0"
         
-        Write-Output "Disabling Windows Update automatic restart" | TimeStamp
+        Write-ToString "Disabling Windows Update automatic restart"
         SetReg -Path "HKLM:\Software\Microsoft\WindowsUpdate\UX\Settings" -Name "NoAutoRebootWithLoggedOnUsers" -Value "1"
         SetReg -Path "HKLM:\Software\Microsoft\WindowsUpdate\UX\Settings" -Name "UxOption" -Value "1"
     
-        Write-Output "Disabling search for app in store for unknown extensions" | TimeStamp
+        Write-ToString "Disabling search for app in store for unknown extensions"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "NoUseStoreOpenWith" -Value "1"
     
-        Write-Output "Disabling Autorun for all drives" | TimeStamp
+        Write-ToString "Disabling Autorun for all drives"
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "NoDriveTypeAutoRun" -Value "255"
     
-        Write-Output "Enabling Remote Desktop With Network Level Authentication" | TimeStamp
+        Write-ToString "Enabling Remote Desktop With Network Level Authentication"
         SetReg -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value "0"
         SetReg -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "UserAuthentication" -Value "0"
     
-        Write-Output "Disabling Remote Assistance" | TimeStamp
+        Write-ToString "Disabling Remote Assistance"
         SetReg -Path "HKLM:\System\CurrentControlSet\Control\Remote Assistance" -Name "fAllowToGetHelp" -Value "0"
 
-        Write-Output "Setting Control Panel view to small icons..." | TimeStamp
+        Write-ToString "Setting Control Panel view to small icons..."
         SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\ControlPanel" -Name "AllItemsIconView" -Value "1"
 
         Function EnableNumlock
         {
-            Write-Output "Enabling NumLock after startup..." | TimeStamp
+            Write-ToString "Enabling NumLock after startup..."
             If (!(Test-Path "HKU:"))
             {
                 New-PSDrive -Name HKU -PSProvider Registry -Root HKEY_USERS | Out-Null
@@ -741,7 +872,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 	
         Function Set-StartMenu
         {
-            Write-Output "Setting a default start menu for all users" | TimeStamp
+            Write-ToString "Setting a default start menu for all users"
             $startlayoutstr = @"
 <LayoutModificationTemplate Version="1" xmlns="http://schemas.microsoft.com/Start/2014/LayoutModification">
   <LayoutOptions StartTileGroupCellWidth="6" />
@@ -766,7 +897,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         Function Set-PhotoViewer
         {
-            Write-Output "Setting up Windows Photo Viewer" | TimeStamp
+            Write-ToString "Setting up Windows Photo Viewer"
             If (!(Test-Path "HKCR:")) 
             {
                 New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT | Out-Null
@@ -791,7 +922,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Set-PhotoViewer
 
     
-        Write-Output "Stopping and Disabling Diagnostics Tracking Service, WAP Push Service, Home Groups service, Xbox Services, and Other Unncessary Services" | TimeStamp
+        Write-ToString "Stopping and Disabling Diagnostics Tracking Service, WAP Push Service, Home Groups service, Xbox Services, and Other Unncessary Services"
         $Services = @()
         $Services += "Diagtrack"
         $Services += "Xblauthmanager"
@@ -801,7 +932,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         $Services += "dmwappushservice"
         Foreach ($Service In $Services) 
         {
-            Write-Output "Stopping Service $Service and setting startup to disabled" | TimeStamp
+            Write-ToString "Stopping Service $Service and setting startup to disabled"
             Get-Service $Service | Stop-Service -Passthru | Set-Service -Startuptype Disabled | Out-Null
         }
     
@@ -818,11 +949,11 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         $Tasks += "Microsoft\Windows\Feedback\Siuf\DmClientOnScenarioDownload" 
         ForEach ($Task in $Tasks)
         {
-            Write-Output "Disabing $Task" | TimeStamp
+            Write-ToString "Disabing $Task"
             Disable-ScheduledTask -TaskName $Task | Out-Null
         }
 
-        Write-Output "Disabling Xbox features..." | TimeStamp
+        Write-ToString "Disabling Xbox features..."
         Get-AppxPackage "Microsoft.XboxApp" | Remove-AppxPackage | Out-Null
         Get-AppxPackage "Microsoft.XboxIdentityProvider" | Remove-AppxPackage | Out-Null
         Get-AppxPackage "Microsoft.XboxSpeechToTextOverlay" | Remove-AppxPackage | Out-Null
@@ -835,7 +966,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         }
         New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" -Name "AllowGameDVR" -PropertyType DWord -Value 0 -Force | Out-Null
     
-        Write-Output "Removing Unwanted Default Apps" | TimeStamp
+        Write-ToString "Removing Unwanted Default Apps"
         $Packages = $a = Get-Appxpackage -Allusers | Where-Object { $_.Name -Notlike "*Store*" } |
             Where-Object { $_.Name -Notlike "*.NET*" } |
             Where-Object { $_.Name -Notlike "*Paint*" } |
@@ -846,7 +977,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     
         ForEach ($Package in $Packages)
         {
-            Write-Output "Uninstalling: $($Package.Name)" | TimeStamp
+            Write-ToString "Uninstalling: $($Package.Name)"
             Remove-Appxpackage -Package $($Package.Name) -Erroraction Silentlycontinue | Out-Null
         }
 
@@ -860,7 +991,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     
         ForEach ($PPackage in $PPackages)
         {
-            Write-Output "Uninstalling: $($PPackage.PackageName)" | TimeStamp
+            Write-ToString "Uninstalling: $($PPackage.PackageName)"
             Remove-Appxprovisionedpackage -PackageName $($PPackage.PackageName) -Online -Erroraction Silentlycontinue | Out-Null
         }
      
@@ -868,22 +999,20 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
     End
     {
-        Write-Output "Enabling System Restore and creating a checkpoint" | TimeStamp
+        Write-ToString "Enabling System Restore and creating a checkpoint"
         Enable-ComputerRestore -Drive $env:systemdrive -Verbose
         Checkpoint-Computer -Description "Default Config" -RestorePointType "MODIFY_SETTINGS" -Verbose
         
-        Write-Output "Setting Execution Policy Back To Correct Settings" | TimeStamp
-        Write-Output "Ignore the error" | TimeStamp
+        Write-ToString "Setting Execution Policy Back To Correct Settings"
+        Write-ToString "Ignore the error"
         Set-Executionpolicy Remotesigned -Force | Out-Null
 
         If ($EnabledLogging)
         {
-            Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
-            Write-Output "####################</Script>####################"
-            Stop-Transcript
+            Stop-Log
         }
         
-        Write-Output "Configuration Complete. Press any key to reboot the computer" | TimeStamp
+        Write-ToString "Configuration Complete. Press any key to reboot the computer"
         cmd /c "Pause"
         Restart-Computer  
     }
@@ -893,48 +1022,49 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 Below are features that used to work in prior versions that seem to throw errors now.
 Some are ones I never implemented anyways but you may want to:
 
-Write-Output "Disabling Let Apps Access Camera" | TimeStamp
+Write-ToString "Disabling Let Apps Access Camera"
 SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessCamera" -Value "2" 
 
-Write-Output "Disabling Delivery Optomization" | TimeStamp
+Write-ToString "Disabling Delivery Optomization"
 SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization" -Name "SystemSettingsDownloadMode" -Value "3"
 
-Write-Output "Disabling WifiSense" | TimeStamp
+Write-ToString "Disabling WifiSense"
 SetReg -Path "HKLM:\Software\Microsoft\PolicyManager\default\WiFi\AllowWiFiHotSpotReporting" -Name "Value" -Value "0"
 
-Write-Output "Disabling Sleep start menu and keyboard button..." | TimeStamp
+Write-ToString "Disabling Sleep start menu and keyboard button..."
 SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings" -Name "ShowSleepOption" -Value "0"
 cmd /c "powercfg /SETACVALUEINDEX SCHEME_CURRENT SUB_BUTTONS SBUTTONACTION 0"
 cmd /c "powercfg /SETDCVALUEINDEX SCHEME_CURRENT SUB_BUTTONS SBUTTONACTION 0"
 
-Write-Output "Disabling Hibernation" | TimeStamp
+Write-ToString "Disabling Hibernation"
 SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings" -Name "ShowHibernateOption" -Value "0"
 
-Write-Output "Allowing Lock Screen" | TimeStamp
+Write-ToString "Allowing Lock Screen"
 SetReg -Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Personalization" -Name "NoLockScreen" -Value "0"
 SetReg -Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Personalization" -Name "NoChangingLockScreen" -Value "0"
 
-Write-Output "Unpinning all items on taskbar - Irreversible!" | Timestamp
+Write-ToString "Unpinning all items on taskbar - Irreversible!"
 New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Taskband" -Name "Favorites" -PropertyType Binary -Value ([byte[]](0xFF)) -Force
 Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Taskband" -Name "FavoritesResolve" -ErrorAction SilentlyContinue
 
-Write-Output "Enabling built-in Adobe Flash in IE and Edge..." | Timestamp
+Write-ToString "Enabling built-in Adobe Flash in IE and Edge..."
 Remove-ItemProperty -Path "HKCU:\Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppContainer\Storage\microsoft.microsoftedge_8wekyb3d8bbwe\MicrosoftEdge\Addons" -Name "FlashPlayerEnabled" -ErrorAction SilentlyContinue
 Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Ext\Settings\{D27CDB6E-AE6D-11CF-96B8-444553540000}" -Name "Flags" -ErrorAction SilentlyContinue
 
-Disable all apps from store, left disabled by default			
+Write-ToString "Disable all apps from store, left disabled by default"		
 SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "DisableStoreApps" -Value "1" 
-Turn off Store, left disabled by default
+
+Write-ToString "Turn off Store, left disabled by default"
 SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "RemoveWindowsStore" -Value "1" 
 
-Write-Output "Setting current network profile to private" | TimeStamp
+Write-ToString "Setting current network profile to private"
 Set-NetConnectionProfile -NetworkCategory Private
 
-Write-Output "Removing memory dumping, event logging, and automatic restarts on operating system crashes" | TimeStamp
+Write-ToString "Removing memory dumping, event logging, and automatic restarts on operating system crashes"
 SetReg -Path "HKLM:\SYSTEM\CurrentControlSet\Control\CrashControl" -Name "LogEvent" -Value "0"
 SetReg -Path "HKLM:\SYSTEM\CurrentControlSet\Control\CrashControl" -Name "CrashDumpEnabled" -Value "0"
 
-Write-Output "Unpinning all Taskbar icons. Pin back the ones you want" | TimeStamp
+Write-ToString "Unpinning all Taskbar icons. Pin back the ones you want"
 Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Taskband" -Name "Favorites" -Type Binary -Value ([byte[]](255))
 Remove-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Taskband" -Name "FavoritesResolve" -ErrorAction SilentlyContinue
 

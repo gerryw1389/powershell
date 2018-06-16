@@ -39,48 +39,179 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     Begin
     {
         
+        <#######<Default Begin Block>#######>
+        # Set logging globally if it has any value in the parameter so helper functions can access it.
         If ($($Logfile.Length) -gt 1)
         {
-            $EnabledLogging = $True
+            $Global:EnabledLogging = $True
+            New-Variable -Scope Global -Name Logfile -Value $Logfile
         }
         Else
         {
-            $EnabledLogging = $False
+            $Global:EnabledLogging = $False
         }
         
-        Filter Timestamp
+        # If logging is enabled, create functions to start the log and stop the log.
+        If ($Global:EnabledLogging)
         {
-            "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $_"
+            Function Start-Log
+            {
+                <#
+                .Synopsis
+                Function to write the opening part of the logfile.
+                .Description
+                Function to write the opening part of the logfil.
+                It creates the directory if it doesn't exists and then the log file automatically.
+                It checks the size of the file if it already exists and clears it if it is over 10 MB.
+                If it exists, it creates a header. This function is best placed in the "Begin" block of a script.
+                .Notes
+                NOTE: The function requires the Write-ToString function.
+                2018-06-13: v1.1 Brought back from previous helper.psm1 files.
+                2017-10-19: v1.0 Initial function
+                #>
+                [CmdletBinding()]
+                Param
+                (
+                    [Parameter(Mandatory = $True)]
+                    [String]$Logfile
+                )
+                # Create parent path and logfile if it doesn't exist
+                $Regex = '([^\\]*)$'
+                $Logparent = $Logfile -Replace $Regex
+                If (!(Test-Path $Logparent))
+                {
+                    New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+                }
+                If (!(Test-Path $Logfile))
+                {
+                    New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+                }
+    
+                # Clear it if it is over 10 MB
+                [Double]$Sizemax = 10485760
+                $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+                If ($($Size.Sum -ge $SizeMax))
+                {
+                    Get-Childitem $Logfile | Clear-Content
+                    Write-Verbose "Logfile has been cleared due to size"
+                }
+                Else
+                {
+                    Write-Verbose "Logfile was less than 10 MB"   
+                }
+                # Start writing to logfile
+                Start-Transcript -Path $Logfile -Append 
+                Write-ToString "####################<Script>####################"
+                Write-ToString "Script Started on $env:COMPUTERNAME"
+            }
+            Start-Log
+
+            Function Stop-Log
+            {
+                <# 
+                    .Synopsis
+                    Function to write the closing part of the logfile.
+                    .Description
+                    Function to write the closing part of the logfile.
+                    This function is best placed in the "End" block of a script.
+                    .Notes
+                    NOTE: The function requires the Write-ToString function.
+                    2018-06-13: v1.1 Brought back from previous helper.psm1 files.
+                    2017-10-19: v1.0 Initial function 
+                    #>
+                [CmdletBinding()]
+                Param
+                (
+                    [Parameter(Mandatory = $True)]
+                    [String]$Logfile
+                )
+                Write-ToString "Script Completed on $env:COMPUTERNAME"
+                Write-ToString "####################</Script>####################"
+                Stop-Transcript
+            }
         }
 
-        If ($EnabledLogging)
+        # Declare a Write-ToString function that doesn't depend if logging is enabled or not.
+        Function Write-ToString
         {
-            # Create parent path and Logfile if it doesn't exist
-            $Regex = '([^\\]*)$'
-            $Logparent = $Logfile -Replace $Regex
-            If (!(Test-Path $Logparent))
+            <# 
+        .Synopsis
+        Function that takes an input object, converts it to text, and sends it to the screen, a logfile, or both depending on if logging is enabled.
+        .Description
+        Function that takes an input object, converts it to text, and sends it to the screen, a logfile, or both depending on if logging is enabled.
+        .Parameter InputObject
+        This can be any PSObject that will be converted to string.
+        .Parameter Color
+        The color in which to display the string on the screen.
+        Valid options are: Black, Blue, Cyan, DarkBlue, DarkCyan, DarkGray, DarkGreen, DarkMagenta, DarkRed, DarkYellow, Gray, Green, Magenta, 
+        Red, White, and Yellow.
+        .Example 
+        Write-ToString "Hello Hello"
+        If $Global:EnabledLogging is set to true, this will create an entry on the screen and the logfile at the same time. 
+        If $Global:EnabledLogging is set to false, it will just show up on the screen in default text colors.
+        .Example 
+        Write-ToString "Hello Hello" -Color "Yellow"
+        If $Global:EnabledLogging is set to true, this will create an entry on the screen colored yellow and to the logfile at the same time. 
+        If $Global:EnabledLogging is set to false, it will just show up on the screen colored yellow.
+        .Example 
+        Write-ToString (cmd /c "ipconfig /all") -Color "Yellow"
+        If $Global:EnabledLogging is set to true, this will create an entry on the screen colored yellow that shows the computer's IP information.
+        The same copy will be in the logfile. 
+        The whole point of converting to strings is this works best with tables and such that usually distort in logfiles.
+        If $Global:EnabledLogging is set to false, it will just show up on the screen colored yellow.
+        .Notes
+        2018-06-13: v1.0 Initial function
+        #>
+            Param
+            (
+                [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+                [PSObject]$InputObject,
+                
+                [Parameter(Mandatory = $False, Position = 1)]
+                [Validateset("Black", "Blue", "Cyan", "Darkblue", "Darkcyan", "Darkgray", "Darkgreen", "Darkmagenta", "Darkred", `
+                        "Darkyellow", "Gray", "Green", "Magenta", "Red", "White", "Yellow")]
+                [String]$Color,
+
+                [Parameter(Mandatory = $False, Position = 2)]
+                [String]$Logfile
+            )
+            
+            $ConvertToString = Out-String -InputObject $InputObject -Width 100
+            If ($Global:EnabledLogging)
             {
-                New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+                # If logging is enabled and a color is defined, send to screen and logfile.
+                If ($($Color.Length -gt 0))
+                {
+                    $previousForegroundColor = $Host.PrivateData.VerboseForegroundColor
+                    $Host.PrivateData.VerboseForegroundColor = $Color
+                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+                    Write-Output "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString" | Out-File -Encoding ASCII -FilePath $Logfile -Append
+                    $Host.PrivateData.VerboseForegroundColor = $previousForegroundColor
+                }
+                # If not, still send to logfile, but use default colors.
+                Else
+                {
+                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+                    Write-Output "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString" | Out-File -Encoding ASCII -FilePath $Logfile -Append
+                }
             }
-            If (!(Test-Path $Logfile))
+            # If logging isn't enabled, just send the string to the screen.
+            Else
             {
-                New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+                If ($($Color.Length -gt 0))
+                {
+                    $previousForegroundColor = $Host.PrivateData.VerboseForegroundColor
+                    $Host.PrivateData.VerboseForegroundColor = $Color
+                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+                    $Host.PrivateData.VerboseForegroundColor = $previousForegroundColor
+                }
+                Else
+                {
+                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+                }
             }
-    
-            # Clear it if it is over 10 MB
-            $Sizemax = 10
-            $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
-            $Sizemb = "{0:N2}" -F ($Size.Sum / 1mb) + "Mb"
-            If ($Sizemb -Ge $Sizemax)
-            {
-                Get-Childitem $Logfile | Clear-Content
-                Write-Verbose "Logfile has been cleared due to size"
-            }
-            # Start writing to Logfile
-            Start-Transcript -Path $Logfile -Append 
-            Write-Output "####################<Script>####################"
-            Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
         }
+        <#######</Default Begin Block>#######>
 
         # Initialize counters
         $i = 0
@@ -106,19 +237,19 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
                         $Progress.PercentComplete = ((($j++) / $ComputerName.count) * 100)
                         Write-Progress @Progress
                         
-                        Write-Output "Connecting to computer: $Computer" | Timestamp
+                        Write-ToString "Connecting to computer: $Computer"
                         # Get a session to the remote computer using WSMAN, if it fails - use DCOM instead
                         Try
                         {
                             $Options = New-CimSessionOption -Protocol WSMAN
                             $CimSession = New-CimSession -ComputerName $Computer -Credential $Credential -SessionOption $Options -ErrorAction Stop
-                            Write-Output "Using protocol: WSMAN" | Timestamp 
+                            Write-ToString "Using protocol: WSMAN" 
                         }
                         Catch
                         {
                             $Options = New-CimSessionOption -Protocol DCOM
                             $CimSession = New-CimSession -ComputerName $Computer -Credential $Credential -SessionOption $Options
-                            Write-Output "Using protocol: DCOM" | Timestamp 
+                            Write-ToString "Using protocol: DCOM" 
                         }
                         
                         $computerSystem = Get-CimInstance CIM_ComputerSystem -CimSession $CimSession
@@ -143,7 +274,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
                     }
                     Else
                     {
-                        Write-Output "Remote computer was not online." | Timestamp
+                        Write-ToString "Remote computer was not online."
                         $ComputerObject = [Ordered]@{}
                         $ComputerObject.ComputerName = $computer
                         $ComputerObject.LastReboot = "Unable to ping. Make sure the computer is turned on and ICMP inbound ports are opened."
@@ -161,7 +292,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
                 }
                 Else
                 {
-                    Write-Output "Computer name was not in a usable format" | Timestamp
+                    Write-ToString "Computer name was not in a usable format"
                     $ComputerObject.ComputerName = "Value is null. Make sure computer name is not blank"
                     $ComputerObject.LastReboot = "$Null"
                     $ComputerObject.OperatingSystem = "$null"
@@ -185,9 +316,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         $ComputerObjects
         If ($EnabledLogging)
         {
-            Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
-            Write-Output "####################</Script>####################"
-            Stop-Transcript
+            Stop-Log
         }
     }
 }

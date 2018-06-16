@@ -36,58 +36,188 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
    
     Begin
     {
-
+        <#######<Default Begin Block>#######>
+        # Set logging globally if it has any value in the parameter so helper functions can access it.
         If ($($Logfile.Length) -gt 1)
         {
-            $EnabledLogging = $True
+            $Global:EnabledLogging = $True
+            New-Variable -Scope Global -Name Logfile -Value $Logfile
         }
         Else
         {
-            $EnabledLogging = $False
+            $Global:EnabledLogging = $False
         }
-    
-        Filter Timestamp
+        
+        # If logging is enabled, create functions to start the log and stop the log.
+        If ($Global:EnabledLogging)
         {
-            "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $_"
+            Function Start-Log
+            {
+                <#
+                .Synopsis
+                Function to write the opening part of the logfile.
+                .Description
+                Function to write the opening part of the logfil.
+                It creates the directory if it doesn't exists and then the log file automatically.
+                It checks the size of the file if it already exists and clears it if it is over 10 MB.
+                If it exists, it creates a header. This function is best placed in the "Begin" block of a script.
+                .Notes
+                NOTE: The function requires the Write-ToString function.
+                2018-06-13: v1.1 Brought back from previous helper.psm1 files.
+                2017-10-19: v1.0 Initial function
+                #>
+                [CmdletBinding()]
+                Param
+                (
+                    [Parameter(Mandatory = $True)]
+                    [String]$Logfile
+                )
+                # Create parent path and logfile if it doesn't exist
+                $Regex = '([^\\]*)$'
+                $Logparent = $Logfile -Replace $Regex
+                If (!(Test-Path $Logparent))
+                {
+                    New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+                }
+                If (!(Test-Path $Logfile))
+                {
+                    New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+                }
+    
+                # Clear it if it is over 10 MB
+                [Double]$Sizemax = 10485760
+                $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+                If ($($Size.Sum -ge $SizeMax))
+                {
+                    Get-Childitem $Logfile | Clear-Content
+                    Write-Verbose "Logfile has been cleared due to size"
+                }
+                Else
+                {
+                    Write-Verbose "Logfile was less than 10 MB"   
+                }
+                # Start writing to logfile
+                Start-Transcript -Path $Logfile -Append 
+                Write-ToString "####################<Script>####################"
+                Write-ToString "Script Started on $env:COMPUTERNAME"
+            }
+            Start-Log
+
+            Function Stop-Log
+            {
+                <# 
+                    .Synopsis
+                    Function to write the closing part of the logfile.
+                    .Description
+                    Function to write the closing part of the logfile.
+                    This function is best placed in the "End" block of a script.
+                    .Notes
+                    NOTE: The function requires the Write-ToString function.
+                    2018-06-13: v1.1 Brought back from previous helper.psm1 files.
+                    2017-10-19: v1.0 Initial function 
+                    #>
+                [CmdletBinding()]
+                Param
+                (
+                    [Parameter(Mandatory = $True)]
+                    [String]$Logfile
+                )
+                Write-ToString "Script Completed on $env:COMPUTERNAME"
+                Write-ToString "####################</Script>####################"
+                Stop-Transcript
+            }
         }
 
-        If ($EnabledLogging)
+        # Declare a Write-ToString function that doesn't depend if logging is enabled or not.
+        Function Write-ToString
         {
-            # Create parent path and logfile if it doesn't exist
-            $Regex = '([^\\]*)$'
-            $Logparent = $Logfile -Replace $Regex
-            If (!(Test-Path $Logparent))
-            {
-                New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
-            }
-            If (!(Test-Path $Logfile))
-            {
-                New-Item -Itemtype File -Path $Logfile -Force | Out-Null
-            }
-    
-            # Clear it if it is over 10 MB
-            $Sizemax = 10
-            $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
-            $Sizemb = "{0:N2}" -F ($Size.Sum / 1mb) + "Mb"
-            If ($Sizemb -Ge $Sizemax)
-            {
-                Get-Childitem $Logfile | Clear-Content
-                Write-Verbose "Logfile has been cleared due to size"
-            }
-            # Start writing to logfile
-            Start-Transcript -Path $Logfile -Append 
-            Write-Output "####################<Script>####################"
-            Write-Output "Script Started on $env:COMPUTERNAME" | TimeStamp
-        }
+            <# 
+        .Synopsis
+        Function that takes an input object, converts it to text, and sends it to the screen, a logfile, or both depending on if logging is enabled.
+        .Description
+        Function that takes an input object, converts it to text, and sends it to the screen, a logfile, or both depending on if logging is enabled.
+        .Parameter InputObject
+        This can be any PSObject that will be converted to string.
+        .Parameter Color
+        The color in which to display the string on the screen.
+        Valid options are: Black, Blue, Cyan, DarkBlue, DarkCyan, DarkGray, DarkGreen, DarkMagenta, DarkRed, DarkYellow, Gray, Green, Magenta, 
+        Red, White, and Yellow.
+        .Example 
+        Write-ToString "Hello Hello"
+        If $Global:EnabledLogging is set to true, this will create an entry on the screen and the logfile at the same time. 
+        If $Global:EnabledLogging is set to false, it will just show up on the screen in default text colors.
+        .Example 
+        Write-ToString "Hello Hello" -Color "Yellow"
+        If $Global:EnabledLogging is set to true, this will create an entry on the screen colored yellow and to the logfile at the same time. 
+        If $Global:EnabledLogging is set to false, it will just show up on the screen colored yellow.
+        .Example 
+        Write-ToString (cmd /c "ipconfig /all") -Color "Yellow"
+        If $Global:EnabledLogging is set to true, this will create an entry on the screen colored yellow that shows the computer's IP information.
+        The same copy will be in the logfile. 
+        The whole point of converting to strings is this works best with tables and such that usually distort in logfiles.
+        If $Global:EnabledLogging is set to false, it will just show up on the screen colored yellow.
+        .Notes
+        2018-06-13: v1.0 Initial function
+        #>
+            Param
+            (
+                [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+                [PSObject]$InputObject,
+                
+                [Parameter(Mandatory = $False, Position = 1)]
+                [Validateset("Black", "Blue", "Cyan", "Darkblue", "Darkcyan", "Darkgray", "Darkgreen", "Darkmagenta", "Darkred", `
+                        "Darkyellow", "Gray", "Green", "Magenta", "Red", "White", "Yellow")]
+                [String]$Color,
 
-       # Load the required module(s) 
+                [Parameter(Mandatory = $False, Position = 2)]
+                [String]$Logfile
+            )
+            
+            $ConvertToString = Out-String -InputObject $InputObject -Width 100
+            If ($Global:EnabledLogging)
+            {
+                # If logging is enabled and a color is defined, send to screen and logfile.
+                If ($($Color.Length -gt 0))
+                {
+                    $previousForegroundColor = $Host.PrivateData.VerboseForegroundColor
+                    $Host.PrivateData.VerboseForegroundColor = $Color
+                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+                    Write-Output "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString" | Out-File -Encoding ASCII -FilePath $Logfile -Append
+                    $Host.PrivateData.VerboseForegroundColor = $previousForegroundColor
+                }
+                # If not, still send to logfile, but use default colors.
+                Else
+                {
+                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+                    Write-Output "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString" | Out-File -Encoding ASCII -FilePath $Logfile -Append
+                }
+            }
+            # If logging isn't enabled, just send the string to the screen.
+            Else
+            {
+                If ($($Color.Length -gt 0))
+                {
+                    $previousForegroundColor = $Host.PrivateData.VerboseForegroundColor
+                    $Host.PrivateData.VerboseForegroundColor = $Color
+                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+                    $Host.PrivateData.VerboseForegroundColor = $previousForegroundColor
+                }
+                Else
+                {
+                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+                }
+            }
+        }
+        <#######</Default Begin Block>#######>
+
+        # Load the required module(s) 
         Try
         {
             Import-Module "$Psscriptroot\..\Private\helpers.psm1" -ErrorAction Stop
         }
         Catch
         {
-            Write-Output "Module 'Helpers' was not found, stopping script" | Timestamp
+            Write-ToString "Module 'Helpers' was not found, stopping script"
             Exit 1
         }
 
@@ -95,7 +225,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     
     Process
     {    
-        Write-Output "Creating a lockscreen task. This will lock the screen every 5 minutes of inactivity" | TimeStamp
+        Write-ToString "Creating a lockscreen task. This will lock the screen every 5 minutes of inactivity"
         $TaskName = "LockScreen"
         $service = New-Object -ComObject("Schedule.Service")
         $service.Connect()
@@ -117,7 +247,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         $user = "$username"
         $rootFolder.RegisterTaskDefinition($TaskName, $taskdef, 6, $user, $null, 3) | Out-Null
 
-        Write-Output "Adding OpenPSHere to right click menu" | TimeStamp
+        Write-ToString "Adding OpenPSHere to right click menu"
         $menu = 'OpenPSHere'
         $command = "$PSHOME\powershell.exe -NoExit -NoProfile -Command ""Set-Location '%V'"""
 
@@ -128,10 +258,10 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
                 Set-ItemProperty -Name HasLUAShield -Value ''
         }
 
-        Write-Output "Enabling SMB 1.0 protocol for connections to legacy NAS devices" | TimeStamp
+        Write-ToString "Enabling SMB 1.0 protocol for connections to legacy NAS devices"
         Set-SmbServerConfiguration -EnableSMB1Protocol $true -Force
 
-        Write-Output "Adjusting visual effects for appearance..." | TimeStamp
+        Write-ToString "Adjusting visual effects for appearance..."
         SetReg -Path "HKCU:\Control Panel\Desktop" -Name "DragFullWindows" -PropertyType "String" -Value "1"
         SetReg -Path "HKCU:\Control Panel\Desktop" -Name "MenuShowDelay" -PropertyType "String" -Value "400"
         SetReg -Path "HKCU:\Control Panel\Desktop" -Name "UserPreferencesMask" -PropertyType "Binary" -Value "9e,7e,06,80,12,00,00,00"
@@ -143,25 +273,25 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name "VisualFXSetting" -Value "3"
         SetReg -Path "HKCU:\Software\Microsoft\Windows\DWM" -Name "EnableAeroPeek" -Value "1"
     
-        Write-Output "Disabling Windows Update automatic restart" | TimeStamp
+        Write-ToString "Disabling Windows Update automatic restart"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "NoAutoRebootWithLoggedOnUsers" -Value "1"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "AUPowerManagement" -Value "0"
 
-        Write-Output "Stopping and disabling Home Groups services" | TimeStamp
+        Write-ToString "Stopping and disabling Home Groups services"
         Stop-Service "HomeGroupListener" -WarningAction SilentlyContinue
         Set-Service "HomeGroupListener" -StartupType Disabled
         Stop-Service "HomeGroupProvider" -WarningAction SilentlyContinue
         Set-Service "HomeGroupProvider" -StartupType Disabled
 
-        Write-Output "Starting and enabling Windows Search indexing service" | TimeStamp
+        Write-ToString "Starting and enabling Windows Search indexing service"
         Set-Service "WSearch" -StartupType Automatic
         SetReg -Path "HKLM:\SYSTEM\CurrentControlSet\Services\WSearch" -Name "DelayedAutoStart" -Value "1"
         Start-Service "WSearch" -WarningAction SilentlyContinue
 
-        Write-Output "Enabling Fast Startup" | TimeStamp
+        Write-ToString "Enabling Fast Startup"
         SetReg -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -Value "1"
 
-        Write-Output "Disabling Action Center" | TimeStamp
+        Write-ToString "Disabling Action Center"
         If (!(Test-Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer"))
         {
             New-Item -Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer" | Out-Null
@@ -169,13 +299,13 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         SetReg -Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "DisableNotificationCenter" -Value "1"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications" -Name "ToastEnabled" -Value "0"
 
-        Write-Output "Disabling Sticky keys prompt" | TimeStamp
+        Write-ToString "Disabling Sticky keys prompt"
         SetReg -Path "HKCU:\Control Panel\Accessibility\StickyKeys" -Name "Flags" -PropertyType "String" -Value "506"
 
-        Write-Output "Disabling file delete confirmation dialog" | TimeStamp
+        Write-ToString "Disabling file delete confirmation dialog"
         Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "ConfirmFileDelete" -ErrorAction SilentlyContinue
     
-        Write-Output "Showing Task Manager details" | TimeStamp
+        Write-ToString "Showing Task Manager details"
         If (!(Test-Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager"))
         {
             New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager" -Force | Out-Null
@@ -194,10 +324,10 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         $preferences.Preferences[28] = 0
         Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager" -Name "Preferences" -Type Binary -Value $preferences.Preferences
     
-        Write-Output "Showing file operations details" | TimeStamp
+        Write-ToString "Showing file operations details"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\OperationStatusManager" -Name "EnthusiastMode" -Value "1"
     
-        Write-Output "Disabling and Uninstalling OneDrive" | TimeStamp
+        Write-ToString "Disabling and Uninstalling OneDrive"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive" -Name "DisableFileSyncNGSC" -Value "1"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive" -Name "DisableFileSync" -Value "1"
         Stop-Process -Name OneDrive -ErrorAction SilentlyContinue
@@ -218,14 +348,14 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Remove-Item -Path "HKCR:\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Recurse -ErrorAction SilentlyContinue
         Remove-Item -Path "HKCR:\Wow6432Node\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Recurse -ErrorAction SilentlyContinue
     
-        Write-Output "Removing Onedrive From Explorer" | TimeStamp
+        Write-ToString "Removing Onedrive From Explorer"
         SetReg -Path "HKCR:\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Name "System.IsPinnedToNameSpaceTree" -Value "0"
         SetReg -Path "HKCR:\Wow6432Node\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Name "System.IsPinnedToNameSpaceTree" -Value "0"
 
-        Write-Output "Removing OneDrive Startup Entry" | TimeStamp
+        Write-ToString "Removing OneDrive Startup Entry"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" -Name "OneDrive" -PropertyType "Binary" -Value "03,00,00,00,cd,9a,36,38,64,0b,d2,01"
   
-        Write-Output "Installing Linux Subsystem" | TimeStamp
+        Write-ToString "Installing Linux Subsystem"
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" -Name "AllowDevelopmentWithoutDevLicense" -Value "1"
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" -Name "AllowAllTrustedApps" -Value "1"
         Enable-WindowsOptionalFeature -Online -FeatureName "Microsoft-Windows-Subsystem-Linux" -NoRestart -WarningAction SilentlyContinue | Out-Null
@@ -233,7 +363,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         <#
     # I used to disable features, but I honestly don't think it's worth the hassle anymore.
 
-Write-Output "Removing system bloat" | TimeStamp
+Write-ToString "Removing system bloat"
     $Features = Get-WindowsOptionalFeature -Online | Where-Object `
     {
     $_.FeatureName -notlike '*Net*FX*' `
@@ -251,7 +381,7 @@ Write-Output "Removing system bloat" | TimeStamp
     If ($Feature.State -eq 'Enabled')
     {
     $Feature | Disable-WindowsOptionalFeature -Online -Remove -NoRestart > $null 3> $null
-Write-Output "Disabling Feature: $($Feature.FeatureName)" | TimeStamp
+Write-ToString "Disabling Feature: $($Feature.FeatureName)"
     }    
     }
     #> 
@@ -261,9 +391,7 @@ Write-Output "Disabling Feature: $($Feature.FeatureName)" | TimeStamp
     {
         If ($EnabledLogging)
         {
-            Write-Output "Script Completed on $env:COMPUTERNAME" | TimeStamp
-            Write-Output "####################</Script>####################"
-            Stop-Transcript
+            Stop-Log
         }
     }
 

@@ -22,9 +22,9 @@ Function Prompt
 
 New-PSDrive -Name c -PSProvider Filesystem -Root /home
 
-Write-Output "====================="
-Write-Output "Custom profile loaded"
-Write-Output "====================="
+Write-ToString "====================="
+Write-ToString "Custom profile loaded"
+Write-ToString "====================="
 
 Start-Sleep -Seconds 1
 Clear-Host

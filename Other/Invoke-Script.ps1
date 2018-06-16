@@ -60,7 +60,7 @@ What the script does is:
 PowerShell.exe -NoProfile ^
 -Command "& {Start-Process PowerShell.exe -ArgumentList '-NoProfile -ExecutionPolicy Bypass -Command ". "%~dpn0.ps1"; Set-Template "' -Verb RunAs}"
 '@
-        Write-Output $String | Out-File -LiteralPath $Batch -Encoding ASCII
+        Write-ToString $String | Out-File -LiteralPath $Batch -Encoding ASCII
 
         Start-Process $Batch -Verb Runas
     }

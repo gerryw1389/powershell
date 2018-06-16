@@ -21,7 +21,7 @@ Function Test-IsAdmin
     $Identity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
     $Principal = new-object System.Security.Principal.WindowsPrincipal(${Identity})
     $IsAdmin = $Principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
-    Write-Output -InputObject $IsAdmin;
+    Write-ToString -InputObject $IsAdmin;
 }
 
 Function Set-RegEntry
@@ -97,7 +97,7 @@ Function Set-RegEntry
         $RegValue = Out-String -InputObject $Value
         If ($CurrentRegValue -eq $RegValue)
         {
-            Write-Output "Key already exists: $Path\$Name with value: $Value" | TimeStamp
+            Write-ToString "Key already exists: $Path\$Name with value: $Value" | TimeStamp
         }
         Else
         {
@@ -107,7 +107,7 @@ Function Set-RegEntry
             }
             $Hex = $Value.Split(',') | ForEach-Object -Process { "0x$_" }
             New-ItemProperty -Path $Path -Name $Name -Value ([byte[]]$Hex) -PropertyType $PropertyType -Force | Out-Null
-            Write-Output "Added key: $Path\$Name to value: $Value" | TimeStamp
+            Write-ToString "Added key: $Path\$Name to value: $Value" | TimeStamp
 
         }
         
@@ -126,7 +126,7 @@ Function Set-RegEntry
         $RegValue = Out-String -InputObject $Value
         If ($CurrentRegValue -eq $RegValue)
         {
-            Write-Output "Key already exists: $Path\$Name with value: $Value" | TimeStamp
+            Write-ToString "Key already exists: $Path\$Name with value: $Value" | TimeStamp
         }
         Else
         {
@@ -135,7 +135,7 @@ Function Set-RegEntry
                 New-Item -Path $Path -Force | Out-Null
             }
             New-Itemproperty -Path $Path -Name $Name -Value $Value -Propertytype $PropertyType -Force | Out-Null
-            Write-Output "Added key: $Path\$Name to value: $Value" | TimeStamp
+            Write-ToString "Added key: $Path\$Name to value: $Value" | TimeStamp
 
         }
     }
