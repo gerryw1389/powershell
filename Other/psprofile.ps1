@@ -19,7 +19,7 @@ Try
 }
 Catch
 {
-    Write-ToString "Module gw* was not found, moving on."
+    Write-Output "Module gw* was not found, moving on."
 }
 
 Try
@@ -29,7 +29,7 @@ Try
 }
 Catch
 {
-    Write-ToString "Module gw* was not found, moving on."
+    Write-Output "Module gw* was not found, moving on."
 }
 
 # Helper
@@ -46,7 +46,7 @@ Function Test-IsAdmin
     $Identity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
     $Principal = new-object System.Security.Principal.WindowsPrincipal(${Identity})
     $IsAdmin = $Principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
-    Write-ToString -InputObject $IsAdmin;
+    Write-Output -InputObject $IsAdmin;
 }
 
 Function Set-Console

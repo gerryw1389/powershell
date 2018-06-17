@@ -18,7 +18,7 @@ This function will copy all folders in this script's folder to a users $PSModule
 
         Function Stop-Script 
         {
-            Write-ToString "Press Any Key To Continue ..."
+            Write-Output "Press Any Key To Continue ..."
             $X = $Host.Ui.Rawui.Readkey("Noecho,Includekeydown")
         }
 		
