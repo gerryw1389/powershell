@@ -10,51 +10,55 @@
 Function Convert-ScriptToExe
 {
     <#
-.Synopsis
-This function is used to convert scripts into executables.
-.Description
-This function is used to convert scripts into executables. All credit goes to the original author, I just used a wrapper.
-.Parameter inputFile
-PowerShell script that you want to convert to EXE.
-.Parameter outputFile
-Destination EXE file name.
-.Parameter verbose
-Output verbose informations - if any.
-.Parameter debug, 
-generate debug informations for output file.
-.Parameter x86
-Compile for 32-bit runtime only.
-.Parameter x64
-Compile for 64-bit runtime only.
-.Parameter runtime20
-This switch forces PS2EXE to create a config file for the generated EXE that contains the supported .NET Framework versions setting for .NET Framework 4.0 for PowerShell 2.0.
-.Parameter runtime30
-This switch forces PS2EXE to create a config file for the generated EXE that contains the supported .NET Framework versions setting for .NET Framework 4.0 for PowerShell 3.0.
-.Parameter runtime40
-This switch forces PS2EXE to create a config file for the generated EXE that contains the supported .NET Framework versions setting for .NET Framework 4.0 for PowerShell 4.0.
-.Parameter lcid
-Location ID for the compiled EXE. Current user culture if not specified.
-.Parameter sta
-Single Thread Apartment Mode.
-.Parameter mta
-Multi Thread Apartment Mode.
-.Parameter noConsole
-The resulting EXE file starts without a console window just like a Windows Forms app.
-.Parameter nested
-.Parameter iconFile
-Specifies an icon file.
-.Parameter Logfile
-Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
-NOTE: If you wish to delete the logfile, I have updated my scripts to where they should still run fine with no logging.
-.Example
-Convert-ScriptToExe -Inputfile "c:\scripts\test\script2.ps1" -Outputfile "c:\scripts\test\script2.exe" -Verbose -x86
-Converts script to an x86 executable file.
-.Notes
-2017-09-08: v1.0 Initial script 
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
-
-#>
+	.Synopsis
+	This function is used to convert scripts into executables.
+	.Description
+	This function is used to convert scripts into executables. All credit goes to the original author, I just used a wrapper.
+	.Parameter inputFile
+	PowerShell script that you want to convert to EXE.
+	.Parameter outputFile
+	Destination EXE file name.
+	.Parameter verbose
+	Output verbose informations - if any.
+	.Parameter debug, 
+	generate debug informations for output file.
+	.Parameter x86
+	Compile for 32-bit runtime only.
+	.Parameter x64
+	Compile for 64-bit runtime only.
+	.Parameter runtime20
+	This switch forces PS2EXE to create a config file for the generated EXE that contains the supported .NET Framework versions setting for .NET Framework 4.0 for PowerShell 2.0.
+	.Parameter runtime30
+	This switch forces PS2EXE to create a config file for the generated EXE that contains the supported .NET Framework versions setting for .NET Framework 4.0 for PowerShell 3.0.
+	.Parameter runtime40
+	This switch forces PS2EXE to create a config file for the generated EXE that contains the supported .NET Framework versions setting for .NET Framework 4.0 for PowerShell 4.0.
+	.Parameter lcid
+	Location ID for the compiled EXE. Current user culture if not specified.
+	.Parameter sta
+	Single Thread Apartment Mode.
+	.Parameter mta
+	Multi Thread Apartment Mode.
+	.Parameter noConsole
+	The resulting EXE file starts without a console window just like a Windows Forms app.
+	.Parameter nested
+	.Parameter iconFile
+	Specifies an icon file.
+	.Parameter Logfile
+	Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
+	NOTE: If you wish to delete the logfile, I have updated my scripts to where they should still run fine with no logging.
+	.Example
+	Convert-ScriptToExe -Inputfile "c:\scripts\test\script2.ps1" -Outputfile "c:\scripts\test\script2.exe" -Verbose -x86
+	Converts script to an x86 executable file.
+	.Notes
+	Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
+	Main code usually starts around line 185ish.
+	If -Verbose is not passed (Default) and logfile is not defined, don't show messages on the screen and don't transcript the session.
+	If -Verbose is not passed (Default) and logfile is defined, enable verbose for them and transcript the session.
+	If -Verbose is passed and logfile is defined, show messages on the screen and transcript the session.
+	If -Verbose is passed and logfile is not defined, show messages on the screen, but don't transcript the session.
+	2018-06-17: v1.1 Updated template.
+	2017-09-08: v1.0 Initial script 
+	#>
 
     Param
     (
@@ -81,98 +85,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {
         
         <#######<Default Begin Block>#######>
-        # Set logging globally if it has any value in the parameter so helper functions can access it.
-        If ($($Logfile.Length) -gt 1)
-        {
-            $Global:EnabledLogging = $True
-            New-Variable -Scope Global -Name Logfile -Value $Logfile
-        }
-        Else
-        {
-            $Global:EnabledLogging = $False
-        }
-        
-        # If logging is enabled, create functions to start the log and stop the log.
-        If ($Global:EnabledLogging)
-        {
-            Function Start-Log
-            {
-                <#
-                .Synopsis
-                Function to write the opening part of the logfile.
-                .Description
-                Function to write the opening part of the logfil.
-                It creates the directory if it doesn't exists and then the log file automatically.
-                It checks the size of the file if it already exists and clears it if it is over 10 MB.
-                If it exists, it creates a header. This function is best placed in the "Begin" block of a script.
-                .Notes
-                NOTE: The function requires the Write-ToString function.
-                2018-06-13: v1.1 Brought back from previous helper.psm1 files.
-                2017-10-19: v1.0 Initial function
-                #>
-                [CmdletBinding()]
-                Param
-                (
-                    [Parameter(Mandatory = $True)]
-                    [String]$Logfile
-                )
-                # Create parent path and logfile if it doesn't exist
-                $Regex = '([^\\]*)$'
-                $Logparent = $Logfile -Replace $Regex
-                If (!(Test-Path $Logparent))
-                {
-                    New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
-                }
-                If (!(Test-Path $Logfile))
-                {
-                    New-Item -Itemtype File -Path $Logfile -Force | Out-Null
-                }
-    
-                # Clear it if it is over 10 MB
-                [Double]$Sizemax = 10485760
-                $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
-                If ($($Size.Sum -ge $SizeMax))
-                {
-                    Get-Childitem $Logfile | Clear-Content
-                    Write-Verbose "Logfile has been cleared due to size"
-                }
-                Else
-                {
-                    Write-Verbose "Logfile was less than 10 MB"   
-                }
-                # Start writing to logfile
-                Start-Transcript -Path $Logfile -Append 
-                Write-ToString "####################<Script>####################"
-                Write-ToString "Script Started on $env:COMPUTERNAME"
-            }
-            Start-Log
-
-            Function Stop-Log
-            {
-                <# 
-                    .Synopsis
-                    Function to write the closing part of the logfile.
-                    .Description
-                    Function to write the closing part of the logfile.
-                    This function is best placed in the "End" block of a script.
-                    .Notes
-                    NOTE: The function requires the Write-ToString function.
-                    2018-06-13: v1.1 Brought back from previous helper.psm1 files.
-                    2017-10-19: v1.0 Initial function 
-                    #>
-                [CmdletBinding()]
-                Param
-                (
-                    [Parameter(Mandatory = $True)]
-                    [String]$Logfile
-                )
-                Write-ToString "Script Completed on $env:COMPUTERNAME"
-                Write-ToString "####################</Script>####################"
-                Stop-Transcript
-            }
-        }
-
-        # Declare a Write-ToString function that doesn't depend if logging is enabled or not.
         Function Write-ToString
         {
             <# 
@@ -211,46 +123,108 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
                 [Parameter(Mandatory = $False, Position = 1)]
                 [Validateset("Black", "Blue", "Cyan", "Darkblue", "Darkcyan", "Darkgray", "Darkgreen", "Darkmagenta", "Darkred", `
                         "Darkyellow", "Gray", "Green", "Magenta", "Red", "White", "Yellow")]
-                [String]$Color,
-
-                [Parameter(Mandatory = $False, Position = 2)]
-                [String]$Logfile
+                [String]$Color
             )
             
             $ConvertToString = Out-String -InputObject $InputObject -Width 100
-            If ($Global:EnabledLogging)
+            
+            If ($($Color.Length -gt 0))
             {
-                # If logging is enabled and a color is defined, send to screen and logfile.
-                If ($($Color.Length -gt 0))
-                {
-                    $previousForegroundColor = $Host.PrivateData.VerboseForegroundColor
-                    $Host.PrivateData.VerboseForegroundColor = $Color
-                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
-                    Write-Output "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString" | Out-File -Encoding ASCII -FilePath $Logfile -Append
-                    $Host.PrivateData.VerboseForegroundColor = $previousForegroundColor
-                }
-                # If not, still send to logfile, but use default colors.
-                Else
-                {
-                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
-                    Write-Output "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString" | Out-File -Encoding ASCII -FilePath $Logfile -Append
-                }
+                $previousForegroundColor = $Host.PrivateData.VerboseForegroundColor
+                $Host.PrivateData.VerboseForegroundColor = $Color
+                Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+                $Host.PrivateData.VerboseForegroundColor = $previousForegroundColor
             }
-            # If logging isn't enabled, just send the string to the screen.
             Else
             {
-                If ($($Color.Length -gt 0))
+                Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+            }
+            
+        }
+        If ($($Logfile.Length) -gt 1)
+        {
+            $Global:EnabledLogging = $True 
+            Set-Variable -Name Logfile -Value $Logfile -Scope Global
+            $VerbosePreference = "Continue"
+            Function Start-Log
+            {
+                <#
+                .Synopsis
+                Function to write the opening part of the logfile.
+                .Description
+                Function to write the opening part of the logfil.
+                It creates the directory if it doesn't exists and then the log file automatically.
+                It checks the size of the file if it already exists and clears it if it is over 10 MB.
+                If it exists, it creates a header. This function is best placed in the "Begin" block of a script.
+                .Notes
+                NOTE: The function requires the Write-ToString function.
+                2018-06-13: v1.1 Brought back from previous helper.psm1 files.
+                2017-10-19: v1.0 Initial function
+                #>
+                [CmdletBinding()]
+                Param
+                (
+                    [Parameter(Mandatory = $True, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+                    [String]$Logfile
+                )
+                # Create parent path and logfile if it doesn't exist
+                $Regex = '([^\\]*)$'
+                $Logparent = $Logfile -Replace $Regex
+                If (!(Test-Path $Logparent))
                 {
-                    $previousForegroundColor = $Host.PrivateData.VerboseForegroundColor
-                    $Host.PrivateData.VerboseForegroundColor = $Color
-                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
-                    $Host.PrivateData.VerboseForegroundColor = $previousForegroundColor
+                    New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+                }
+                If (!(Test-Path $Logfile))
+                {
+                    New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+                }
+    
+                # Clear it if it is over 10 MB
+                [Double]$Sizemax = 10485760
+                $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+                If ($($Size.Sum -ge $SizeMax))
+                {
+                    Get-Childitem $Logfile | Clear-Content
+                    Write-ToString "Logfile has been cleared due to size"
                 }
                 Else
                 {
-                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+                    Write-ToString "Logfile was less than 10 MB"   
                 }
+                # Start writing to logfile
+                Start-Transcript -Path $Logfile -Append 
+                Write-ToString "####################<Script>####################"
+                Write-ToString "Script Started on $env:COMPUTERNAME"
             }
+            Start-Log -Logfile $Logfile -Verbose
+
+            Function Stop-Log
+            {
+                <# 
+                    .Synopsis
+                    Function to write the closing part of the logfile.
+                    .Description
+                    Function to write the closing part of the logfile.
+                    This function is best placed in the "End" block of a script.
+                    .Notes
+                    NOTE: The function requires the Write-ToString function.
+                    2018-06-13: v1.1 Brought back from previous helper.psm1 files.
+                    2017-10-19: v1.0 Initial function 
+                    #>
+                [CmdletBinding()]
+                Param
+                (
+                    [Parameter(Mandatory = $True, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+                    [String]$Logfile
+                )
+                Write-ToString "Script Completed on $env:COMPUTERNAME"
+                Write-ToString "####################</Script>####################"
+                Stop-Transcript
+            }
+        }
+        Else
+        {
+            $Global:EnabledLogging = $False
         }
         <#######</Default Begin Block>#######>
     }
@@ -1700,9 +1674,14 @@ $forms
 
     End
     {
-        If ($EnabledLogging)
+        If ($Global:EnabledLogging)
         {
-            Stop-Log
+            Stop-Log -Logfile $Logfile
+        }
+        Else
+        {
+            $Date = $(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt")
+            Write-Output "Function completed at $Date"
         }
     }
 

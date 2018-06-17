@@ -9,29 +9,30 @@
 
 Function Invoke-CustomMenu
 {
-
     <#
-.Synopsis
-Invokes a menu driven application that can run pre-defined Powershell commands and scripts.
-.Description
-Invokes a menu driven application that can run pre-defined Powershell commands and scripts.
-.Parameter Logfile
-Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
-NOTE: If you wish to delete the logfile, I have updated my scripts to where they should still run fine with no logging.
-.Example
-Invoke-CustomMenu
-Invokes a menu driven application that can run pre-defined Powershell commands and scripts.
-.Example
-"Pc2", "Pc1" | Invoke-CustomMenu
-Invokes a menu driven application that can run pre-defined Powershell commands and scripts.
-.Notes
-2017-09-08: v1.0 Initial script 
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
-
-#>
-
-
+    .Synopsis
+    Invokes a menu driven application that can run pre-defined Powershell commands and scripts.
+    .Description
+    Invokes a menu driven application that can run pre-defined Powershell commands and scripts.
+    .Parameter Logfile
+    Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
+    NOTE: If you wish to delete the logfile, I have updated my scripts to where they should still run fine with no logging.
+    .Example
+    Invoke-CustomMenu
+    Invokes a menu driven application that can run pre-defined Powershell commands and scripts.
+    .Example
+    "Pc2", "Pc1" | Invoke-CustomMenu
+    Invokes a menu driven application that can run pre-defined Powershell commands and scripts.
+    .Notes
+    Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
+    Main code usually starts around line 185ish.
+    If -Verbose is not passed (Default) and logfile is not defined, don't show messages on the screen and don't transcript the session.
+    If -Verbose is not passed (Default) and logfile is defined, enable verbose for them and transcript the session.
+    If -Verbose is passed and logfile is defined, show messages on the screen and transcript the session.
+    If -Verbose is passed and logfile is not defined, show messages on the screen, but don't transcript the session.
+    2018-06-17: v1.1 Updated template.
+    2017-09-08: v1.0 Initial script 
+    #>
     [Cmdletbinding()]
 
     Param
@@ -42,98 +43,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     Begin
     {
         <#######<Default Begin Block>#######>
-        # Set logging globally if it has any value in the parameter so helper functions can access it.
-        If ($($Logfile.Length) -gt 1)
-        {
-            $Global:EnabledLogging = $True
-            New-Variable -Scope Global -Name Logfile -Value $Logfile
-        }
-        Else
-        {
-            $Global:EnabledLogging = $False
-        }
-        
-        # If logging is enabled, create functions to start the log and stop the log.
-        If ($Global:EnabledLogging)
-        {
-            Function Start-Log
-            {
-                <#
-                .Synopsis
-                Function to write the opening part of the logfile.
-                .Description
-                Function to write the opening part of the logfil.
-                It creates the directory if it doesn't exists and then the log file automatically.
-                It checks the size of the file if it already exists and clears it if it is over 10 MB.
-                If it exists, it creates a header. This function is best placed in the "Begin" block of a script.
-                .Notes
-                NOTE: The function requires the Write-ToString function.
-                2018-06-13: v1.1 Brought back from previous helper.psm1 files.
-                2017-10-19: v1.0 Initial function
-                #>
-                [CmdletBinding()]
-                Param
-                (
-                    [Parameter(Mandatory = $True)]
-                    [String]$Logfile
-                )
-                # Create parent path and logfile if it doesn't exist
-                $Regex = '([^\\]*)$'
-                $Logparent = $Logfile -Replace $Regex
-                If (!(Test-Path $Logparent))
-                {
-                    New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
-                }
-                If (!(Test-Path $Logfile))
-                {
-                    New-Item -Itemtype File -Path $Logfile -Force | Out-Null
-                }
-    
-                # Clear it if it is over 10 MB
-                [Double]$Sizemax = 10485760
-                $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
-                If ($($Size.Sum -ge $SizeMax))
-                {
-                    Get-Childitem $Logfile | Clear-Content
-                    Write-Verbose "Logfile has been cleared due to size"
-                }
-                Else
-                {
-                    Write-Verbose "Logfile was less than 10 MB"   
-                }
-                # Start writing to logfile
-                Start-Transcript -Path $Logfile -Append 
-                Write-ToString "####################<Script>####################"
-                Write-ToString "Script Started on $env:COMPUTERNAME"
-            }
-            Start-Log
-
-            Function Stop-Log
-            {
-                <# 
-                    .Synopsis
-                    Function to write the closing part of the logfile.
-                    .Description
-                    Function to write the closing part of the logfile.
-                    This function is best placed in the "End" block of a script.
-                    .Notes
-                    NOTE: The function requires the Write-ToString function.
-                    2018-06-13: v1.1 Brought back from previous helper.psm1 files.
-                    2017-10-19: v1.0 Initial function 
-                    #>
-                [CmdletBinding()]
-                Param
-                (
-                    [Parameter(Mandatory = $True)]
-                    [String]$Logfile
-                )
-                Write-ToString "Script Completed on $env:COMPUTERNAME"
-                Write-ToString "####################</Script>####################"
-                Stop-Transcript
-            }
-        }
-
-        # Declare a Write-ToString function that doesn't depend if logging is enabled or not.
         Function Write-ToString
         {
             <# 
@@ -172,46 +81,108 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
                 [Parameter(Mandatory = $False, Position = 1)]
                 [Validateset("Black", "Blue", "Cyan", "Darkblue", "Darkcyan", "Darkgray", "Darkgreen", "Darkmagenta", "Darkred", `
                         "Darkyellow", "Gray", "Green", "Magenta", "Red", "White", "Yellow")]
-                [String]$Color,
-
-                [Parameter(Mandatory = $False, Position = 2)]
-                [String]$Logfile
+                [String]$Color
             )
             
             $ConvertToString = Out-String -InputObject $InputObject -Width 100
-            If ($Global:EnabledLogging)
+            
+            If ($($Color.Length -gt 0))
             {
-                # If logging is enabled and a color is defined, send to screen and logfile.
-                If ($($Color.Length -gt 0))
-                {
-                    $previousForegroundColor = $Host.PrivateData.VerboseForegroundColor
-                    $Host.PrivateData.VerboseForegroundColor = $Color
-                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
-                    Write-Output "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString" | Out-File -Encoding ASCII -FilePath $Logfile -Append
-                    $Host.PrivateData.VerboseForegroundColor = $previousForegroundColor
-                }
-                # If not, still send to logfile, but use default colors.
-                Else
-                {
-                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
-                    Write-Output "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString" | Out-File -Encoding ASCII -FilePath $Logfile -Append
-                }
+                $previousForegroundColor = $Host.PrivateData.VerboseForegroundColor
+                $Host.PrivateData.VerboseForegroundColor = $Color
+                Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+                $Host.PrivateData.VerboseForegroundColor = $previousForegroundColor
             }
-            # If logging isn't enabled, just send the string to the screen.
             Else
             {
-                If ($($Color.Length -gt 0))
+                Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+            }
+            
+        }
+        If ($($Logfile.Length) -gt 1)
+        {
+            $Global:EnabledLogging = $True 
+            Set-Variable -Name Logfile -Value $Logfile -Scope Global
+            $VerbosePreference = "Continue"
+            Function Start-Log
+            {
+                <#
+                .Synopsis
+                Function to write the opening part of the logfile.
+                .Description
+                Function to write the opening part of the logfil.
+                It creates the directory if it doesn't exists and then the log file automatically.
+                It checks the size of the file if it already exists and clears it if it is over 10 MB.
+                If it exists, it creates a header. This function is best placed in the "Begin" block of a script.
+                .Notes
+                NOTE: The function requires the Write-ToString function.
+                2018-06-13: v1.1 Brought back from previous helper.psm1 files.
+                2017-10-19: v1.0 Initial function
+                #>
+                [CmdletBinding()]
+                Param
+                (
+                    [Parameter(Mandatory = $True, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+                    [String]$Logfile
+                )
+                # Create parent path and logfile if it doesn't exist
+                $Regex = '([^\\]*)$'
+                $Logparent = $Logfile -Replace $Regex
+                If (!(Test-Path $Logparent))
                 {
-                    $previousForegroundColor = $Host.PrivateData.VerboseForegroundColor
-                    $Host.PrivateData.VerboseForegroundColor = $Color
-                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
-                    $Host.PrivateData.VerboseForegroundColor = $previousForegroundColor
+                    New-Item -Itemtype Directory -Path $Logparent -Force | Out-Null
+                }
+                If (!(Test-Path $Logfile))
+                {
+                    New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+                }
+    
+                # Clear it if it is over 10 MB
+                [Double]$Sizemax = 10485760
+                $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+                If ($($Size.Sum -ge $SizeMax))
+                {
+                    Get-Childitem $Logfile | Clear-Content
+                    Write-ToString "Logfile has been cleared due to size"
                 }
                 Else
                 {
-                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+                    Write-ToString "Logfile was less than 10 MB"   
                 }
+                # Start writing to logfile
+                Start-Transcript -Path $Logfile -Append 
+                Write-ToString "####################<Script>####################"
+                Write-ToString "Script Started on $env:COMPUTERNAME"
             }
+            Start-Log -Logfile $Logfile -Verbose
+
+            Function Stop-Log
+            {
+                <# 
+                    .Synopsis
+                    Function to write the closing part of the logfile.
+                    .Description
+                    Function to write the closing part of the logfile.
+                    This function is best placed in the "End" block of a script.
+                    .Notes
+                    NOTE: The function requires the Write-ToString function.
+                    2018-06-13: v1.1 Brought back from previous helper.psm1 files.
+                    2017-10-19: v1.0 Initial function 
+                    #>
+                [CmdletBinding()]
+                Param
+                (
+                    [Parameter(Mandatory = $True, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+                    [String]$Logfile
+                )
+                Write-ToString "Script Completed on $env:COMPUTERNAME"
+                Write-ToString "####################</Script>####################"
+                Stop-Transcript
+            }
+        }
+        Else
+        {
+            $Global:EnabledLogging = $False
         }
         <#######</Default Begin Block>#######>
     
@@ -292,7 +263,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             $count = 1
 
             ### Loop through the array
-            $strArray | % {
+            $strArray | ForEach-Object {
                 if ($count -eq 1 -and $blnStartsWithColor -eq $false)
                 {
                     Write-Host $_ -NoNewline
@@ -398,31 +369,31 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Function New-MenuItem
         {
             <#
-    .SYNOPSIS
-    Creates a Menu Item used with New-Menu
-    .DESCRIPTION
-    Use this in conjunction with New-Menu and Show-Menu
-    to generate a menu system for your scripts
-    .PARAMETER Name
-    Mandatory. Text that shows up in the menu for this menu item.
-    .PARAMETER Command
-    Mandatory. Command the menu item executes when selected
-    Important Note: Define your command in single quotes '' and not double quotes ""
-    .INPUTS
-    [string]$Name
-    [string]$Command
-    .OUTPUTS
-    [PSObject] Name, Command
-    .NOTES
-    Version:    1.0
-    Author:     Brian Clark
-    Creation Date:  03/23/2017
-    Purpose/Change: Initial function development
-    .EXAMPLE
-    $item = New-MenuItem -Name "List All Services" -Command 'Get-Service'
-    $item_end = New-MenuItem -Name "Exit Menu" -Command 'End-Menu'
-    $item_switch_menu = New-MenuItem -Name "View Menu 2" -Command 'Show-Menu $menu2'
-    #>
+            .SYNOPSIS
+            Creates a Menu Item used with New-Menu
+            .DESCRIPTION
+            Use this in conjunction with New-Menu and Show-Menu
+            to generate a menu system for your scripts
+            .PARAMETER Name
+            Mandatory. Text that shows up in the menu for this menu item.
+            .PARAMETER Command
+            Mandatory. Command the menu item executes when selected
+            Important Note: Define your command in single quotes '' and not double quotes ""
+            .INPUTS
+            [string]$Name
+            [string]$Command
+            .OUTPUTS
+            [PSObject] Name, Command
+            .NOTES
+            Version:    1.0
+            Author:     Brian Clark
+            Creation Date:  03/23/2017
+            Purpose/Change: Initial function development
+            .EXAMPLE
+            $item = New-MenuItem -Name "List All Services" -Command 'Get-Service'
+            $item_end = New-MenuItem -Name "Exit Menu" -Command 'End-Menu'
+            $item_switch_menu = New-MenuItem -Name "View Menu 2" -Command 'Show-Menu $menu2'
+            #>
             [CmdletBinding()]
             Param ([Parameter(Mandatory = $true)][string]$Name,
                 [Parameter(Mandatory = $true)]$Command)
@@ -434,7 +405,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
             ### Ensure cmdlet/function is defined if so create and return the menu item
             if ($cmd -eq "End-Menu" -or (Get-Command $cmd -ErrorAction SilentlyContinue))
             {
-                $menu_item = New-Object -TypeName PSObject | Select Name, Command
+                $menu_item = New-Object -TypeName PSObject | Select-Object Name, Command
                 $menu_item.Name = $Name
                 $menu_item.Command = $Command
                 return $menu_item
@@ -449,39 +420,39 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Function New-Menu
         {
             <#
-    .SYNOPSIS
-    Creates a looping menu system
-    .DESCRIPTION
-    Use this in conjunction with New-MenuItem and Show-Menu
-    to generate a menu system for your scripts
-    .PARAMETER Name
-    Mandatory. Text that shows up as the menu title in the menu screen
-    .PARAMETER MenuItems[]
-    Mandatory. Array of Menu Items created via the New-MenuItem cmdlet
-    .INPUTS
-    [string]$Name
-    [PSObject]$MenuItems[]
-    .OUTPUTS
-    [PSObject] Name, MenuItems[]
-    .NOTES
-    Version:    1.0
-    Author:     Brian Clark
-    Creation Date:  03/23/2017
-    Purpose/Change: Initial function development
-    .EXAMPLE
-    $main_menu = New-Menu -Name 'Main Menu' -MenuItems @(
-        (New-MenuItem -Name 'Get Services' -Command 'Get-Service'),
-        (New-MenuItem -Name 'Get ChildItems' -Command 'Get-ChildItem'),
-        (New-MenuItem -Name 'GoTo Sub Menu' -Command 'Show-Menu -Menu $sub_menu'),
-        (New-MenuItem -Name 'Exit' -Command "End-Menu")
-    )
-    #>
+            .SYNOPSIS
+            Creates a looping menu system
+            .DESCRIPTION
+            Use this in conjunction with New-MenuItem and Show-Menu
+            to generate a menu system for your scripts
+            .PARAMETER Name
+            Mandatory. Text that shows up as the menu title in the menu screen
+            .PARAMETER MenuItems[]
+            Mandatory. Array of Menu Items created via the New-MenuItem cmdlet
+            .INPUTS
+            [string]$Name
+            [PSObject]$MenuItems[]
+            .OUTPUTS
+            [PSObject] Name, MenuItems[]
+            .NOTES
+            Version:    1.0
+            Author:     Brian Clark
+            Creation Date:  03/23/2017
+            Purpose/Change: Initial function development
+            .EXAMPLE
+            $main_menu = New-Menu -Name 'Main Menu' -MenuItems @(
+                (New-MenuItem -Name 'Get Services' -Command 'Get-Service'),
+                (New-MenuItem -Name 'Get ChildItems' -Command 'Get-ChildItem'),
+                (New-MenuItem -Name 'GoTo Sub Menu' -Command 'Show-Menu -Menu $sub_menu'),
+                (New-MenuItem -Name 'Exit' -Command "End-Menu")
+            )
+            #>
             [CmdletBinding()]
             Param ([Parameter(Mandatory = $true)][string]$Name,
                 [Parameter(Mandatory = $true)][PSObject[]]$MenuItems)
 
             ### Create Menu PSObject
-            $menu = New-Object -TypeName PSObject | Select Name, MenuItems
+            $menu = New-Object -TypeName PSObject | Select-Object Name, MenuItems
             $menu.Name = $Name
             $menu.MenuItems = @()
 
@@ -505,7 +476,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
                 {
                     $blnMenuExitsToMenu = $true 
                 }
-                $menu_item = New-Object -TypeName PSObject | Select Number, Name, Command
+                $menu_item = New-Object -TypeName PSObject | Select-Object Number, Name, Command
                 $menu_item.Number = $i
                 $menu_item.Name = $MenuItems[$i].Name
                 $menu_item.Command = $MenuItems[$i].Command
@@ -523,26 +494,26 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Function Show-Menu
         {
             <#
-    .SYNOPSIS
-    Starts the menu display/selection loop for a menu created with New-Menu
-    .DESCRIPTION
-    Use this in conjunction with New-Menu and New-MenuItem
-    to generate a menu system for your scripts
-    .PARAMETER Menu
-    Mandatory. A menu created with the New-Menu cmdlet
-    .INPUTS
-    [PSObject]$Menu
-    .OUTPUTS
-    Starts the Menu Display Loop
-    This function returns nothing
-    .NOTES
-    Version:    1.0
-    Author:     Brian Clark
-    Creation Date:  03/23/2017
-    Purpose/Change: Initial function development
-    .EXAMPLE
-    Show-Menu $MyMenu
-    #>
+            .SYNOPSIS
+            Starts the menu display/selection loop for a menu created with New-Menu
+            .DESCRIPTION
+            Use this in conjunction with New-Menu and New-MenuItem
+            to generate a menu system for your scripts
+            .PARAMETER Menu
+            Mandatory. A menu created with the New-Menu cmdlet
+            .INPUTS
+            [PSObject]$Menu
+            .OUTPUTS
+            Starts the Menu Display Loop
+            This function returns nothing
+            .NOTES
+            Version:    1.0
+            Author:     Brian Clark
+            Creation Date:  03/23/2017
+            Purpose/Change: Initial function development
+            .EXAMPLE
+            Show-Menu $MyMenu
+            #>
             [CmdletBinding()]
             Param ([Parameter(Mandatory = $true)][PSObject]$Menu)
 
@@ -645,9 +616,14 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
     End
     {
-        If ($EnabledLogging)
+        If ($Global:EnabledLogging)
         {
-            Stop-Log
+            Stop-Log -Logfile $Logfile
+        }
+        Else
+        {
+            $Date = $(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt")
+            Write-Output "Function completed at $Date"
         }
     }
  
