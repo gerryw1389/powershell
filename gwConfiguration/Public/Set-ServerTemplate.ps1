@@ -955,27 +955,27 @@ Function Set-ServerTemplate
 
     
         Write-ToString "Stopping and Disabling Diagnostics Tracking Service, WAP Push Service, Home Groups service, Xbox Services, and Other Unncessary Services"
-        $Services = @()
-        $Services += "Diagtrack"
-        $Services += "Xblauthmanager"
-        $Services += "Xblgamesave"
-        $Services += "Trkwks"
-        $Services += "dmwappushservice"
+        $Services = [System.Collections.ArrayList]@()
+        [Void]$Services.Add("Diagtrack")
+        [Void]$Services.Add("Xblauthmanager")
+        [Void]$Services.Add("Xblgamesave")
+        [Void]$Services.Add("Trkwks")
+        [Void]$Services.Add("dmwappushservice")
         Foreach ($Service In $Services) 
         {
             Write-ToString "Stopping Service $Service and setting startup to disabled"
             Get-Service $Service | Stop-Service -Passthru | Set-Service -Startuptype Disabled | Out-Null
         }
     
-        $Tasks = @()
-        $Tasks += "Microsoft\Windows\Application Experience\Microsoft Compatibility Appraiser"
-        $Tasks += "Microsoft\Windows\Application Experience\ProgramDataUpdater"
-        $Tasks += "Microsoft\Windows\Autochk\Proxy"
-        $Tasks += "Microsoft\Windows\Customer Experience Improvement Program\Consolidator"
-        $Tasks += "Microsoft\Windows\Customer Experience Improvement Program\UsbCeip"
-        $Tasks += "Microsoft\Windows\DiskDiagnostic\Microsoft-Windows-DiskDiagnosticDataCollector"
-        $Tasks += "Microsoft\Windows\NetTrace\GatherNetworkInfo"  
-        $Tasks += "Microsoft\Windows\Windows Error Reporting\QueueReporting"
+        $Tasks = [System.Collections.ArrayList]@()
+        [Void]$Tasks.Add("Microsoft\Windows\Application Experience\Microsoft Compatibility Appraiser")
+        [Void]$Tasks.Add("Microsoft\Windows\Application Experience\ProgramDataUpdater")
+        [Void]$Tasks.Add("Microsoft\Windows\Autochk\Proxy")
+        [Void]$Tasks.Add("Microsoft\Windows\Customer Experience Improvement Program\Consolidator")
+        [Void]$Tasks.Add("Microsoft\Windows\Customer Experience Improvement Program\UsbCeip")
+        [Void]$Tasks.Add("Microsoft\Windows\DiskDiagnostic\Microsoft-Windows-DiskDiagnosticDataCollector")
+        [Void]$Tasks.Add("Microsoft\Windows\NetTrace\GatherNetworkInfo")
+        [Void]$Tasks.Add("Microsoft\Windows\Windows Error Reporting\QueueReporting")
         ForEach ($Task in $Tasks)
         {
             Write-ToString "Disabing $Task"
@@ -985,17 +985,17 @@ Function Set-ServerTemplate
         Function Get-ScheduledTasksStatus
         {
 
-            $Tasks = @()
-            $Tasks += "Microsoft Compatibility Appraiser"
-            $Tasks += "ProgramDataUpdater"
-            $Tasks += "Proxy"
-            $Tasks += "Consolidator"
-            $Tasks += "UsbCeip"
-            $Tasks += "Microsoft-Windows-DiskDiagnosticDataCollector"
-            $Tasks += "GatherNetworkInfo"  
-            $Tasks += "QueueReporting"
-            $Tasks += "DmClient"
-            $Tasks += "DmClientOnScenarioDownload" 
+            $Tasks = [System.Collections.ArrayList]@()
+            [Void]$Tasks.Add("Microsoft Compatibility Appraiser")
+            [Void]$Tasks.Add("ProgramDataUpdater")
+            [Void]$Tasks.Add("Proxy")
+            [Void]$Tasks.Add("Consolidator")
+            [Void]$Tasks.Add("UsbCeip")
+            [Void]$Tasks.Add("Microsoft-Windows-DiskDiagnosticDataCollector")
+            [Void]$Tasks.Add("GatherNetworkInfo")  
+            [Void]$Tasks.Add("QueueReporting")
+            [Void]$Tasks.Add("DmClient")
+            [Void]$Tasks.Add("DmClientOnScenarioDownload") 
             ForEach ($Task in $Tasks)
             {
                 Get-ScheduledTask -TaskName $Task
