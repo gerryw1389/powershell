@@ -195,7 +195,7 @@ Function Get-ComputerInfo
         # Initialize counters
         $i = 0
         $j = 0
-        $ComputerObjects = @()
+        $ComputerObjects = [System.Collections.ArrayList]@()
 
         
     }
@@ -250,7 +250,7 @@ Function Get-ComputerInfo
                         $ComputerObject.CurrentUser = $computerSystem.UserName
                         
 
-                        $ComputerObjects += $ComputerObject
+                        [Void]$ComputerObjects.Add($ComputerObject)
                         
                         Remove-CimSession -CimSession $CimSession 
                     }
@@ -269,7 +269,7 @@ Function Get-ComputerInfo
                         $ComputerObject.TotalDiskSpace = "$null"
                         $ComputerObject.CurrentUser = "$null"
 
-                        $ComputerObjects += $ComputerObject                     
+                        [Void]$ComputerObjects.Add($ComputerObject)                     
                     }
                 
                 
@@ -288,7 +288,7 @@ Function Get-ComputerInfo
                     $ComputerObject.TotalDiskSpace = "$null"
                     $ComputerObject.CurrentUser = "$null"
 
-                    $ComputerObjects += $ComputerObject   
+                    [Void]$ComputerObjects.Add($ComputerObject)   
                 }
             }
         }

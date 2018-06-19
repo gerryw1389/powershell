@@ -201,7 +201,7 @@ Function Get-VideoFileInfo
     {    
         $Objshell = New-Object -Comobject Shell.Application 
 
-        $Filelist = @() 
+        $Filelist = [System.Collections.ArrayList]@()
         $Attrlist = @{} 
         $Details = ( "Frame Height", "Frame Width", "Frame Rate" ) 
  
@@ -227,7 +227,7 @@ Function Get-VideoFileInfo
                         Add-Member -Inputobject $File -Membertype Noteproperty -Name $("A_" + $Attr) -Value $Attrvalue 
                     }  
                 } 
-                $Filelist += $File 
+                [Void]$Filelist.Add($File) 
                 $Filelist.Count 
             } 
         } 

@@ -13,6 +13,15 @@ Function Send-CreditBalance
     Function to send credit card balance by text message daily based on email alerts from bank.
     .Description
     Function to send credit card balance by text message daily based on email alerts from bank.
+    See https://www.gerrywilliams.net/2018/02/ps-send-me-my-credit-balance/ to see an overview.
+    Line(s) you will need to edit:
+    194 - Client ID - See https://www.gerrywilliams.net/2018/01/using-powershell-to-access-gmail-api/
+    195 - Secret - See https://www.gerrywilliams.net/2018/01/using-powershell-to-access-gmail-api/
+    197 - Refresh Token - See https://www.gerrywilliams.net/2018/01/using-powershell-to-access-gmail-api/
+    224 - If your bank includes the last four of your Credit Card, enter it here.
+    234 - 254 - This is parsing the email exactly because my bank always sends a template with just the amount that changes, YMMV.
+    464 - Edit your gmail credentials
+    473-517 - Edit your email / phone info. I'm not breaking this down because it's pretty self explanatory.
     .Parameter Logfile
     Specifies A Logfile. Default is $PSScriptRoot\..\Logs\Scriptname.Log and is created for every script automatically.
     NOTE: If you wish to delete the logfile, I have updated my scripts to where they should still run fine with no logging.
@@ -295,104 +304,153 @@ Function Send-CreditBalance
 
         # Round up one because there is always a whole number and some change
         $DaysTilPayday = ($Span.Days + 1).ToString()
+
+        <#
+        My new version just pays the bills on the fifth each month so the paydays are irrelevant:
+        # Get the number of days until the fifth
+        [int]$ThisFifth = ((Get-Date -Day 5).Date - (Get-Date)).Days
+        [int]$NextFifth = ((Get-Date -Day 5).AddMonths(1).Date - (Get-Date)).Days
+        If ($ThisFifth -ge 0)
+        {
+            # Prevent it from sending 1 on the actual fifth
+            If ($ThisFifth -eq 0)
+            {
+                $DaysTilPayday = 0
+            }
+            Else
+            {
+                $DaysTilPayday = $($ThisFifth + 1)
+            }
+        }
+        Else
+        {
+            $DaysTilPayday = $($NextFifth + 1 )
+        }
+        
+        #>
     
         # Section 3: Add in recurring bills. See https://www.gerrywilliams.net/2018/02/ps-send-me-my-credit-balance/ for a description.
         $DayofMonth = $($(Get-Date).Day)
-
+        $UpcomingBills = [System.Collections.ArrayList]@()
+        # Credit cards paid off monthly on the fifth and next bill isn't until 6th, so no charge here.
         If ($DayofMonth -eq 5)
         {
+            # For this one exception, don't worry about the parsed email amount, it doesn't matter as it will be paid today.
+            $Results = 0
+            # This means the budget will always be $979 on the fifth ($2400 - $1421 for bills below)
             $ResultsWithBills = $Results + 1421
-            $UpcomingBills = '6 - Groceries - $200<br>'
-            $UpcomingBills += '13 - Groceries - $200<br>'
-            $UpcomingBills += '14 - Hulu - $13<br>'
-            $UpcomingBills += '16 - Water - $90<br>'
-            $UpcomingBills += '16 - ATT Cell - $45<br>'
-            $UpcomingBills += '20 - Groceries - $200<br>'
-            $UpcomingBills += '24 - Netflix - $11<br>'
-            $UpcomingBills += '27 - Electric - $166<br>'
-            $UpcomingBills += '27 - Plex - $15<br>'
-            $UpcomingBills += '27 - Groceries - $200<br>'
-            $UpcomingBills += '28 - Auto Ins. - $176<br>'
-            $UpcomingBills += '1 - Internet - $105<br>'
+            [void]$UpcomingBills.Add('6 - Groceries - $200<br>')
+            [void]$UpcomingBills.Add('13 - Groceries - $200<br>')
+            [void]$UpcomingBills.Add('14 - Hulu - $13<br>')
+            [void]$UpcomingBills.Add('16 - Water - $90<br>')
+            [void]$UpcomingBills.Add('16 - ATT Cell - $45<br>')
+            [void]$UpcomingBills.Add('20 - Groceries - $200<br>')
+            [void]$UpcomingBills.Add('24 - Netflix - $11<br>')
+            [void]$UpcomingBills.Add('27 - Electric - $166<br>')
+            [void]$UpcomingBills.Add('27 - Plex - $15<br>')
+            [void]$UpcomingBills.Add('27 - Groceries - $200<br>')
+            [void]$UpcomingBills.Add('28 - Auto Ins. - $176<br>')
+            [void]$UpcomingBills.Add('1 - Internet - $105<br>')
+            [void]$UpcomingBills.Add('Total: 1421<br>')
         }
 
         ElseIf (($DayofMonth -ge 6) -And ($DayofMonth -le 12))
         {
             $ResultsWithBills = $Results + 1221
-            $UpcomingBills = '13 - Groceries - $200<br>'
-            $UpcomingBills += '14 - Hulu - $13<br>'
-            $UpcomingBills += '16 - Water - $90<br>'
-            $UpcomingBills += '16 - ATT Cell - $45<br>'
-            $UpcomingBills += '20 - Groceries - $200<br>'
-            $UpcomingBills += '24 - Netflix - $11<br>'
-            $UpcomingBills += '27 - Electric - $166<br>'
-            $UpcomingBills += '27 - Plex - $15<br>'
-            $UpcomingBills += '27 - Groceries - $200<br>'
-            $UpcomingBills += '28 - Auto Ins. - $176<br>'
-            $UpcomingBills += '1 - Internet - $105<br>'
+            [void]$UpcomingBills.Add('13 - Groceries - $200<br>')
+            [void]$UpcomingBills.Add('14 - Hulu - $13<br>')
+            [void]$UpcomingBills.Add('16 - Water - $90<br>')
+            [void]$UpcomingBills.Add('16 - ATT Cell - $45<br>')
+            [void]$UpcomingBills.Add('20 - Groceries - $200<br>')
+            [void]$UpcomingBills.Add('24 - Netflix - $11<br>')
+            [void]$UpcomingBills.Add('27 - Electric - $166<br>')
+            [void]$UpcomingBills.Add('27 - Plex - $15<br>')
+            [void]$UpcomingBills.Add('27 - Groceries - $200<br>')
+            [void]$UpcomingBills.Add('28 - Auto Ins. - $176<br>')
+            [void]$UpcomingBills.Add('1 - Internet - $105<br>')
+            [void]$UpcomingBills.Add('Total: 1221<br>')
         }
-
+        
         ElseIf ($DayofMonth -eq 13)
         {
             $ResultsWithBills = $Results + 1021
-            $UpcomingBills = '14 - Hulu - $13<br>'
-            $UpcomingBills += '16 - Water - $90<br>'
-            $UpcomingBills += '16 - ATT Cell - $45<br>'
-            $UpcomingBills += '20 - Groceries - $200<br>'
-            $UpcomingBills += '24 - Netflix - $11<br>'
-            $UpcomingBills += '27 - Electric - $166<br>'
-            $UpcomingBills += '27 - Plex - $15<br>'
-            $UpcomingBills += '27 - Groceries - $200<br>'
-            $UpcomingBills += '28 - Auto Ins. - $176<br>'
-            $UpcomingBills += '1 - Internet - $105<br>'
+            [void]$UpcomingBills.Add('14 - Hulu - $13<br>')
+            [void]$UpcomingBills.Add('16 - Water - $90<br>')
+            [void]$UpcomingBills.Add('16 - ATT Cell - $45<br>')
+            [void]$UpcomingBills.Add('20 - Groceries - $200<br>')
+            [void]$UpcomingBills.Add('24 - Netflix - $11<br>')
+            [void]$UpcomingBills.Add('27 - Electric - $166<br>')
+            [void]$UpcomingBills.Add('27 - Plex - $15<br>')
+            [void]$UpcomingBills.Add('27 - Groceries - $200<br>')
+            [void]$UpcomingBills.Add('28 - Auto Ins. - $176<br>')
+            [void]$UpcomingBills.Add('1 - Internet - $105<br>')
+            [void]$UpcomingBills.Add('Total: 1021<br>')
         }
-
+        
         ElseIf (($DayofMonth -ge 14) -And ($DayofMonth -le 15))
         {
             $ResultsWithBills = $Results + 1008
-            $UpcomingBills = '16 - Water - $90<br>'
-            $UpcomingBills += '16 - ATT Cell - $45<br>'
-            $UpcomingBills += '20 - Groceries - $200<br>'
-            $UpcomingBills += '24 - Netflix - $11<br>'
-            $UpcomingBills += '27 - Electric - $166<br>'
-            $UpcomingBills += '27 - Plex - $15<br>'
-            $UpcomingBills += '27 - Groceries - $200<br>'
-            $UpcomingBills += '28 - Auto Ins. - $176<br>'
-            $UpcomingBills += '1 - Internet - $105<br>'
+            [void]$UpcomingBills.Add('16 - Water - $90<br>')
+            [void]$UpcomingBills.Add('16 - ATT Cell - $45<br>')
+            [void]$UpcomingBills.Add('20 - Groceries - $200<br>')
+            [void]$UpcomingBills.Add('24 - Netflix - $11<br>')
+            [void]$UpcomingBills.Add('27 - Electric - $166<br>')
+            [void]$UpcomingBills.Add('27 - Plex - $15<br>')
+            [void]$UpcomingBills.Add('27 - Groceries - $200<br>')
+            [void]$UpcomingBills.Add('28 - Auto Ins. - $176<br>')
+            [void]$UpcomingBills.Add('1 - Internet - $105<br>')
+            [void]$UpcomingBills.Add('Total: 1008<br>')
+        }
+
+        ElseIf (($DayofMonth -ge 16) -And ($DayofMonth -le 19))
+        {
+            $ResultsWithBills = $Results + 873
+            [void]$UpcomingBills.Add('20 - Groceries - $200<br>')
+            [void]$UpcomingBills.Add('24 - Netflix - $11<br>')
+            [void]$UpcomingBills.Add('27 - Electric - $166<br>')
+            [void]$UpcomingBills.Add('27 - Plex - $15<br>')
+            [void]$UpcomingBills.Add('27 - Groceries - $200<br>')
+            [void]$UpcomingBills.Add('28 - Auto Ins. - $176<br>')
+            [void]$UpcomingBills.Add('1 - Internet - $105<br>')
+            [void]$UpcomingBills.Add('Total: 873<br>')
         }
 
         ElseIf (($DayofMonth -ge 20) -And ($DayofMonth -le 23))
         {
             $ResultsWithBills = $Results + 673
-            $UpcomingBills = '24 - Netflix - $11<br>'
-            $UpcomingBills += '27 - Electric - $166<br>'
-            $UpcomingBills += '27 - Plex - $15<br>'
-            $UpcomingBills += '27 - Groceries - $200<br>'
-            $UpcomingBills += '28 - Auto Ins. - $176<br>'
-            $UpcomingBills += '1 - Internet - $105<br>'
+            [void]$UpcomingBills.Add('24 - Netflix - $11<br>')
+            [void]$UpcomingBills.Add('27 - Electric - $166<br>')
+            [void]$UpcomingBills.Add('27 - Plex - $15<br>')
+            [void]$UpcomingBills.Add('27 - Groceries - $200<br>')
+            [void]$UpcomingBills.Add('28 - Auto Ins. - $176<br>')
+            [void]$UpcomingBills.Add('1 - Internet - $105<br>')
+            [void]$UpcomingBills.Add('Total: 673<br>')
         }
 
         ElseIf (($DayofMonth -ge 24) -And ($DayofMonth -le 26))
         {
             $ResultsWithBills = $Results + 662
-            $UpcomingBills = '27 - Electric - $166<br>'
-            $UpcomingBills += '27 - Plex - $15<br>'
-            $UpcomingBills += '27 - Groceries - $200<br>'
-            $UpcomingBills += '28 - Auto Ins. - $176<br>'
-            $UpcomingBills += '1 - Internet - $105<br>'
+            [void]$UpcomingBills.Add('27 - Electric - $166<br>')
+            [void]$UpcomingBills.Add('27 - Plex - $15<br>')
+            [void]$UpcomingBills.Add('27 - Groceries - $200<br>')
+            [void]$UpcomingBills.Add('28 - Auto Ins. - $176<br>')
+            [void]$UpcomingBills.Add('1 - Internet - $105<br>')
+            [void]$UpcomingBills.Add('Total: 662<br>')
         }
 
         ElseIf ($DayofMonth -eq 27)
         {
             $ResultsWithBills = $Results + 281
-            $UpcomingBills = '28 - Auto Ins. - $176<br>'
-            $UpcomingBills += '1 - Internet - $105<br>'
+            [void]$UpcomingBills.Add('28 - Auto Ins. - $176<br>')
+            [void]$UpcomingBills.Add('1 - Internet - $105<br>')
+            [void]$UpcomingBills.Add('Total: 281<br>')
         }
 
         Elseif (($DayofMonth -ge 28) -And ($DayofMonth -le 31))
         {
             $ResultsWithBills = $Results + 105
-            $UpcomingBills = '1 - Internet - $105<br>'
+            [void]$UpcomingBills.Add('1 - Internet - $105<br>')
+            [void]$UpcomingBills.Add('Total: 105<br>')
         }
 
         Elseif (($DayofMonth -ge 1) -And ($DayofMonth -le 4))

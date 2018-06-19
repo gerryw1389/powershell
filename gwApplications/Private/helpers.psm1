@@ -21,7 +21,7 @@ Function Test-IsAdmin
     $Identity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
     $Principal = new-object System.Security.Principal.WindowsPrincipal(${Identity})
     $IsAdmin = $Principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
-    Write-Verbose -InputObject $IsAdmin;
+    Write-Output -InputObject $IsAdmin;
 }
 
 Function Set-RegEntry
@@ -72,67 +72,81 @@ Function Set-RegEntry
  
     )
     
-    If (!(Test-Path HKCR:))
+    Begin
     {
-        New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT | Out-Null
+        If (!(Test-Path HKCR:))
+        {
+            New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT | Out-Null
+        }
+        # Inherit higher scope verbose preference
+        # This will hide output if verbose is not passed in another function and will show it it if it is!
+        # Please see: https://powershell.org/2014/01/13/getting-your-script-module-functions-to-inherit-preference-variables-from-the-caller/
+        If (-not $PSBoundParameters.ContainsKey('Verbose'))
+        {
+            $VerbosePreference = $PSCmdlet.GetVariableValue('VerbosePreference')
+        }  
     }
-       
-    If ($PropertyType -eq "Binary")
+    Process
     {
-        # Try to get the regentry's current value. If it fails to retrieve it (either wrong value or doesn't exist), just create it. 
-        Try
+        If ($PropertyType -eq "Binary")
         {
-            $CurrentValue = ((Get-Item -Path $Path -ErrorAction Stop ).GetValue($Name))
-        }
-        Catch
-        {
-            $CurrentValue = ''
-        }
-        $CurrentRegValue = Out-String -InputObject $CurrentValue
-        $RegValue = Out-String -InputObject $Value
-        If ($CurrentRegValue -eq $RegValue)
-        {
-            Write-Verbose "Key already exists: $Path\$Name with value: $Value"
+            # Try to get the regentry's current value. If it fails to retrieve it (either wrong value or doesn't exist), just create it. 
+            Try
+            {
+                $CurrentValue = ((Get-Item -Path $Path -ErrorAction Stop ).GetValue($Name))
+            }
+            Catch
+            {
+                $CurrentValue = ''
+            }
+            $CurrentRegValue = Out-String -InputObject $CurrentValue
+            $RegValue = Out-String -InputObject $Value
+            If ($CurrentRegValue -eq $RegValue)
+            {
+                Write-Verbose "Key already exists: $Path\$Name with value: $Value"
+            }
+            Else
+            {
+                If (!(Test-Path $Path))
+                {
+                    New-Item -Path $Path -Force | Out-Null
+                }
+                $Hex = $Value.Split(',') | ForEach-Object -Process { "0x$_" }
+                New-ItemProperty -Path $Path -Name $Name -Value ([byte[]]$Hex) -PropertyType $PropertyType -Force | Out-Null
+                Write-Verbose "Added key: $Path\$Name to value: $Value"
+            }
         }
         Else
         {
-            If (!(Test-Path $Path))
+            Try
             {
-                New-Item -Path $Path -Force | Out-Null
+                $CurrentValue = ((Get-Item -Path $Path -ErrorAction Stop ).GetValue($Name))
             }
-            $Hex = $Value.Split(',') | ForEach-Object -Process { "0x$_" }
-            New-ItemProperty -Path $Path -Name $Name -Value ([byte[]]$Hex) -PropertyType $PropertyType -Force | Out-Null
-            Write-Verbose "Added key: $Path\$Name to value: $Value"
+            Catch
+            {
+                $CurrentValue = ''
+            }
+            $CurrentRegValue = Out-String -InputObject $CurrentValue
+            $RegValue = Out-String -InputObject $Value
+            If ($CurrentRegValue -eq $RegValue)
+            {
+                Write-Verbose "Key already exists: $Path\$Name with value: $Value"
+            }
+            Else
+            {
+                If (!(Test-Path $Path))
+                {
+                    New-Item -Path $Path -Force | Out-Null
+                }
+                New-Itemproperty -Path $Path -Name $Name -Value $Value -Propertytype $PropertyType -Force | Out-Null
+                Write-Verbose "Added key: $Path\$Name to value: $Value"
 
+            }
         }
-        
     }
-    Else
+    End
     {
-        Try
-        {
-            $CurrentValue = ((Get-Item -Path $Path -ErrorAction Stop ).GetValue($Name))
-        }
-        Catch
-        {
-            $CurrentValue = ''
-        }
-        $CurrentRegValue = Out-String -InputObject $CurrentValue
-        $RegValue = Out-String -InputObject $Value
-        If ($CurrentRegValue -eq $RegValue)
-        {
-            Write-Verbose "Key already exists: $Path\$Name with value: $Value"
-        }
-        Else
-        {
-            If (!(Test-Path $Path))
-            {
-                New-Item -Path $Path -Force | Out-Null
-            }
-            New-Itemproperty -Path $Path -Name $Name -Value $Value -Propertytype $PropertyType -Force | Out-Null
-            Write-Verbose "Added key: $Path\$Name to value: $Value"
-
-        }
+    
     }
 }
 New-Alias -Name "SetReg" -Value Set-Regentry
