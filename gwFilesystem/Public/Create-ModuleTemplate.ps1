@@ -202,14 +202,16 @@ Function New-Module
 
             # Create .psd1
             $GUID = [guid]::NewGuid().ToString() 
-            $Params = @{}
-            $Params.Path = ($ModulePath + "\" + $Modulename + ".psd1")
-            $Params.Guid = $GUID 
-            $Params.Author = 'Gerry.Williams'
-            $Params.RootModule = ($ModuleName + ".psm1") 
-            $Params.ModuleVersion = "1.0" 
-            $Params.Description = "Change later"
-            $Params.Copyright = '(c) 2018 Gerry Williams. All rights reserved.'
+            $Params = @{
+                Path          = ($ModulePath + "\" + $Modulename + ".psd1")
+                Guid          = $GUID 
+                Author        = 'Gerry.Williams'
+                RootModule    = ($ModuleName + ".psm1") 
+                ModuleVersion = "1.0" 
+                Description   = "Change later"
+                Copyright     = '(c) 2018 Gerry Williams. All rights reserved.'
+            }
+            
             New-ModuleManifest @Params
             Clear-Variable -Name Params
 

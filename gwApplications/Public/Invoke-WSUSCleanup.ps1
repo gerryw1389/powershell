@@ -201,14 +201,14 @@ Function Invoke-WSUSCleanup
     
     Process
     {    
-        $Params = @{}
-        $Params.Cleanupobsoleteupdates = $True
-        $Params.Cleanupunneededcontentfiles = $True
-        $Params.Declineexpiredupdates = $True
-        $Params.Declinesupersededupdates = $True
+        $Params = @{
+            Cleanupobsoleteupdates      = $True
+            Cleanupunneededcontentfiles = $True
+            Declineexpiredupdates       = $True
+            Declinesupersededupdates    = $True
+        }
         Get-Wsusserver | Invoke-Wsusservercleanup @Params
         Write-ToString "Wsus Server Has Been Cleaned"
-    
     }
 
     End

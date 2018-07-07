@@ -21,7 +21,7 @@ Function Test-IsAdmin
     $Identity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
     $Principal = new-object System.Security.Principal.WindowsPrincipal(${Identity})
     $IsAdmin = $Principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
-    Write-Output -InputObject $IsAdmin;
+    Write-Output -InputObject $IsAdmin
 }
 
 Function Set-RegEntry
@@ -43,13 +43,13 @@ Function Set-RegEntry
         You will need to export the key you are about to change first (from a machine that has it how you want it) and then copy and paste the results into the $Value variable.
         For example, if I want OneDrive to not run on startup I would export the keys from [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run]
         on a machine that I already have OneDrive disabled on startup and then copy the $Value as "03,00,00,00,cd,9a,36,38,64,0b,d2,01". I would then place:
-        $Params = @{}
-        $Params.Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
-        $Params.Name = "OneDrive"
-        $Params.Value = "03,00,00,00,cd,9a,36,38,64,0b,d2,01"
-        $Params.PropertyType = "Binary"
-        Set-Regentry @Params
-        $Params = $Null
+        $SetRegParams = @{
+            Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
+            Name = "OneDrive"
+            Value = "03,00,00,00,cd,9a,36,38,64,0b,d2,01"
+            PropertyType = "Binary"c
+        }
+        Set-Regentry @SetRegParams
         .Example
         Set-RegEntry -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "ShowSyncProviderNotifications" -Value "0"
         Tests if that value exists at that path, and if not, creates it.

@@ -36,7 +36,6 @@ Function Set-ServerTemplate
     (
         [String]$Logfile = "$PSScriptRoot\Set-Template.Log"
     )
-
    
     Begin
     {
@@ -401,11 +400,12 @@ Function Set-ServerTemplate
         {
             Write-ToString "Removing User Folders From This PC"
             # Documents
-            $Params = @{}
-            $Params.Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions\{f42ee2d3-909f-4907-8871-4c22fc0bf756}\PropertyBag"
-            $Params.Name = "ThisPCPolicy"
-            $Params.Value = "Hide"
-            $Params.PropertyType = "String"
+            $Params = @{
+                Path         = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions\{f42ee2d3-909f-4907-8871-4c22fc0bf756}\PropertyBag"
+                Name         = "ThisPCPolicy"
+                Value        = "Hide"
+                PropertyType = "String"
+            }
             SetReg @Params
             $Params = $null
             $Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{A8CDFF1C-4878-43be-B5FD-F8091C1C60D0}"
@@ -429,11 +429,12 @@ Function Set-ServerTemplate
                 Remove-Item $Path | Out-Null
             }
             # Pictures
-            $Params = @{}
-            $Params.Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions\{0ddd015d-b06c-45d5-8c4c-f59713854639}\PropertyBag"
-            $Params.Name = "ThisPCPolicy"
-            $Params.Value = "Hide"
-            $Params.PropertyType = "String"
+            $Params = @{
+                Path         = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions\{0ddd015d-b06c-45d5-8c4c-f59713854639}\PropertyBag"
+                Name         = "ThisPCPolicy"
+                Value        = "Hide"
+                PropertyType = "String"
+            }
             SetReg @Params
             $Params = $null
             $Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{3ADD1653-EB32-4cb0-BBD7-DFA0ABB5ACCA}"
@@ -457,11 +458,12 @@ Function Set-ServerTemplate
                 Remove-Item $Path | Out-Null
             }
             # Videos
-            $Params = @{}
-            $Params.Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions\{35286a68-3c57-41a1-bbb1-0eae73d76c95}\PropertyBag"
-            $Params.Name = "ThisPCPolicy"
-            $Params.Value = "Hide"
-            $Params.PropertyType = "String"
+            $Params = @{
+                Path         = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions\{35286a68-3c57-41a1-bbb1-0eae73d76c95}\PropertyBag"
+                Name         = "ThisPCPolicy"
+                Value        = "Hide"
+                PropertyType = "String"
+            }
             SetReg @Params
             $Params = $null
             $Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{A0953C92-50DC-43bf-BE83-3742FED03C9C}"
@@ -485,11 +487,12 @@ Function Set-ServerTemplate
                 Remove-Item $Path | Out-Null
             }
             # Downloads
-            $Params = @{}
-            $Params.Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions\{7d83ee9b-2244-4e70-b1f5-5393042af1e4}\PropertyBag"
-            $Params.Name = "ThisPCPolicy"
-            $Params.Value = "Hide"
-            $Params.PropertyType = "String"
+            $Params = @{
+                Path         = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions\{7d83ee9b-2244-4e70-b1f5-5393042af1e4}\PropertyBag"
+                Name         = "ThisPCPolicy"
+                Value        = "Hide"
+                PropertyType = "String"
+            }
             SetReg @Params
             $Params = $null
             $Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{374DE290-123F-4565-9164-39C4925E467B}"
@@ -513,11 +516,12 @@ Function Set-ServerTemplate
                 Remove-Item $Path | Out-Null
             }
             # Music
-            $Params = @{}
-            $Params.Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions\{a0c69a99-21c8-4671-8703-7934162fcf1d}\PropertyBag"
-            $Params.Name = "ThisPCPolicy"
-            $Params.Value = "Hide"
-            $Params.PropertyType = "String"
+            $Params = @{
+                Path         = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions\{a0c69a99-21c8-4671-8703-7934162fcf1d}\PropertyBag"
+                Name         = "ThisPCPolicy"
+                Value        = "Hide"
+                PropertyType = "String"
+            }
             SetReg @Params
             $Params = $null
             $Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{1CF1260C-4DD0-4ebb-811F-33C572699FDE}"
@@ -541,11 +545,12 @@ Function Set-ServerTemplate
                 Remove-Item $Path | Out-Null
             }
             # Desktop
-            $Params = @{}
-            $Params.Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions\{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}\PropertyBag"
-            $Params.Name = "ThisPCPolicy"
-            $Params.Value = "Hide"
-            $Params.PropertyType = "String"
+            $Params = @{
+                Path         = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions\{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}\PropertyBag"
+                Name         = "ThisPCPolicy"
+                Value        = "Hide"
+                PropertyType = "String"
+            }
             SetReg @Params
             $Params = $null
             $Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}"
@@ -773,40 +778,43 @@ Function Set-ServerTemplate
         }
 
         Write-ToString "Setting RDP to allow inbound connections"
-        $Params = @{}
-        $Params.DisplayName = "AllowRDP"
-        $Params.Description = "Allow Remote Desktop"
-        $Params.Profile = "Any"
-        $Params.Direction = "Inbound"
-        $Params.LocalPort = "3389"
-        $Params.Protocol = "TCP"
-        $Params.Action = "Allow"
-        $Params.Enabled = "True"
+        $Params = @{
+            DisplayName = "AllowRDP"
+            Description = "Allow Remote Desktop"
+            Profile     = "Any"
+            Direction   = "Inbound"
+            LocalPort   = "3389"
+            Protocol    = "TCP"
+            Action      = "Allow"
+            Enabled     = "True"
+        }
         New-NetFirewallRule @Params | Out-Null
         $Params = $null
 
         Write-ToString "Setting Ping firewall rule (in/out)"
-        $Params = @{}
-        $Params.DisplayName = "AllowPingsOut"
-        $Params.Description = "Allow Pings"
-        $Params.Profile = "Any"
-        $Params.Direction = "Outbound"
-        $Params.Protocol = "ICMPv4"
-        $Params.IcmpType = "Any"
-        $Params.Action = "Allow"
-        $Params.Enabled = "True"
+        $Params = @{
+            DisplayName = "AllowPingsOut"
+            Description = "Allow Pings"
+            Profile     = "Any"
+            Direction   = "Outbound"
+            Protocol    = "ICMPv4"
+            IcmpType    = "Any"
+            Action      = "Allow"
+            Enabled     = "True"
+        }
         New-NetFirewallRule @Params| Out-Null
         $Params = $null
 
-        $Params = @{}
-        $Params.DisplayName = "AllowPingsIn"
-        $Params.Description = "Allow Pings"
-        $Params.Profile = "Any"
-        $Params.Direction = "Inbound"
-        $Params.Protocol = "ICMPv4"
-        $Params.IcmpType = "Any"
-        $Params.Action = "Allow"
-        $Params.Enabled = "True"
+        $Params = @{
+            DisplayName = "AllowPingsIn"
+            Description = "Allow Pings"
+            Profile     = "Any"
+            Direction   = "Inbound"
+            Protocol    = "ICMPv4"
+            IcmpType    = "Any"
+            Action      = "Allow"
+            Enabled     = "True"
+        }
         New-NetFirewallRule @Params| Out-Null
         $Params = $null
     

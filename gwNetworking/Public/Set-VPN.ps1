@@ -188,13 +188,14 @@ Function Set-VPN
         $VpnName = "Datacenter"
         $Pre = Read-Host -Prompt "Enter Preshared Key"
 
-        $Params = @{}
-        $Params.Name = $VpnName
-        $Params.ServerAddress = "server.domain.com"
-        $Params.TunnelType = "L2TP"
-        $Params.EncryptionLevel = "Required"
-        $Params.AuthenicationMethod = "MSChapv2"
-        $Params.L2tppsk = $Pre
+        $Params = @{
+            Name                = $VpnName
+            ServerAddress       = "server.domain.com"
+            TunnelType          = "L2TP"
+            EncryptionLevel     = "Required"
+            AuthenicationMethod = "MSChapv2"
+            L2tppsk             = $Pre
+        }
         
         $VPN = Add-Vpnconnection @Params -Remembercredential -Passthru
 
