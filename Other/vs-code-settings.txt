@@ -1,18 +1,24 @@
 // Place your settings in this file to overwrite the default settings
 {
-    "files.hotExit": "off",
     "editor.acceptSuggestionOnEnter": false,
     "editor.autoClosingBrackets": false,
     "editor.cursorStyle": "line",
-    "powershell.codeFormatting.ignoreOneLineBlock": false,
-    "powershell.codeFormatting.openBraceOnSameLine": false,
-    "terminal.integrated.cursorStyle": "underline",
+    "editor.codeLens": false,
+    "editor.foldingStrategy": "indentation",
+    "explorer.confirmDelete": false,
+    "files.hotExit": "off",
     "git.autoRepositoryDetection": false,
     "git.autorefresh": false,
     "git.decorations.enabled": false,
     "git.confirmSync": false,
     "git.detectSubmodules": false,
-    "git.enabled": false
+    "git.enabled": false,
+    "powershell.codeFormatting.preset": "Allman",
+    "powershell.developer.editorServicesLogLevel": "Diagnostic",
+    "terminal.integrated.cursorStyle": "underline"
 }
 
 # format code (shift+alt+f)
+# Make sure to install the extension "powershell" before copying/pasting
+
+# Ctrl+Shift+[ to collapse regions and Ctrl+Shift+] to expand. This only works with the foldingstrategy at "indentation"
