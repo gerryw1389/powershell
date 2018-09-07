@@ -26,6 +26,203 @@ Function Set-HomePC
    
     Begin
     {
+        ####################<Default Begin Block>####################
+        # Force verbose because Write-Output doesn't look well in transcript files
+        $VerbosePreference = "Continue"
+        
+        [String]$Logfile = $PSScriptRoot + '\PSLogs\' + (Get-Date -Format "yyyy-MM-dd") +
+        "-" + $MyInvocation.MyCommand.Name + ".log"
+        
+        Function Write-Log
+        {
+            <#
+            .Synopsis
+            This writes objects to the logfile and to the screen with optional coloring.
+            .Parameter InputObject
+            This can be text or an object. The function will convert it to a string and verbose it out.
+            Since the main function forces verbose output, everything passed here will be displayed on the screen and to the logfile.
+            .Parameter Color
+            Optional coloring of the input object.
+            .Example
+            Write-Log "hello" -Color "yellow"
+            Will write the string "VERBOSE: YYYY-MM-DD HH: Hello" to the screen and the logfile.
+            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
+            .Example
+            Write-Log (cmd /c "ipconfig /all")
+            Will write the string "VERBOSE: YYYY-MM-DD HH: ****ipconfig output***" to the screen and the logfile.
+            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
+            .Notes
+            2018-06-24: Initial script
+            #>
+            
+            Param
+            (
+                [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+                [PSObject]$InputObject,
+                
+                # I usually set this to = "Green" since I use a black and green theme console
+                [Parameter(Mandatory = $False, Position = 1)]
+                [Validateset("Black", "Blue", "Cyan", "Darkblue", "Darkcyan", "Darkgray", "Darkgreen", "Darkmagenta", "Darkred", `
+                        "Darkyellow", "Gray", "Green", "Magenta", "Red", "White", "Yellow")]
+                [String]$Color = "Green"
+            )
+            
+            $ConvertToString = Out-String -InputObject $InputObject -Width 100
+            
+            If ($($Color.Length -gt 0))
+            {
+                $previousForegroundColor = $Host.PrivateData.VerboseForegroundColor
+                $Host.PrivateData.VerboseForegroundColor = $Color
+                Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+                $Host.PrivateData.VerboseForegroundColor = $previousForegroundColor
+            }
+            Else
+            {
+                Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+            }
+            
+        }
+
+        Function Start-Log
+        {
+            <#
+            .Synopsis
+            Creates the log file and starts transcribing the session.
+            .Notes
+            2018-06-24: Initial script
+            #>
+            
+            # Create transcript file if it doesn't exist
+            If (!(Test-Path $Logfile))
+            {
+                New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+            }
+        
+            # Clear it if it is over 10 MB
+            [Double]$Sizemax = 10485760
+            $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+            If ($($Size.Sum -ge $SizeMax))
+            {
+                Get-Childitem $Logfile | Clear-Content
+                Write-Verbose "Logfile has been cleared due to size"
+            }
+            Else
+            {
+                Write-Verbose "Logfile was less than 10 MB"   
+            }
+            Start-Transcript -Path $Logfile -Append 
+            Write-Log "####################<Function>####################"
+            Write-Log "Function started on $env:COMPUTERNAME"
+
+        }
+        
+        Function Stop-Log
+        {
+            <#
+            .Synopsis
+            Stops transcribing the session and cleans the transcript file by removing the fluff.
+            .Notes
+            2018-06-24: Initial script
+            #>
+            
+            Write-Log "Function completed on $env:COMPUTERNAME"
+            Write-Log "####################</Function>####################"
+            Stop-Transcript
+       
+            # Now we will clean up the transcript file as it contains filler info that needs to be removed...
+            $Transcript = Get-Content $Logfile -raw
+
+            # Create a tempfile
+            $TempFile = $PSScriptRoot + "\PSLogs\temp.txt"
+            New-Item -Path $TempFile -ItemType File | Out-Null
+			
+            # Get all the matches for PS Headers and dump to a file
+            $Transcript | 
+                Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
+                ForEach-Object {$_.Matches} | 
+                ForEach-Object {$_.Value} | 
+                Out-File -FilePath $TempFile -Append
+
+            # Compare the two and put the differences in a third file
+            $m1 = Get-Content -Path $Logfile
+            $m2 = Get-Content -Path $TempFile
+            $all = Compare-Object -ReferenceObject $m1 -DifferenceObject $m2 | Where-Object -Property Sideindicator -eq '<='
+            $Array = [System.Collections.Generic.List[PSObject]]@()
+            foreach ($a in $all)
+            {
+                [void]$Array.Add($($a.InputObject))
+            }
+            $Array = $Array -replace 'VERBOSE: ', ''
+
+            Remove-Item -Path $Logfile -Force
+            Remove-Item -Path $TempFile -Force
+            # Finally, put the information we care about in the original file and discard the rest.
+            $Array | Out-File $Logfile -Append -Encoding ASCII
+            
+        }
+        
+        Start-Log
+
+        Function Set-Console
+        {
+            <# 
+        .Synopsis
+        Function to set console colors just for the session.
+        .Description
+        Function to set console colors just for the session.
+        This function sets background to black and foreground to green.
+        Verbose is DarkCyan which is what I use often with logging in scripts.
+        I mainly did this because darkgreen does not look too good on blue (Powershell defaults).
+        .Notes
+        2017-10-19: v1.0 Initial script 
+        #>
+        
+            Function Test-IsAdmin
+            {
+                <#
+                .Synopsis
+                Determines whether or not the user is a member of the local Administrators security group.
+                .Outputs
+                System.Bool
+                #>
+
+                [CmdletBinding()]
+    
+                $Identity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+                $Principal = new-object System.Security.Principal.WindowsPrincipal(${Identity})
+                $IsAdmin = $Principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
+                Write-Output -InputObject $IsAdmin
+            }
+
+            $console = $host.UI.RawUI
+            If (Test-IsAdmin)
+            {
+                $console.WindowTitle = "Administrator: Powershell"
+            }
+            Else
+            {
+                $console.WindowTitle = "Powershell"
+            }
+            $Background = "Black"
+            $Foreground = "Green"
+            $Messages = "DarkCyan"
+            $Host.UI.RawUI.BackgroundColor = $Background
+            $Host.UI.RawUI.ForegroundColor = $Foreground
+            $Host.PrivateData.ErrorForegroundColor = $Messages
+            $Host.PrivateData.ErrorBackgroundColor = $Background
+            $Host.PrivateData.WarningForegroundColor = $Messages
+            $Host.PrivateData.WarningBackgroundColor = $Background
+            $Host.PrivateData.DebugForegroundColor = $Messages
+            $Host.PrivateData.DebugBackgroundColor = $Background
+            $Host.PrivateData.VerboseForegroundColor = $Messages
+            $Host.PrivateData.VerboseBackgroundColor = $Background
+            $Host.PrivateData.ProgressForegroundColor = $Messages
+            $Host.PrivateData.ProgressBackgroundColor = $Background
+            Clear-Host
+        }
+        Set-Console
+
+        ####################</Default Begin Block>####################
         # Load the required module(s) 
         Try
         {
@@ -33,14 +230,14 @@ Function Set-HomePC
         }
         Catch
         {
-            Write-Output "Module 'Helpers' was not found, stopping script"
+            Write-Log "Module 'Helpers' was not found, stopping script"
             Exit 1
         }
     }
     
     Process
     {    
-        Write-Output "Creating a lockscreen task. This will lock the screen every 5 minutes of inactivity"
+        Write-Log "Creating a lockscreen task. This will lock the screen every 5 minutes of inactivity"
         $TaskName = "LockScreen"
         $service = New-Object -ComObject("Schedule.Service")
         $service.Connect()
@@ -62,7 +259,7 @@ Function Set-HomePC
         $user = "$username"
         $rootFolder.RegisterTaskDefinition($TaskName, $taskdef, 6, $user, $null, 3) | Out-Null
 
-        Write-Output "Adding OpenPSHere to right click menu"
+        Write-Log "Adding OpenPSHere to right click menu"
         $menu = 'OpenPSHere'
         $command = "$PSHOME\powershell.exe -NoExit -NoProfile -Command ""Set-Location '%V'"""
 
@@ -73,10 +270,10 @@ Function Set-HomePC
                 Set-ItemProperty -Name HasLUAShield -Value ''
         }
 
-        Write-Output "Enabling SMB 1.0 protocol for connections to legacy NAS devices"
+        Write-Log "Enabling SMB 1.0 protocol for connections to legacy NAS devices"
         Set-SmbServerConfiguration -EnableSMB1Protocol $true -Force
 
-        Write-Output "Adjusting visual effects for appearance..."
+        Write-Log "Adjusting visual effects for appearance..."
         SetReg -Path "HKCU:\Control Panel\Desktop" -Name "DragFullWindows" -PropertyType "String" -Value "1"
         SetReg -Path "HKCU:\Control Panel\Desktop" -Name "MenuShowDelay" -PropertyType "String" -Value "400"
         SetReg -Path "HKCU:\Control Panel\Desktop" -Name "UserPreferencesMask" -PropertyType "Binary" -Value "9e,7e,06,80,12,00,00,00"
@@ -88,25 +285,25 @@ Function Set-HomePC
         SetReg -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name "VisualFXSetting" -Value "3"
         SetReg -Path "HKCU:\Software\Microsoft\Windows\DWM" -Name "EnableAeroPeek" -Value "1"
     
-        Write-Output "Disabling Windows Update automatic restart"
+        Write-Log "Disabling Windows Update automatic restart"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "NoAutoRebootWithLoggedOnUsers" -Value "1"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "AUPowerManagement" -Value "0"
 
-        Write-Output "Stopping and disabling Home Groups services"
+        Write-Log "Stopping and disabling Home Groups services"
         Stop-Service "HomeGroupListener" -WarningAction SilentlyContinue
         Set-Service "HomeGroupListener" -StartupType Disabled
         Stop-Service "HomeGroupProvider" -WarningAction SilentlyContinue
         Set-Service "HomeGroupProvider" -StartupType Disabled
 
-        Write-Output "Starting and enabling Windows Search indexing service"
+        Write-Log "Starting and enabling Windows Search indexing service"
         Set-Service "WSearch" -StartupType Automatic
         SetReg -Path "HKLM:\SYSTEM\CurrentControlSet\Services\WSearch" -Name "DelayedAutoStart" -Value "1"
         Start-Service "WSearch" -WarningAction SilentlyContinue
 
-        Write-Output "Enabling Fast Startup"
+        Write-Log "Enabling Fast Startup"
         SetReg -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -Value "1"
 
-        Write-Output "Disabling Action Center"
+        Write-Log "Disabling Action Center"
         If (!(Test-Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer"))
         {
             New-Item -Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer" | Out-Null
@@ -114,13 +311,13 @@ Function Set-HomePC
         SetReg -Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "DisableNotificationCenter" -Value "1"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications" -Name "ToastEnabled" -Value "0"
 
-        Write-Output "Disabling Sticky keys prompt"
+        Write-Log "Disabling Sticky keys prompt"
         SetReg -Path "HKCU:\Control Panel\Accessibility\StickyKeys" -Name "Flags" -PropertyType "String" -Value "506"
 
-        Write-Output "Disabling file delete confirmation dialog"
+        Write-Log "Disabling file delete confirmation dialog"
         Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "ConfirmFileDelete" -ErrorAction SilentlyContinue
     
-        Write-Output "Showing Task Manager details"
+        Write-Log "Showing Task Manager details"
         If (!(Test-Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager"))
         {
             New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager" -Force | Out-Null
@@ -139,10 +336,10 @@ Function Set-HomePC
         $preferences.Preferences[28] = 0
         Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager" -Name "Preferences" -Type Binary -Value $preferences.Preferences
     
-        Write-Output "Showing file operations details"
+        Write-Log "Showing file operations details"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\OperationStatusManager" -Name "EnthusiastMode" -Value "1"
     
-        Write-Output "Disabling and Uninstalling OneDrive"
+        Write-Log "Disabling and Uninstalling OneDrive"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive" -Name "DisableFileSyncNGSC" -Value "1"
         SetReg -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive" -Name "DisableFileSync" -Value "1"
         Stop-Process -Name OneDrive -ErrorAction SilentlyContinue
@@ -163,14 +360,14 @@ Function Set-HomePC
         Remove-Item -Path "HKCR:\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Recurse -ErrorAction SilentlyContinue
         Remove-Item -Path "HKCR:\Wow6432Node\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Recurse -ErrorAction SilentlyContinue
     
-        Write-Output "Removing Onedrive From Explorer"
+        Write-Log "Removing Onedrive From Explorer"
         SetReg -Path "HKCR:\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Name "System.IsPinnedToNameSpaceTree" -Value "0"
         SetReg -Path "HKCR:\Wow6432Node\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Name "System.IsPinnedToNameSpaceTree" -Value "0"
 
-        Write-Output "Removing OneDrive Startup Entry"
+        Write-Log "Removing OneDrive Startup Entry"
         SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" -Name "OneDrive" -PropertyType "Binary" -Value "03,00,00,00,cd,9a,36,38,64,0b,d2,01"
   
-        Write-Output "Installing Linux Subsystem"
+        Write-Log "Installing Linux Subsystem"
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" -Name "AllowDevelopmentWithoutDevLicense" -Value "1"
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" -Name "AllowAllTrustedApps" -Value "1"
         Enable-WindowsOptionalFeature -Online -FeatureName "Microsoft-Windows-Subsystem-Linux" -NoRestart -WarningAction SilentlyContinue | Out-Null
@@ -178,7 +375,7 @@ Function Set-HomePC
         <#
         # I used to disable features, but I honestly don't think it's worth the hassle anymore.
 
-        Write-Output "Removing system bloat"
+        Write-Log "Removing system bloat"
         $Features = Get-WindowsOptionalFeature -Online | Where-Object `
         {
         $_.FeatureName -notlike '*Net*FX*' `
@@ -196,7 +393,7 @@ Function Set-HomePC
         If ($Feature.State -eq 'Enabled')
         {
         $Feature | Disable-WindowsOptionalFeature -Online -Remove -NoRestart > $null 3> $null
-        Write-Output "Disabling Feature: $($Feature.FeatureName)"
+        Write-Log "Disabling Feature: $($Feature.FeatureName)"
         }    
         }
         #> 
@@ -204,6 +401,7 @@ Function Set-HomePC
 
     End
     {
+        Stop-Log
     }
 
 }

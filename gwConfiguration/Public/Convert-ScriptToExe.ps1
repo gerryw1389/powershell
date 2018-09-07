@@ -49,6 +49,9 @@ Function Convert-ScriptToExe
 	.Example
 	Convert-ScriptToExe -Inputfile "c:\scripts\test\script2.ps1" -Outputfile "c:\scripts\test\script2.exe" -Verbose -x86
 	Converts script to an x86 executable file.
+	.Example
+	Convert-ScriptToExe -Inputfile "c:\scripts\blah.ps1" -Outputfile "c:\scripts\test.exe" -Verbose -x86
+	Converts script to an x86 executable file.
 	#>
 
     Param
@@ -72,7 +75,7 @@ Function Convert-ScriptToExe
 
     Begin
     {
-        }
+	}
 	
     Process
     {   
@@ -1519,20 +1522,9 @@ $forms
 
     End
     {
-        If ($Global:EnabledLogging)
-        {
-            Stop-Log -Logfile $Logfile
-        }
-        Else
-        {
-            $Date = $(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt")
-            Write-Output "Function completed at $Date"
-        }
     }
 
-}   
-
-# Convert-ScriptToExe -Inputfile "c:\scripts\blah.ps1" -Outputfile "c:\scripts\test.exe" -Verbose -x86
+}
 
 <#######</Body>#######>
 <#######</Script>#######>
