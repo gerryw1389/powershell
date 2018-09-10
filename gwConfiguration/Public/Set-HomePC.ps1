@@ -300,8 +300,8 @@ Function Set-HomePC
         SetReg -Path "HKLM:\SYSTEM\CurrentControlSet\Services\WSearch" -Name "DelayedAutoStart" -Value "1"
         Start-Service "WSearch" -WarningAction SilentlyContinue
 
-        Write-Log "Enabling Fast Startup"
-        SetReg -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -Value "1"
+        Write-Log "Disabling Fast Startup"
+        SetReg -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -Value "0"
 
         Write-Log "Disabling Action Center"
         If (!(Test-Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer"))
@@ -371,7 +371,26 @@ Function Set-HomePC
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" -Name "AllowDevelopmentWithoutDevLicense" -Value "1"
         SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" -Name "AllowAllTrustedApps" -Value "1"
         Enable-WindowsOptionalFeature -Online -FeatureName "Microsoft-Windows-Subsystem-Linux" -NoRestart -WarningAction SilentlyContinue | Out-Null
+
+        Write-Log "Setting time zone to Central Standard"    
+        $TimeZone = 'Central Standard Time'
+        If ( (Get-TimeZone).StandardName -eq $TimeZone)
+        {
+            Write-Log "The time zone is already set to $TimeZone"
+        }
+        Else
+        {
+            Set-TimeZone -Name $TimeZone
+            Write-Log "The time zone set to $TimeZone"
+        }
     
+        Write-Log "Setting system dark theme"
+        SetReg -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "AppsUseLightTheme" -Value "0"
+        SetReg -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "AppsUseLightTheme" -Value "0"
+        
+        Write-Log "Enable F8 Advanced Boot Options screen in Windows 10 for Safe Mode access like Windows 7 and sets timeout to 5 seconds"
+        cmd /c "bcdedit /set {bootmgr} displaybootmenu yes"
+        cmd /c "bcdedit /timeout 5"
         <#
         # I used to disable features, but I honestly don't think it's worth the hassle anymore.
 
