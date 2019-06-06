@@ -8,21 +8,21 @@
 <#######<Body>#######>
 Function Add-AD50Users
 {
-    <#
-    .Synopsis
-    Creates 50 pre-populated users in AD. 
-    .Description
-    Creates 50 pre-populated users in AD. Good for test lab user creation.
-    .Parameter Password
-    Madatory. Parameter stores a password as a string and then gets converted to a secure string in the Begin block.
-    .Parameter Fqdn
-    Madatory. Parameter that specifies the FQDN of the domain. Ex= "example.com".
-    .Parameter Ou
-    Madatory. Parameter that specifies the OU to create the users in. Ex = "OU=Users,DC=Domain,DC=com"
-    .Example
-    Add-AD50Users -Password "#Tacos99!" -Fqdn "domain.net" -Ou "Ou=DomainUsers,Dc=domain,Dc=net"
-    Adds 50 users to the "DomainUsers" OU in domain.net with the password of "#Tacos99!" 
-    #>
+<#
+.Synopsis
+Creates 50 pre-populated users in AD. 
+.Description
+Creates 50 pre-populated users in AD. Good for test lab user creation.
+.Parameter Password
+Madatory. Parameter stores a password as a string and then gets converted to a secure string in the Begin block.
+.Parameter Fqdn
+Madatory. Parameter that specifies the FQDN of the domain. Ex= "example.com".
+.Parameter Ou
+Madatory. Parameter that specifies the OU to create the users in. Ex = "OU=Users,DC=Domain,DC=com"
+.Example
+Add-AD50Users -Password "#Tacos99!" -Fqdn "domain.net" -Ou "Ou=DomainUsers,Dc=domain,Dc=net"
+Adds 50 users to the "DomainUsers" OU in domain.net with the password of "#Tacos99!" 
+#>
 
     [Cmdletbinding()]
 

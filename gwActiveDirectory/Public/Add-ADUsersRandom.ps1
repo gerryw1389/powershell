@@ -9,23 +9,23 @@
 
 Function Add-ADUsersRandom
 {
-    <#
-    .Synopsis
-    Creates a number of AD users retrieved from https://randomuser.me/api/
-    .Description
-    Creates a number of AD users retrieved from https://randomuser.me/api/ . Good for test lab user creation.
-    .Parameter Password
-    Madatory. Parameter stores a password as a string and then gets converted to a secure string in the Begin block.
-    .Parameter Fqdn
-    Madatory. Parameter that specifies the FQDN of the domain. Ex= "example.com".
-    .Parameter Ou
-    Madatory. Parameter that specifies the OU to create the users in. Ex = "OU=Users,DC=Domain,DC=com"
-    .Parameter Numberofusers
-    Madatory. Parameter that specifies the number of users to create.
-    .Example
-    Add-ADUsersRandom -Password "#Tacos99!" -Fqdn "domain.net" -Ou "Ou=DomainUsers,Dc=domain,Dc=net" -NumberofUsers 3
-    Creates 3 users in the "domain users" OU for domain.net. They will be enabled with the password of "#Tacos99!" 
-    #>
+<#
+.Synopsis
+Creates a number of AD users retrieved from https://randomuser.me/api/
+.Description
+Creates a number of AD users retrieved from https://randomuser.me/api/ . Good for test lab user creation.
+.Parameter Password
+Madatory. Parameter stores a password as a string and then gets converted to a secure string in the Begin block.
+.Parameter Fqdn
+Madatory. Parameter that specifies the FQDN of the domain. Ex= "example.com".
+.Parameter Ou
+Madatory. Parameter that specifies the OU to create the users in. Ex = "OU=Users,DC=Domain,DC=com"
+.Parameter Numberofusers
+Madatory. Parameter that specifies the number of users to create.
+.Example
+Add-ADUsersRandom -Password "#Tacos99!" -Fqdn "domain.net" -Ou "Ou=DomainUsers,Dc=domain,Dc=net" -NumberofUsers 3
+Creates 3 users in the "domain users" OU for domain.net. They will be enabled with the password of "#Tacos99!" 
+#>
 
     [Cmdletbinding()]
 

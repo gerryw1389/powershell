@@ -8,24 +8,24 @@
 <#######<Body>#######>
 Function Get-LastUserAuthentication
 {
-    <#
-    .Synopsis
-    Gets the last time a user authenticated with the domain controller.
-    .Description
-    Gets the last time a user authenticated with the domain controller.
-    .Example
-    Get-LastUserAuthentication -Username "gerry", "admin"
-    Name       Value
-    ----       -----
-    Name       Gerry
-    LastLogonTime      1/26/2016 7:36:27 PM
-    Name       Gerry Williams
-    LastLogonTime      4/25/2018 10:47:53 PM
-    Name       Administrator
-    LastLogonTime      7/5/2015 3:58:05 PM
-    Name       admin
-    LastLogonTime      4/22/2018 9:22:18 PM
-    #>
+<#
+.Synopsis
+Gets the last time a user authenticated with the domain controller.
+.Description
+Gets the last time a user authenticated with the domain controller.
+.Example
+Get-LastUserAuthentication -Username "gerry", "admin"
+Name       Value
+----       -----
+Name       Gerry
+LastLogonTime      1/26/2016 7:36:27 PM
+Name       Gerry Williams
+LastLogonTime      4/25/2018 10:47:53 PM
+Name       Administrator
+LastLogonTime      7/5/2015 3:58:05 PM
+Name       admin
+LastLogonTime      4/22/2018 9:22:18 PM
+#>
 
     [Cmdletbinding()]
     Param

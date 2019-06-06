@@ -9,18 +9,18 @@
 
 Function Watch-ADReplicationStatus
 {
-    <#
-    .Synopsis
-    This function is best placed a scheduled task to run every 5 minutes on the domain controller. 
-    It will send an email if replication status fails.
-    .Description
-    This function is best placed a scheduled task to run every 5 minutes on the domain controller. 
-    It will send an email if replication status fails.
-    You will need to setup the "from address, to address, smtp server, $logfile" variables.
-    .Example
-    Watch-ADReplicationStatus
-    Sends a report to the email you if replication status fails.
-    #>
+<#
+.Synopsis
+This function is best placed a scheduled task to run every 5 minutes on the domain controller. 
+It will send an email if replication status fails.
+.Description
+This function is best placed a scheduled task to run every 5 minutes on the domain controller. 
+It will send an email if replication status fails.
+You will need to setup the "from address, to address, smtp server, $logfile" variables.
+.Example
+Watch-ADReplicationStatus
+Sends a report to the email you if replication status fails.
+#>
  
     [Cmdletbinding()]
 

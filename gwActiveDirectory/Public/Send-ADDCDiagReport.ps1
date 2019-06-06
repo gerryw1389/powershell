@@ -9,18 +9,18 @@
 
 Function Send-ADDCDiagReport
 {
-    <#
-    .Synopsis
-    This function is best placed a scheduled task to run daily on the domain controller. 
-    It will send an email showing results of ad health checks. 
-    .Description
-    This function is best placed a scheduled task to run daily on the domain controller. 
-    It will send an email showing results of ad health checks.
-    You will need to setup the from address, to address, smtp server, $logfile" variables.
-    .Example
-    Send-ADDCDiagReport
-    Sends a report to the email you specify of various dc diag tests that run will run on the domain controller.
-    #>
+<#
+.Synopsis
+This function is best placed a scheduled task to run daily on the domain controller. 
+It will send an email showing results of ad health checks. 
+.Description
+This function is best placed a scheduled task to run daily on the domain controller. 
+It will send an email showing results of ad health checks.
+You will need to setup the from address, to address, smtp server, $logfile" variables.
+.Example
+Send-ADDCDiagReport
+Sends a report to the email you specify of various dc diag tests that run will run on the domain controller.
+#>
 
     [Cmdletbinding()]
 
