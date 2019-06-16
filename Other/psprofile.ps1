@@ -7,42 +7,71 @@
 <#######</Header>#######>
 <#######<Body>#######>
 ###############################################################################################################################################
-# Misc:
+# Set Readline and colors:
 ###############################################################################################################################################
-# Setup Colors and remove annoying bell sound:
-Set-PSReadlineOption -Bellstyle 'none'
-$options = Get-PSReadlineOption
-$ForegroundColor                                = "White"
-$Options.CommandForegroundColor                 = 'Cyan'
-$Options.ParameterForegroundColor               = 'DarkCyan'
-$Options.OperatorForegroundColor                = 'Magenta'
-$Options.NumberForegroundColor                  = 'Magenta'
-$Options.ContinuationPromptForegroundColor      = 'Magenta'
-$Options.StringForegroundColor                  = 'Green'
-$Options.DefaultTokenForegroundColor            = 'Green'
-$Options.CommentForegroundColor                 = 'DarkGray'
-$Options.VariableForegroundColor                = 'Red'
-$Options.EmphasisForegroundColor                = $ForegroundColor
-$Options.ErrorForegroundColor                   = $ForegroundColor
-$Options.MemberForegroundColor                  = $ForegroundColor
-$Options.TypeForegroundColor                    = $ForegroundColor
+If ( $((get-module PSReadline).version.Major) -eq 1 )
+{
+    $Background = 'Black'
+    Set-PSReadLineOption -TokenKind Comment -ForegroundColor 'DarkGray' -BackgroundColor $Background
+    Set-PSReadLineOption -TokenKind Keyword -ForegroundColor 'DarkGray' -BackgroundColor $Background
+    Set-PSReadLineOption -TokenKind String -ForegroundColor 'Green' -BackgroundColor $Background
+    Set-PSReadLineOption -TokenKind Operator -ForegroundColor 'Magenta' -BackgroundColor $Background
+    Set-PSReadLineOption -TokenKind Variable -ForegroundColor 'Red' -BackgroundColor $Background
+    Set-PSReadLineOption -TokenKind Command -ForegroundColor 'Cyan' -BackgroundColor $Background
+    Set-PSReadLineOption -TokenKind Parameter -ForegroundColor 'DarkCyan' -BackgroundColor $Background
+    Set-PSReadLineOption -TokenKind Type -ForegroundColor 'White' -BackgroundColor $Background
+    Set-PSReadLineOption -TokenKind Number -ForegroundColor 'Magenta' -BackgroundColor $Background
+    Set-PSReadLineOption -TokenKind Member -ForegroundColor 'White' -BackgroundColor $Background
+    Set-PSReadLineOption -BellStyle "None"
+    Set-PSReadLineOption -EditMode "Vi"
+    Set-PSReadLineOption -ViModeIndicator "Prompt"
+    # Set-PSReadlineKeyHandler -Key Tab -Function Complete
+}
+Else
+{
+    $PSReadLineOptions = @{
+        BellStyle                     = "None"
+        EditMode                      = "Vi"
+        ViModeIndicator               = "Prompt"
+        HistoryNoDuplicates           = $true
+        HistorySearchCursorMovesToEnd = $true
+        Colors                        = @{
+            Command            = 'Cyan'
+            Comment            = 'DarkGray'
+            ContinuationPrompt = 'Magenta'
+            Default            = 'Green'
+            Emphasis           = 'White'
+            Error              = 'Red'
+            Member             = 'White'
+            Number             = 'Magenta'
+            Operator           = 'Magenta'
+            Parameter          = 'DarkCyan'
+            String             = 'Green'
+            Type               = 'White'
+            Variable           = 'Red'
+        }
+    }
+    Set-PSReadLineOption @PSReadLineOptions
+    #Set-PSReadlineKeyHandler -Key Tab -Function Complete
+}
+    
 
-$BackgroundColor                                = "Black"
-$Options.CommandBackgroundColor                 = $BackgroundColor
-$Options.CommentBackgroundColor                 = $BackgroundColor
-$Options.ContinuationPromptBackgroundColor      = $BackgroundColor
-$Options.DefaultTokenBackgroundColor            = $BackgroundColor
-$Options.EmphasisBackgroundColor                = $BackgroundColor
-$Options.ErrorBackgroundColor                   = $BackgroundColor
-$Options.KeywordBackgroundColor                 = $BackgroundColor
-$Options.KeywordForegroundColor                 = $BackgroundColor
-$Options.MemberBackgroundColor                  = $BackgroundColor
-$Options.NumberBackgroundColor                  = $BackgroundColor
-$Options.OperatorBackgroundColor                = $BackgroundColor
-$Options.ParameterBackgroundColor               = $BackgroundColor
-$Options.StringBackgroundColor                  = $BackgroundColor
-$Options.TypeBackgroundColor                    = $BackgroundColor
-$Options.VariableBackgroundColor                = $BackgroundColor
+$Background = "Black"
+$Foreground = "Green"
+$Messages = "DarkCyan"
+$Host.UI.RawUI.BackgroundColor = $Background
+$Host.UI.RawUI.ForegroundColor = $Foreground
+$Host.PrivateData.ErrorForegroundColor = $Messages
+$Host.PrivateData.ErrorBackgroundColor = $Background
+$Host.PrivateData.WarningForegroundColor = $Messages
+$Host.PrivateData.WarningBackgroundColor = $Background
+$Host.PrivateData.DebugForegroundColor = $Messages
+$Host.PrivateData.DebugBackgroundColor = $Background
+$Host.PrivateData.VerboseForegroundColor = $Messages
+$Host.PrivateData.VerboseBackgroundColor = $Background
+$Host.PrivateData.ProgressForegroundColor = $Messages
+$Host.PrivateData.ProgressBackgroundColor = $Background
+Clear-Host
 
 ###############################################################################################################################################
 # Set the prompt
