@@ -28,11 +28,10 @@ N/A
 		
         $VerbosePreference = "Continue"
         
-        # Unblock the download
-        Get-Childitem -Path $SourceDir -Recurse | Unblock-File
-        
         # Get all the files: Need to go one level up to get other folders
         $SourceDir = Split-Path -Path $PSScriptRoot -Parent
+        # Unblock the download
+        Get-Childitem -Path $SourceDir -Recurse | Unblock-File
     }
     
     Process
