@@ -194,24 +194,16 @@ Returns the password expiration for 'gerryw'
     {
         Try
         {
-            Try
+            $u = Get-ADUser -Identity $Identity -ErrorAction SilentlyContinue
+            If ( $u.Name.Length -gt 0 )
             {
-                $u = Get-ADUser -Identity $Identity -ErrorAction Stop
-                If ( $u.Name.Length -gt 0 )
-                {
-                    Get-ADUser $Identity –Properties "DisplayName", "msDS-UserPasswordExpiryTimeComputed" | 
-                    Select-Object -Property "Displayname", @{Name = "ExpiryDate"; Expression = { [datetime]::FromFileTime($_."msDS-UserPasswordExpiryTimeComputed") } } 
-                }
-                Else
-                {
-                    Write-Log "Unable to find user: $Identity"
-                }
+                Get-ADUser $Identity -Properties "DisplayName", "msDS-UserPasswordExpiryTimeComputed" | 
+                Select-Object -Property "Displayname", @{Name = "ExpiryDate"; Expression = { [datetime]::FromFileTime($_."msDS-UserPasswordExpiryTimeComputed") } } 
             }
-            Catch
+            Else
             {
-                Write-Log "Unable to find user: $Identity"
+                Write-Log "Unable to find user: $Identity "
             }
-        
         }
         Catch
         {
