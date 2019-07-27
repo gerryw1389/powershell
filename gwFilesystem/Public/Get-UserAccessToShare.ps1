@@ -1,34 +1,31 @@
-﻿<#######<Script>#######>
+<#######<Script>#######>
 <#######<Header>#######>
-# Name: Get-ExtractedEmailAddresses
+# Name: Get-UsersAccessToShare
 <#######</Header>#######>
 <#######<Body>#######>
-Function Get-ExtractedEmailAddresses
+Function Get-UsersAccessToShare
 {
     <#
 .Synopsis
-Gets email addresses from one or more text files.
+Creates two text files at 'c:\scripts' that contains paths that the group 'builtin\users' can write to and read to.
 .Description
-Gets email addresses from one or more text files. Returns a seperate parsed file called ".\extracted.txt"
-To further clean up the results, I would run: Get-Content .\Extracted.Txt | Sort-Object | Select-Object -Unique | Out-File .\Sorted.Txt -Force
-.Parameter FilePath
-Mandatory file(s) to search for email regex.
+Creates two text files at 'c:\scripts' that contains paths that the group 'builtin\users' can write to and read to.
+Requires 'accesschk64.exe' to be in the directory 'c:\scripts'.
 .Example
-Get-ExtractedEmailAddresses -FilePath c:\scripts\myfile.log
-Parses "c:\scripts\myfile.log" for any email addresses and returns a document called "extracted.txt" in the scripts running directory with the emails returned.
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
+Get-UsersAccessToShare
+Creates two text files at 'c:\scripts' that contains paths that the group 'users' can write to and read to.
+.Notes
+Version history:
+2018-09-27: version 1
 #>
 
     [Cmdletbinding()]
     Param
     (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String[]]$FilePath
     )
     
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -192,31 +189,31 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         ####################</Default Begin Block>####################
         
-        $OutputFile = "$Psscriptroot\extracted.txt"
-        # Overwrite output file from previous run
-        New-Item $OutputFile -ItemType File -Force | Out-Null
-        
     }
-    
+
     Process
-    {   
+    {
         Try
         {
-            Foreach ( $Path in $FilePath )
+            # Get folders users have write access to    
+            $folders = Get-ChildItem 'g:\data'
+            New-Item -Path 'c:\scripts\write.txt' -ItemType file | Out-Null
+            foreach ($folder in $folders)
             {
-                If ( Test-Path $Path )
-                {
-                    $EmailRegex = '\b[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b'
-
-                    Select-String -Path $Path -Pattern $EmailRegex -AllMatches | 
-                        ForEach-Object { $_.Matches } | 
-                        ForEach-Object { $_.Value } |
-                        Out-File $OutputFile -Encoding ascii -Append
-                }
-                Else
-                {
-                    Write-Log "Path does not exist: $Path"
-                }
+                $foldername = $($folder.fullname)
+                # If you want to change the group, replace 'users' with whatever group. I think it has to be a local group, could be wrong.
+                c:\scripts\accesschk64.exe users $foldername -w | 
+                    Out-File 'c:\scripts\write.txt' -Append
+            }
+            # Get folders users have read access to
+            $folders = Get-ChildItem 'g:\data'
+            New-Item -Path 'c:\scripts\read.txt' -ItemType file | Out-Null
+            foreach ($folder in $folders)
+            {
+                $foldername = $($folder.fullname)
+                # If you want to change the group, replace 'users' with whatever group. I think it has to be a local group, could be wrong.
+                c:\scripts\accesschk64.exe users $foldername -r | 
+                    Out-File 'c:\scripts\read.txt' -Append
             }
         }
         Catch
@@ -229,7 +226,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {
         Stop-log
     }
-
 }
 
 <#######</Body>#######>

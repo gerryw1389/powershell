@@ -1,34 +1,44 @@
-﻿<#######<Script>#######>
+<#######<Script>#######>
 <#######<Header>#######>
-# Name: Get-ExtractedEmailAddresses
+# Name: Get-PatchSunday
 <#######</Header>#######>
 <#######<Body>#######>
-Function Get-ExtractedEmailAddresses
-{
-    <#
-.Synopsis
-Gets email addresses from one or more text files.
+Function Get-PatchSunday
+{ 
+<#  
+.SYNOPSIS   
+Gets the Sunday after Patch Tuesday of any month. Used for maintenance cycles.
 .Description
-Gets email addresses from one or more text files. Returns a seperate parsed file called ".\extracted.txt"
-To further clean up the results, I would run: Get-Content .\Extracted.Txt | Sort-Object | Select-Object -Unique | Out-File .\Sorted.Txt -Force
-.Parameter FilePath
-Mandatory file(s) to search for email regex.
-.Example
-Get-ExtractedEmailAddresses -FilePath c:\scripts\myfile.log
-Parses "c:\scripts\myfile.log" for any email addresses and returns a document called "extracted.txt" in the scripts running directory with the emails returned.
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
-#>
-
+    Gets the Sunday after Patch Tuesday of any month. Used for maintenance cycles.
+.PARAMETER month 
+The month to check
+.PARAMETER year 
+The year to check
+.EXAMPLE  
+Get-PatchSunday -month 8 -year 2018
+.EXAMPLE  
+Get-PatchSunday June 2018
+.Notes
+To check older patch Sunday's, type something like:
+$Months = 1..12
+ForEach ($M in $Months)
+{
+Get-PatchSunday -Month $m
+# See next years patches
+Get-PatchSunday -Month $m -Year 2019
+}
+#> 
     [Cmdletbinding()]
-    Param
-    (
+    param
+    ( 
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String[]]$FilePath
-    )
-    
+        [string]$Month,
+
+        [Parameter(Mandatory=$true,Position=1)]
+        [string]$Year
+    ) 
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -38,11 +48,32 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         
         Function Write-Log
         {
+            <#
+            .Synopsis
+            This writes objects to the logfile and to the screen with optional coloring.
+            .Parameter InputObject
+            This can be text or an object. The function will convert it to a string and verbose it out.
+            Since the main function forces verbose output, everything passed here will be displayed on the screen and to the logfile.
+            .Parameter Color
+            Optional coloring of the input object.
+            .Example
+            Write-Log "hello" -Color "yellow"
+            Will write the string "VERBOSE: YYYY-MM-DD HH: Hello" to the screen and the logfile.
+            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
+            .Example
+            Write-Log (cmd /c "ipconfig /all")
+            Will write the string "VERBOSE: YYYY-MM-DD HH: ****ipconfig output***" to the screen and the logfile.
+            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
+            .Notes
+            2018-06-24: Initial script
+            #>
+            
             Param
             (
                 [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
                 [PSObject]$InputObject,
                 
+                # I usually set this to = "Green" since I use a black and green theme console
                 [Parameter(Mandatory = $False, Position = 1)]
                 [Validateset("Black", "Blue", "Cyan", "Darkblue", "Darkcyan", "Darkgray", "Darkgreen", "Darkmagenta", "Darkred", `
                         "Darkyellow", "Gray", "Green", "Magenta", "Red", "White", "Yellow")]
@@ -67,6 +98,13 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         Function Start-Log
         {
+            <#
+            .Synopsis
+            Creates the log file and starts transcribing the session.
+            .Notes
+            2018-06-24: Initial script
+            #>
+            
             # Create transcript file if it doesn't exist
             If (!(Test-Path $Logfile))
             {
@@ -93,6 +131,13 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         
         Function Stop-Log
         {
+            <#
+            .Synopsis
+            Stops transcribing the session and cleans the transcript file by removing the fluff.
+            .Notes
+            2018-06-24: Initial script
+            #>
+            
             Write-Log "Function completed on $env:COMPUTERNAME"
             Write-Log "####################</Function>####################"
             Stop-Transcript
@@ -191,46 +236,33 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Set-Console
 
         ####################</Default Begin Block>####################
-        
-        $OutputFile = "$Psscriptroot\extracted.txt"
-        # Overwrite output file from previous run
-        New-Item $OutputFile -ItemType File -Force | Out-Null
-        
-    }
-    
-    Process
-    {   
-        Try
-        {
-            Foreach ( $Path in $FilePath )
-            {
-                If ( Test-Path $Path )
-                {
-                    $EmailRegex = '\b[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b'
 
-                    Select-String -Path $Path -Pattern $EmailRegex -AllMatches | 
-                        ForEach-Object { $_.Matches } | 
-                        ForEach-Object { $_.Value } |
-                        Out-File $OutputFile -Encoding ascii -Append
-                }
-                Else
-                {
-                    Write-Log "Path does not exist: $Path"
-                }
+    }
+    Process
+    {
+        $Firstdayofmonth = [Datetime] ([String]$Month + "/1/" + [String]$Year)
+        $Counter = 0..30
+        # Create an array
+        $Arr = [System.Collections.Generic.List[Psobject]]@()
+        Foreach ($C In $Counter)
+        {
+            # Get each day of the month
+            $Day = $Firstdayofmonth.Adddays($C) 
+            # If it is Tuesday, add to the array
+            If ( $($Day.Dayofweek) -Like "Tue*")
+            {
+                [Void]$Arr.Add($Day)
             }
         }
-        Catch
-        {
-            Write-Error $($_.Exception.Message)
-        }
+        # Select the second Tuesday, Patch Tuesday, and add 5 days to it so it will be Sunday
+        $Sunday = $Arr[1].Adddays(5)
+        # Return Sunday for the month
+        Write-Output $($Sunday.ToString("yyyy-MM-dd"))
     }
-
-    End
+    End 
     {
         Stop-log
     }
-
 }
-
 <#######</Body>#######>
 <#######</Script>#######>

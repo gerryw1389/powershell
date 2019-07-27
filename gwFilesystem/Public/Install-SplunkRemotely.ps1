@@ -1,34 +1,28 @@
-﻿<#######<Script>#######>
+<#######<Script>#######>
 <#######<Header>#######>
-# Name: Get-ExtractedEmailAddresses
+# Name: Install-SplunkRemotely
 <#######</Header>#######>
 <#######<Body>#######>
-Function Get-ExtractedEmailAddresses
+Function Install-SplunkRemotely
 {
     <#
 .Synopsis
-Gets email addresses from one or more text files.
+Tries to install Splunk remotely assuming you have the installer locally at "C:\scripts\splunk.msi"
 .Description
-Gets email addresses from one or more text files. Returns a seperate parsed file called ".\extracted.txt"
-To further clean up the results, I would run: Get-Content .\Extracted.Txt | Sort-Object | Select-Object -Unique | Out-File .\Sorted.Txt -Force
-.Parameter FilePath
-Mandatory file(s) to search for email regex.
+Tries to install Splunk remotely assuming you have the installer locally at "C:\scripts\splunk.msi"
+Not tested
 .Example
-Get-ExtractedEmailAddresses -FilePath c:\scripts\myfile.log
-Parses "c:\scripts\myfile.log" for any email addresses and returns a document called "extracted.txt" in the scripts running directory with the emails returned.
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
+Install-SplunkRemotely
+Tries to install Splunk remotely assuming you have the installer locally at "C:\scripts\splunk.msi"
 #>
 
     [Cmdletbinding()]
     Param
     (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String[]]$FilePath
     )
     
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -192,31 +186,57 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         ####################</Default Begin Block>####################
         
-        $OutputFile = "$Psscriptroot\extracted.txt"
-        # Overwrite output file from previous run
-        New-Item $OutputFile -ItemType File -Force | Out-Null
-        
     }
-    
+
     Process
-    {   
+    {
         Try
         {
-            Foreach ( $Path in $FilePath )
-            {
-                If ( Test-Path $Path )
-                {
-                    $EmailRegex = '\b[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b'
+            $servers = Get-Content -Path "c:\scripts\s.txt"
 
-                    Select-String -Path $Path -Pattern $EmailRegex -AllMatches | 
-                        ForEach-Object { $_.Matches } | 
-                        ForEach-Object { $_.Value } |
-                        Out-File $OutputFile -Encoding ascii -Append
-                }
-                Else
+            $yes = @()
+            $no = @()
+            foreach ($s in $servers)
+            {
+                If (Test-Connection $s -Quiet -Count 1)
                 {
-                    Write-Log "Path does not exist: $Path"
-                }
+                    Write-Log "trying to connect to $s"
+                    Invoke-Command -Computername $s -ScriptBlock { 
+                        Write-Log "connected to $s"
+                        If ((not (Test-Path "c:\scripts")))
+                        {
+                            New-Item -ItemType Directory -Path "c:\scripts"
+                        }
+                        Else {} 
+                        If ((not (Test-Path "c:\scripts\splunk.msi")))
+                        {
+                            Copy-Item -Path "C:\scripts\splunk.msi" -Destination "\\$s\C$\scripts\"
+                        }
+                        Else {}
+                        $SplunkInstall = Start-Process -FilePath "msiexec" -ArgumentList "/i `"c:\scripts\splunk.msi`" AGREETOLICENSE=Yes DEPLOYMENT_SERVER=splunk.domain.com:8089 /l*v `"$env:TEMP\SplunkInstall.log`" /qn /norestart" -Wait -Passthru
+                        $ExitCode = $SplunkInstall.ExitCode
+                        If ($ExitCode -eq 0)
+                        { 
+                            Write-Log "Installation completed successfully" 
+                        }
+                        elseif ($ExitCode -eq 1603)
+                        { 
+                            Write-Log "Current version already installed."
+                        }
+                        else
+                        {
+                            Write-Log "Installer exit code $($process.ExitCode)"
+                        }
+                    }
+
+                } -AsJob
+                Write-Log "successfully ran on $s"
+                $yes += $s
+            }
+            Else
+            {
+                Write-Log "unable to connect to $s"
+                $no += $s
             }
         }
         Catch
@@ -227,9 +247,14 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
     End
     {
+        
+        Write-Log "##########################"
+        Write-Log "Successful on $yes"
+        Write-Log "##########################"
+        Write-Log "Not successful on $no"
+        Write-Log "##########################"
         Stop-log
     }
-
 }
 
 <#######</Body>#######>

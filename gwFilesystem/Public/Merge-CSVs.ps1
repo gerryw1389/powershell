@@ -1,34 +1,36 @@
-﻿<#######<Script>#######>
+<#######<Script>#######>
 <#######<Header>#######>
-# Name: Get-ExtractedEmailAddresses
+# Name: Merge-CSVs
 <#######</Header>#######>
 <#######<Body>#######>
-Function Get-ExtractedEmailAddresses
+Function Merge-CSVs
 {
     <#
 .Synopsis
-Gets email addresses from one or more text files.
+Combines a group of CSV Files and adds a "filename" field to the end to sort them by.
 .Description
-Gets email addresses from one or more text files. Returns a seperate parsed file called ".\extracted.txt"
-To further clean up the results, I would run: Get-Content .\Extracted.Txt | Sort-Object | Select-Object -Unique | Out-File .\Sorted.Txt -Force
-.Parameter FilePath
-Mandatory file(s) to search for email regex.
+Combines a group of CSV Files and adds a "filename" field to the end to sort them by.
+.Parameter Path
+The folder where the .csv files are located - is not recursive by default.
+.Parameter Destination
+The CSV file you want created from the merge.
 .Example
-Get-ExtractedEmailAddresses -FilePath c:\scripts\myfile.log
-Parses "c:\scripts\myfile.log" for any email addresses and returns a document called "extracted.txt" in the scripts running directory with the emails returned.
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
+Merge-CSVs -Path c:\scripts -Destination c:\scripts\merged.csv
+Sends all the servers hostnames to a text file broken up by group.
 #>
 
     [Cmdletbinding()]
     Param
     (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String[]]$FilePath
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+        [string[]]$Path,
+
+        [Parameter(Mandatory = $true, Position = 1)]
+        [string]$Destination
     )
     
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -192,32 +194,34 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         ####################</Default Begin Block>####################
         
-        $OutputFile = "$Psscriptroot\extracted.txt"
-        # Overwrite output file from previous run
-        New-Item $OutputFile -ItemType File -Force | Out-Null
-        
     }
-    
+
     Process
-    {   
+    {
         Try
         {
-            Foreach ( $Path in $FilePath )
+            $Output = @()
+            $Csvs = [System.Collections.Generic.List[PSObject]]@()
+            $Files = Get-Childitem $Path | Select-Object -Property fullname
+            foreach ($f in $files)
             {
-                If ( Test-Path $Path )
-                {
-                    $EmailRegex = '\b[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b'
-
-                    Select-String -Path $Path -Pattern $EmailRegex -AllMatches | 
-                        ForEach-Object { $_.Matches } | 
-                        ForEach-Object { $_.Value } |
-                        Out-File $OutputFile -Encoding ascii -Append
-                }
-                Else
-                {
-                    Write-Log "Path does not exist: $Path"
-                }
+                [void]$Csvs.Add($($f.fullname))
             }
+            foreach ($CSV in $CSVs)
+            { 
+                if (Test-Path $CSV)
+                { 
+                    $FileName = [System.IO.Path]::GetFileName($CSV) 
+                    $temp = Import-CSV -Path $CSV | Select-Object *, @{Expression = {$FileName}; Label = "FileName"} 
+                    $Output += $temp
+                }
+                else
+                { 
+                    Write-Warning "$CSV : No such file found" 
+                } 
+            } 
+            $Output | Export-Csv -Path $Destination -NoTypeInformation 
+            Write-Output "$Destination successfully created"
         }
         Catch
         {
@@ -229,7 +233,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {
         Stop-log
     }
-
 }
 
 <#######</Body>#######>

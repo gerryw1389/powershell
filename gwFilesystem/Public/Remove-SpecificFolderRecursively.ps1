@@ -1,34 +1,43 @@
-﻿<#######<Script>#######>
+<#######<Script>#######>
 <#######<Header>#######>
-# Name: Get-ExtractedEmailAddresses
+# Name: Remove-SpecificFolderRecursively
+# Copyright: Gerry Williams (https://www.gerrywilliams.net)
+# License: MIT License (https://opensource.org/licenses/mit)
+# Script Modified from: n/a
 <#######</Header>#######>
 <#######<Body>#######>
-Function Get-ExtractedEmailAddresses
+Function Remove-SpecificFolderRecursively
 {
-    <#
+<#
 .Synopsis
-Gets email addresses from one or more text files.
+Removes all files under a specific folder recursively. I use this all the time for 'PSLogs' that each of my functions generate.
 .Description
-Gets email addresses from one or more text files. Returns a seperate parsed file called ".\extracted.txt"
-To further clean up the results, I would run: Get-Content .\Extracted.Txt | Sort-Object | Select-Object -Unique | Out-File .\Sorted.Txt -Force
-.Parameter FilePath
-Mandatory file(s) to search for email regex.
+Removes all files under a specific folder recursively. I use this all the time for 'PSLogs' that each of my functions generate.
 .Example
-Get-ExtractedEmailAddresses -FilePath c:\scripts\myfile.log
-Parses "c:\scripts\myfile.log" for any email addresses and returns a document called "extracted.txt" in the scripts running directory with the emails returned.
-.Functionality
+Remove-SpecificFolderRecursively -Path 'c:\scripts\powershell' -Filter 'pslogs'
+Removes all files under a specific folder recursively. I use this all the time for 'PSLogs' that each of my functions generate.
+.Parameter Path
+The top folder you want to search recursively.
+.Parameter Filter
+The name of the folder you want to delete all files under.
+.Notes
 Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
 #>
 
     [Cmdletbinding()]
+    
     Param
     (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String[]]$FilePath
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+        [String] $Path,
+
+        [Parameter(Mandatory = $true, Position = 1)]
+        [String] $Filter
     )
     
     Begin
     {       
+        
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -38,11 +47,32 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         
         Function Write-Log
         {
+            <#
+            .Synopsis
+            This writes objects to the logfile and to the screen with optional coloring.
+            .Parameter InputObject
+            This can be text or an object. The function will convert it to a string and verbose it out.
+            Since the main function forces verbose output, everything passed here will be displayed on the screen and to the logfile.
+            .Parameter Color
+            Optional coloring of the input object.
+            .Example
+            Write-Log "hello" -Color "yellow"
+            Will write the string "VERBOSE: YYYY-MM-DD HH: Hello" to the screen and the logfile.
+            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
+            .Example
+            Write-Log (cmd /c "ipconfig /all")
+            Will write the string "VERBOSE: YYYY-MM-DD HH: ****ipconfig output***" to the screen and the logfile.
+            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
+            .Notes
+            2018-06-24: Initial script
+            #>
+            
             Param
             (
                 [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
                 [PSObject]$InputObject,
                 
+                # I usually set this to = "Green" since I use a black and green theme console
                 [Parameter(Mandatory = $False, Position = 1)]
                 [Validateset("Black", "Blue", "Cyan", "Darkblue", "Darkcyan", "Darkgray", "Darkgreen", "Darkmagenta", "Darkred", `
                         "Darkyellow", "Gray", "Green", "Magenta", "Red", "White", "Yellow")]
@@ -67,6 +97,13 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         Function Start-Log
         {
+            <#
+            .Synopsis
+            Creates the log file and starts transcribing the session.
+            .Notes
+            2018-06-24: Initial script
+            #>
+            
             # Create transcript file if it doesn't exist
             If (!(Test-Path $Logfile))
             {
@@ -93,6 +130,13 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         
         Function Stop-Log
         {
+            <#
+            .Synopsis
+            Stops transcribing the session and cleans the transcript file by removing the fluff.
+            .Notes
+            2018-06-24: Initial script
+            #>
+            
             Write-Log "Function completed on $env:COMPUTERNAME"
             Write-Log "####################</Function>####################"
             Stop-Transcript
@@ -106,10 +150,10 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 			
             # Get all the matches for PS Headers and dump to a file
             $Transcript | 
-                Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
-                ForEach-Object {$_.Matches} | 
-                ForEach-Object {$_.Value} | 
-                Out-File -FilePath $TempFile -Append
+            Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
+            ForEach-Object { $_.Matches } | 
+            ForEach-Object { $_.Value } | 
+            Out-File -FilePath $TempFile -Append
 
             # Compare the two and put the differences in a third file
             $m1 = Get-Content -Path $Logfile
@@ -191,32 +235,45 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Set-Console
 
         ####################</Default Begin Block>####################
-        
-        $OutputFile = "$Psscriptroot\extracted.txt"
-        # Overwrite output file from previous run
-        New-Item $OutputFile -ItemType File -Force | Out-Null
-        
+
     }
     
     Process
     {   
         Try
         {
-            Foreach ( $Path in $FilePath )
+            $FolderSet = Get-ChildItem $Path -Filter $Filter -Recurse
+            $Folders = @()
+            $Files = @()
+            
+            Foreach ($Folder in $($FolderSet.Fullname))
             {
-                If ( Test-Path $Path )
-                {
-                    $EmailRegex = '\b[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b'
-
-                    Select-String -Path $Path -Pattern $EmailRegex -AllMatches | 
-                        ForEach-Object { $_.Matches } | 
-                        ForEach-Object { $_.Value } |
-                        Out-File $OutputFile -Encoding ascii -Append
-                }
+                $Folders += $Folder
+                
+            }
+            
+            <#
+            Run this instead if you want to set exclusions:
+            Foreach ($Folder in $($FolderSet.Fullname))
+            {
+                If ( $Folder -like 'C:\scripts' )
+                { }
                 Else
                 {
-                    Write-Log "Path does not exist: $Path"
+                    $Folders += $Folder
                 }
+            }
+            #>
+            
+            Foreach ($Folder in $Folders)
+            {
+                $Files += ((Get-Childitem -Path $Folder).FullName)
+            }
+            
+            Foreach ($File in $Files)
+            {
+                Write-Log "Removing $File"
+                Remove-Item -Path $File -Force | Out-Null
             }
         }
         Catch
@@ -229,7 +286,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {
         Stop-log
     }
-
 }
 
 <#######</Body>#######>

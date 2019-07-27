@@ -1,21 +1,18 @@
 ﻿<#######<Script>#######>
 <#######<Header>#######>
-# Name: Get-ExtractedEmailAddresses
+# Name: Get-FirewallNServiceStatus
 <#######</Header>#######>
 <#######<Body>#######>
-Function Get-ExtractedEmailAddresses
+Function Get-FirewallNServiceStatus
 {
     <#
 .Synopsis
-Gets email addresses from one or more text files.
+Gets the status of the Windows Firewall and the "Remote Desktop Services" service for a given server.
 .Description
-Gets email addresses from one or more text files. Returns a seperate parsed file called ".\extracted.txt"
-To further clean up the results, I would run: Get-Content .\Extracted.Txt | Sort-Object | Select-Object -Unique | Out-File .\Sorted.Txt -Force
-.Parameter FilePath
-Mandatory file(s) to search for email regex.
+Gets the status of the Windows Firewall and the "Remote Desktop Services" service for a given server.
 .Example
-Get-ExtractedEmailAddresses -FilePath c:\scripts\myfile.log
-Parses "c:\scripts\myfile.log" for any email addresses and returns a document called "extracted.txt" in the scripts running directory with the emails returned.
+Get-FirewallNServiceStatus
+Displays the status of the RDS Service and the firewall status.
 .Functionality
 Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
 #>
@@ -23,8 +20,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     [Cmdletbinding()]
     Param
     (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String[]]$FilePath
     )
     
     Begin
@@ -192,32 +187,85 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         ####################</Default Begin Block>####################
         
-        $OutputFile = "$Psscriptroot\extracted.txt"
-        # Overwrite output file from previous run
-        New-Item $OutputFile -ItemType File -Force | Out-Null
+        $Counter = 0
         
+        [string]$OsName = Get-WmiObject -Query 'SELECT Caption FROM Win32_OperatingSystem' -Namespace ROOT\Cimv2 | Select-Object -ExpandProperty Caption
+        Switch -Regex ($osName)
+        {
+            '7'
+            {
+                Write-output $osName; $Counter = 1; Break 
+            }
+            # Had to put R2 first because if it matches 2008, it would just break and not keep the correct counter. Nested elseif's could be another option.
+            '2008 R2'
+            {
+                Write-output $osName; $Counter = 3; Break 
+            }
+            '2008'
+            {
+                Write-output $osName; $Counter = 2; Break 
+            }
+            '2012 R2'
+            {
+                Write-output $osName; $Counter = 5; Break 
+            }
+            '2012'
+            {
+                Write-output $osName; $Counter = 4; Break 
+            }
+            '10'
+            {
+                Write-output $osName; $Counter = 6; Break 
+            }
+            '2016'
+            {
+                Write-output $osName; $Counter = 7; Break 
+            }
+        }
     }
     
     Process
     {   
         Try
         {
-            Foreach ( $Path in $FilePath )
+            
+            $Status = $((Get-Service -Name TermService).Status)
+            If ($Status -Like "Running")
             {
-                If ( Test-Path $Path )
-                {
-                    $EmailRegex = '\b[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b'
-
-                    Select-String -Path $Path -Pattern $EmailRegex -AllMatches | 
-                        ForEach-Object { $_.Matches } | 
-                        ForEach-Object { $_.Value } |
-                        Out-File $OutputFile -Encoding ascii -Append
-                }
-                Else
-                {
-                    Write-Log "Path does not exist: $Path"
-                }
+                Write-output "RDS Service is running"
             }
+            Else
+            {
+                Write-output "RDS Service is not running"
+            }
+		
+            If ($Counter -le 4)
+            {
+                $net = cmd /c "netsh advfirewall show all state"
+                Write-output $net
+            }
+            Else
+            {
+                $Gnp = Get-NetFirewallProfile | Select-Object -Property Name, Enabled
+                Write-Output $Gnp
+            }
+
+            <# Option 2:
+        $RegPath = "HKLM:\System\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\StandardProfile"
+		$Value = (Get-Item $RegPath | ForEach-Object { Get-ItemProperty -Path $_.PSPath }).EnableFirewall
+		If ($Value -eq 0)
+		{
+		Write-output "Firewall is disabled"
+		}
+		Elseif ($Value -eq 1)
+		{
+		Write-output "Firewall is enabled"
+		}
+		Else
+		{
+		Write-output "Unable to determine state of firewall"
+		}
+		#>
         }
         Catch
         {
@@ -231,6 +279,5 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     }
 
 }
-
 <#######</Body>#######>
 <#######</Script>#######>

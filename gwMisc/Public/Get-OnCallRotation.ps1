@@ -1,34 +1,43 @@
-﻿<#######<Script>#######>
+<#######<Script>#######>
 <#######<Header>#######>
-# Name: Get-ExtractedEmailAddresses
+# Name: Get-OnCallRotation
 <#######</Header>#######>
 <#######<Body>#######>
-Function Get-ExtractedEmailAddresses
+Function Get-OnCallRotation
 {
     <#
 .Synopsis
-Gets email addresses from one or more text files.
+Returns the all the on-call rotation dates between two dates.
 .Description
-Gets email addresses from one or more text files. Returns a seperate parsed file called ".\extracted.txt"
-To further clean up the results, I would run: Get-Content .\Extracted.Txt | Sort-Object | Select-Object -Unique | Out-File .\Sorted.Txt -Force
-.Parameter FilePath
-Mandatory file(s) to search for email regex.
+Returns the all the on-call rotation dates between two dates.
+.Parameter StartDate
+The start date of that you want to check from.
+.Parameter EndDate
+The end date of that you want to check to.
 .Example
-Get-ExtractedEmailAddresses -FilePath c:\scripts\myfile.log
-Parses "c:\scripts\myfile.log" for any email addresses and returns a document called "extracted.txt" in the scripts running directory with the emails returned.
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
+Get-OnCallRotation -StartDate "7/25/2018" -EndDate "12/31/2018"
+Returns:
+2018-08-15 to 2018-08-22 
+2018-09-05 to 2018-09-12 
+2018-09-26 to 2018-10-03 
+2018-10-17 to 2018-10-24 
+2018-11-07 to 2018-11-14 
+2018-11-28 to 2018-12-05 
+2018-12-19 to 2018-12-26 
+2019-01-09 to 2019-01-16 
 #>
-
     [Cmdletbinding()]
     Param
     (
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String[]]$FilePath
+        [Datetime]$StartDate,
+
+        [Parameter(Mandatory=$true,Position=1)]
+        [Datetime]$EndDate
     )
-    
+
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -191,37 +200,32 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Set-Console
 
         ####################</Default Begin Block>####################
-        
-        $OutputFile = "$Psscriptroot\extracted.txt"
-        # Overwrite output file from previous run
-        New-Item $OutputFile -ItemType File -Force | Out-Null
-        
-    }
-    
-    Process
-    {   
-        Try
-        {
-            Foreach ( $Path in $FilePath )
-            {
-                If ( Test-Path $Path )
-                {
-                    $EmailRegex = '\b[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b'
 
-                    Select-String -Path $Path -Pattern $EmailRegex -AllMatches | 
-                        ForEach-Object { $_.Matches } | 
-                        ForEach-Object { $_.Value } |
-                        Out-File $OutputFile -Encoding ascii -Append
-                }
-                Else
-                {
-                    Write-Log "Path does not exist: $Path"
-                }
-            }
-        }
-        Catch
+    }
+    Process
+    {
+        # Create an array that adds 3 weeks between start and end date and store in Array $arr
+        $Arr = [System.Collections.Generic.List[PSObject]]@()
+        Do
         {
-            Write-Error $($_.Exception.Message)
+            $Rotation = $StartDate.AddDays(21)
+            [void]$arr.add($Rotation)
+            $StartDate = $StartDate.AddDays(21)
+        }
+        While ($StartDate -lt $EndDate)
+
+        # Create a second array that is just 7 more days for each item in Array $arr
+        $End = [System.Collections.Generic.List[PSObject]]@()
+        ForEach ($a in $Arr)
+        {
+            $RotationEnd = $a.AddDays(7)
+            [void]$End.add($RotationEnd)
+        }
+
+        # Loop through either array since they have the same count and Write the time frames
+        for ($i = 0; $i -lt $($arr.Count); $i++)
+        {        
+            Write-output " $($arr[$i].ToString("yyyy-MM-dd")) to $($end[$i].ToString("yyyy-MM-dd")) "
         }
     }
 
@@ -229,8 +233,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {
         Stop-log
     }
-
 }
-
 <#######</Body>#######>
 <#######</Script>#######>

@@ -1,34 +1,34 @@
-﻿<#######<Script>#######>
+<#######<Script>#######>
 <#######<Header>#######>
-# Name: Get-ExtractedEmailAddresses
+# Name: Get-PoweredOffVMs
+# Copyright: Gerry Williams (https://www.gerrywilliams.net)
+# License: MIT License (https://opensource.org/licenses/mit)
+# Script Modified from: n/a
 <#######</Header>#######>
 <#######<Body>#######>
-Function Get-ExtractedEmailAddresses
+Function Get-PoweredOffVMs
 {
     <#
 .Synopsis
-Gets email addresses from one or more text files.
+Gets a list of powered off VM's in vCenter and exports to CSV.
 .Description
-Gets email addresses from one or more text files. Returns a seperate parsed file called ".\extracted.txt"
-To further clean up the results, I would run: Get-Content .\Extracted.Txt | Sort-Object | Select-Object -Unique | Out-File .\Sorted.Txt -Force
-.Parameter FilePath
-Mandatory file(s) to search for email regex.
+Gets a list of powered off VM's in vCenter and exports to CSV.
+.Parameter Path
+The path where you want the CSV to export to with the name of the csv in it.
 .Example
-Get-ExtractedEmailAddresses -FilePath c:\scripts\myfile.log
-Parses "c:\scripts\myfile.log" for any email addresses and returns a document called "extracted.txt" in the scripts running directory with the emails returned.
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
+Get-PoweredOffVMs -Path c:\scripts\poweredoff.csv
+Gets a list of powered off VM's in vCenter and exports them to "c:\scripts\poweredoff.csv"
 #>
 
     [Cmdletbinding()]
     Param
     (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String[]]$FilePath
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+        [String] $Path
     )
     
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -192,32 +192,61 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         ####################</Default Begin Block>####################
         
-        $OutputFile = "$Psscriptroot\extracted.txt"
-        # Overwrite output file from previous run
-        New-Item $OutputFile -ItemType File -Force | Out-Null
-        
+        Import-Module VMware.PowerCLI
+        Set-PowerCLIConfiguration -InvalidCertificateAction ignore -confirm:$false
+        $VCServer = 'your.server.com'
+        $vcUSERNAME = Read-Host 'Enter user name'
+        $vcPassword = Read-Host 'Enter password' -AsSecureString
+        $vccredential = New-Object System.Management.Automation.PSCredential ($vcusername, $vcPassword)
+        $connection = Connect-VIServer -Server $VCServer -Cred $vccredential -ErrorAction SilentlyContinue -WarningAction 0 | Out-Null
+
+        If (-not ( Test-Path $Path ))
+        {
+            New-Item -Itemtyp File -Path $Path | out-null
+        }
     }
-    
+
     Process
-    {   
+    {
         Try
         {
-            Foreach ( $Path in $FilePath )
-            {
-                If ( Test-Path $Path )
-                {
-                    $EmailRegex = '\b[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b'
+            $Vms = Get-Vm | Where-Object {$_.PowerState -eq "PoweredOff"}
 
-                    Select-String -Path $Path -Pattern $EmailRegex -AllMatches | 
-                        ForEach-Object { $_.Matches } | 
-                        ForEach-Object { $_.Value } |
-                        Out-File $OutputFile -Encoding ascii -Append
-                }
-                Else
-                {
-                    Write-Log "Path does not exist: $Path"
-                }
+            $hash = @{}
+            Foreach ($vm in $vms)
+            {
+
+                [DateTime]$OffDate = (Get-VIEvent -Entity $vm | Sort-Object -Property CreatedTime -Descending | 
+                        Where-Object { $_.Gettype().Name -eq "VmPoweredOffEvent" } | 
+                        Select-Object -First 1).CreatedTime
+
+                $hash.add( $($Vm.name), $OffDate.Tostring("yyyy-MM-dd"))
             }
+
+            function Format-Hashtable 
+            {
+                param(
+                    [Parameter(Mandatory, ValueFromPipeline)]
+                    [hashtable]$Hashtable,
+
+                    [ValidateNotNullOrEmpty()]
+                    [string]$KeyHeader = 'Name',
+
+                    [ValidateNotNullOrEmpty()]
+                    [string]$ValueHeader = 'Value'
+                )
+
+                $Hashtable.GetEnumerator() |
+                    Select-Object @{Label = $KeyHeader; Expression = {$_.Key}} , @{Label = $ValueHeader; Expression = {$_.Value}}
+
+            }
+
+            $hash | 
+                Format-Hashtable -KeyHeader ServerName -ValueHeader PoweredOffDate |
+                Select-Object -Property ServerName, PoweredOffDate | 
+                Sort-Object -Property PoweredOffDate -Descending | 
+                Export-CSV -LiteralPath $Path -NoTypeInformation -Force
+
         }
         Catch
         {
@@ -229,7 +258,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {
         Stop-log
     }
-
 }
 
 <#######</Body>#######>

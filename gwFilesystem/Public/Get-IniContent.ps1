@@ -1,34 +1,61 @@
-﻿<#######<Script>#######>
+<#######<Script>#######>
 <#######<Header>#######>
-# Name: Get-ExtractedEmailAddresses
+# Name: Get-IniContent
 <#######</Header>#######>
 <#######<Body>#######>
-Function Get-ExtractedEmailAddresses
+Function Get-IniContent
 {
     <#
-.Synopsis
-Gets email addresses from one or more text files.
-.Description
-Gets email addresses from one or more text files. Returns a seperate parsed file called ".\extracted.txt"
-To further clean up the results, I would run: Get-Content .\Extracted.Txt | Sort-Object | Select-Object -Unique | Out-File .\Sorted.Txt -Force
-.Parameter FilePath
-Mandatory file(s) to search for email regex.
-.Example
-Get-ExtractedEmailAddresses -FilePath c:\scripts\myfile.log
-Parses "c:\scripts\myfile.log" for any email addresses and returns a document called "extracted.txt" in the scripts running directory with the emails returned.
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
+.Synopsis  
+Gets the content of an INI file  
+.Description  
+Gets the content of an INI file and returns it as a hashtable  
+.Notes  
+Author        : Oliver Lipkau <oliver@lipkau.net>  
+Blog        : http://oliver.lipkau.net/blog/  
+Source        : https://github.com/lipkau/PsIni 
+http://gallery.technet.microsoft.com/scriptcenter/ea40c1ef-c856-434b-b8fb-ebd7a76e8d91 
+Version        : 1.0 - 2010/03/12 - Initial release  
+1.1 - 2014/12/11 - Typo (Thx SLDR) 
+Typo (Thx Dave Stiff) 
+#Requires -Version 2.0  
+.Inputs  
+System.String  
+.Outputs  
+System.Collections.Hashtable  
+.Parameter FilePath  
+Specifies the path to the input file.  
+.Example  
+$FileContent = Get-IniContent "C:\myinifile.ini"  
+-----------  
+Description  
+Saves the content of the c:\myinifile.ini in a hashtable called $FileContent  
+.Example  
+$inifilepath | $FileContent = Get-IniContent  
+-----------  
+Description  
+Gets the content of the ini file passed through the pipe into a hashtable called $FileContent  
+.Example  
+C:\PS>$FileContent = Get-IniContent "c:\settings.ini"  
+C:\PS>$FileContent["Section"]["Key"]  
+-----------  
+Description  
+Returns the key "Key" of the section "Section" from the C:\settings.ini file  
+.Link  
+Out-IniFile  
 #>
 
-    [Cmdletbinding()]
-    Param
-    (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String[]]$FilePath
-    )
+    [CmdletBinding()]  
+    Param(  
+        [ValidateNotNullOrEmpty()]  
+        [ValidateScript( {(Test-Path $_) -and ((Get-Item $_).Extension -eq ".ini")})]  
+        [Parameter(ValueFromPipeline = $True, Mandatory = $True)]  
+        [string]$FilePath  
+    )  
+
     
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -192,44 +219,57 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         ####################</Default Begin Block>####################
         
-        $OutputFile = "$Psscriptroot\extracted.txt"
-        # Overwrite output file from previous run
-        New-Item $OutputFile -ItemType File -Force | Out-Null
-        
     }
-    
+
     Process
-    {   
+    {
         Try
         {
-            Foreach ( $Path in $FilePath )
-            {
-                If ( Test-Path $Path )
-                {
-                    $EmailRegex = '\b[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b'
-
-                    Select-String -Path $Path -Pattern $EmailRegex -AllMatches | 
-                        ForEach-Object { $_.Matches } | 
-                        ForEach-Object { $_.Value } |
-                        Out-File $OutputFile -Encoding ascii -Append
-                }
-                Else
-                {
-                    Write-Log "Path does not exist: $Path"
-                }
-            }
+            Write-Verbose "$($MyInvocation.MyCommand.Name):: Processing file: $Filepath"  
+            $ini = @{}  
+            switch -regex -file $FilePath  
+            {  
+                "^\[(.+)\]$" # Section  
+                {  
+                    $section = $matches[1]  
+                    $ini[$section] = @{}  
+                    $CommentCount = 0  
+                }  
+                "^(;.*)$" # Comment  
+                {  
+                    if (!($section))  
+                    {  
+                        $section = "No-Section"  
+                        $ini[$section] = @{}  
+                    }  
+                    $value = $matches[1]  
+                    $CommentCount = $CommentCount + 1  
+                    $name = "Comment" + $CommentCount  
+                    $ini[$section][$name] = $value  
+                }   
+                "(.+?)\s*=\s*(.*)" # Key  
+                {  
+                    if (!($section))  
+                    {  
+                        $section = "No-Section"  
+                        $ini[$section] = @{}  
+                    }  
+                    $name, $value = $matches[1..2]  
+                    $ini[$section][$name] = $value  
+                }  
+            }  
+            Write-Verbose "$($MyInvocation.MyCommand.Name):: Finished Processing file: $FilePath"  
+            Return $ini  
         }
         Catch
         {
-            Write-Error $($_.Exception.Message)
+            Write-Error $($_.Exception.Message) 
         }
     }
-
     End
     {
         Stop-log
     }
-
 }
 
 <#######</Body>#######>

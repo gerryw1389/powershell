@@ -1,34 +1,36 @@
-﻿<#######<Script>#######>
+<#######<Script>#######>
 <#######<Header>#######>
-# Name: Get-ExtractedEmailAddresses
+# Name: Get-LocalAdminsRemotely
 <#######</Header>#######>
 <#######<Body>#######>
-Function Get-ExtractedEmailAddresses
+Function Get-LocalAdminsRemotely
 {
     <#
 .Synopsis
-Gets email addresses from one or more text files.
+Gets the local admin accounts on a server and outputs to a CSV.
 .Description
-Gets email addresses from one or more text files. Returns a seperate parsed file called ".\extracted.txt"
-To further clean up the results, I would run: Get-Content .\Extracted.Txt | Sort-Object | Select-Object -Unique | Out-File .\Sorted.Txt -Force
+Gets the local admin accounts on a server and outputs to a CSV.
 .Parameter FilePath
-Mandatory file(s) to search for email regex.
+A text file containing server names one servername per line.
+.Parameter OutputPath
+The path you want to export the CSV to.
 .Example
-Get-ExtractedEmailAddresses -FilePath c:\scripts\myfile.log
-Parses "c:\scripts\myfile.log" for any email addresses and returns a document called "extracted.txt" in the scripts running directory with the emails returned.
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
+Get-LocalAdminsRemotely -FilePath c:\scripts\servers.txt -OutputPath c:\scripts\server-admins.csv
+Gets the local admin accounts on each server and outputs to a CSV.
 #>
 
     [Cmdletbinding()]
     Param
     (
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String[]]$FilePath
+        [String] $FilePath,
+
+        [Parameter(Mandatory=$true,Position=1)]
+        [String] $OutputPath
     )
     
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -191,33 +193,27 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Set-Console
 
         ####################</Default Begin Block>####################
-        
-        $OutputFile = "$Psscriptroot\extracted.txt"
-        # Overwrite output file from previous run
-        New-Item $OutputFile -ItemType File -Force | Out-Null
-        
+         
     }
-    
+
     Process
-    {   
+    {
         Try
         {
-            Foreach ( $Path in $FilePath )
-            {
-                If ( Test-Path $Path )
-                {
-                    $EmailRegex = '\b[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b'
-
-                    Select-String -Path $Path -Pattern $EmailRegex -AllMatches | 
-                        ForEach-Object { $_.Matches } | 
-                        ForEach-Object { $_.Value } |
-                        Out-File $OutputFile -Encoding ascii -Append
+            # Import Servers
+            $Servers = Get-Content $FilePath
+            
+            Invoke-Command {
+                $Members = Net Localgroup Administrators | 
+                    Where-Object { $_ -And $_ -Notmatch "Command Completed Successfully" } | 
+                    Select-Object -Skip 4
+                
+                New-Object Psobject -Property @{
+                    Computername = $Env:Computername
+                    Group        = "Administrators"
+                    Members      = $Members
                 }
-                Else
-                {
-                    Write-Log "Path does not exist: $Path"
-                }
-            }
+            } -Computer $Servers | Export-Csv -LiteralPath $OutputPath -Notypeinformation #May need -credential (get-credential) if running unelevated
         }
         Catch
         {
@@ -229,7 +225,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {
         Stop-log
     }
-
 }
 
 <#######</Body>#######>

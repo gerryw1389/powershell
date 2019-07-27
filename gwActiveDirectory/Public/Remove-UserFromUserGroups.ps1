@@ -1,34 +1,39 @@
-﻿<#######<Script>#######>
+<#######<Script>#######>
 <#######<Header>#######>
-# Name: Get-ExtractedEmailAddresses
+# Name: Remove-UserFromUserGroups
 <#######</Header>#######>
 <#######<Body>#######>
-Function Get-ExtractedEmailAddresses
+Function Remove-UserFromUserGroups
 {
     <#
 .Synopsis
-Gets email addresses from one or more text files.
+Removes all groups a user is a part of except for ones you specify (optional)
 .Description
-Gets email addresses from one or more text files. Returns a seperate parsed file called ".\extracted.txt"
-To further clean up the results, I would run: Get-Content .\Extracted.Txt | Sort-Object | Select-Object -Unique | Out-File .\Sorted.Txt -Force
-.Parameter FilePath
-Mandatory file(s) to search for email regex.
+Removes all groups a user is a part of except for ones you specify (optional)
+.Parameter Identity
+One or more SamAccountNames.
+.Parameter Except
+Optional groups you may want the user to keep. I highly suggest they keep 'Domain Users'.
 .Example
-Get-ExtractedEmailAddresses -FilePath c:\scripts\myfile.log
-Parses "c:\scripts\myfile.log" for any email addresses and returns a document called "extracted.txt" in the scripts running directory with the emails returned.
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
+Remove-UserFromUserGroups -Identity 'bob', 'sammi' -Except 'Domain Users', 'All_Employees'
+Removes all groups a user is a part of except for ones you specify (optional)
+.Notes
+Version History:
+2018-12-06: Initial
 #>
 
     [Cmdletbinding()]
     Param
     (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String[]]$FilePath
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+        [String[]] $Identity,
+
+        [Parameter(Mandatory = $false, Position = 1)]
+        [String[]] $Except = 'Domain Users'
     )
     
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -192,30 +197,36 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         ####################</Default Begin Block>####################
         
-        $OutputFile = "$Psscriptroot\extracted.txt"
-        # Overwrite output file from previous run
-        New-Item $OutputFile -ItemType File -Force | Out-Null
+        Import-Module ActiveDirectory
         
     }
-    
+
     Process
-    {   
+    {
         Try
         {
-            Foreach ( $Path in $FilePath )
+            foreach ($user in $Identity)
             {
-                If ( Test-Path $Path )
+                Write-Log "Processing $user"
+                $groups = Get-ADPrincipalGroupMembership $user | Select-Object name
+                Write-Log "Groups: $groups"
+                foreach ($group in $groups)
                 {
-                    $EmailRegex = '\b[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b'
+                    [string]$g = $($group.name.ToString())
+                    Foreach ($e in $Except)
+                    {
+                        If ( $g -like $e)
+                        {
+                            # do nothing
+                        }
+                        Else
+                        {
+                            Remove-ADGroupMember -Identity $g -Members $user
+                            Write-Log "Removing $user from $g"
+                        }
+                    }
 
-                    Select-String -Path $Path -Pattern $EmailRegex -AllMatches | 
-                        ForEach-Object { $_.Matches } | 
-                        ForEach-Object { $_.Value } |
-                        Out-File $OutputFile -Encoding ascii -Append
-                }
-                Else
-                {
-                    Write-Log "Path does not exist: $Path"
+                    Remove-Variable -Name g
                 }
             }
         }
@@ -229,7 +240,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {
         Stop-log
     }
-
 }
 
 <#######</Body>#######>

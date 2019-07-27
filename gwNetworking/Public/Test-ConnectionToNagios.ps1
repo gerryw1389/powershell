@@ -1,34 +1,38 @@
-﻿<#######<Script>#######>
+<#######<Script>#######>
 <#######<Header>#######>
-# Name: Get-ExtractedEmailAddresses
+# Name: Test-ConnectionToNagios
 <#######</Header>#######>
 <#######<Body>#######>
-Function Get-ExtractedEmailAddresses
+Function Test-ConnectionToNagios
 {
     <#
 .Synopsis
-Gets email addresses from one or more text files.
+This function is meant to run hourly and tests a connection to a server for dropped packets.
 .Description
-Gets email addresses from one or more text files. Returns a seperate parsed file called ".\extracted.txt"
-To further clean up the results, I would run: Get-Content .\Extracted.Txt | Sort-Object | Select-Object -Unique | Out-File .\Sorted.Txt -Force
-.Parameter FilePath
-Mandatory file(s) to search for email regex.
+This function is meant to run hourly and tests a connection to a server for dropped packets.
+Change line 211 to the path of the server this needs to run on.
+.Parameter IPAddress
+The IP Address you want to 'ping'
+.Parameter Log
+A mandatory log file to see if the script is dropping packets.
 .Example
-Get-ExtractedEmailAddresses -FilePath c:\scripts\myfile.log
-Parses "c:\scripts\myfile.log" for any email addresses and returns a document called "extracted.txt" in the scripts running directory with the emails returned.
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
+Test-ConnectionToNagios -IPAddress 10.10.10.10 -Log '\\server.domain.com\scripts\PS\NagiosLogging\server.txt'
+This function is meant to run hourly and tests a connection to a server for dropped packets.
 #>
 
     [Cmdletbinding()]
     Param
     (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String[]]$FilePath
+        [Parameter(Mandatory=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
+        [ValidateScript({$_ -match [IPAddress]$_ })]  
+        [string]$IPAddress,
+
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 1)]
+        [string]$Log
     )
     
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -191,32 +195,32 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Set-Console
 
         ####################</Default Begin Block>####################
-        
-        $OutputFile = "$Psscriptroot\extracted.txt"
-        # Overwrite output file from previous run
-        New-Item $OutputFile -ItemType File -Force | Out-Null
-        
+         
     }
-    
+
     Process
-    {   
+    {
         Try
         {
-            Foreach ( $Path in $FilePath )
+            If (-not (Test-Path $Log))
             {
-                If ( Test-Path $Path )
+                New-Item -Itemtype File -Path $Log | Out-Null
+            }
+            $date = Get-Date -format g
+            Write-output "$date : Script started" | Out-File -FilePath $Log -Encoding ascii -Append
+            $a = 0
+            # Set this to run a little less than an hour
+            $b = 3590
+            while ($a -le $b)
+            {
+                $date = Get-Date -format g
+                $result = Test-Connection $IPAddress -count 1 -quiet
+                If ($result -eq $false)
                 {
-                    $EmailRegex = '\b[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b'
-
-                    Select-String -Path $Path -Pattern $EmailRegex -AllMatches | 
-                        ForEach-Object { $_.Matches } | 
-                        ForEach-Object { $_.Value } |
-                        Out-File $OutputFile -Encoding ascii -Append
+                    Write-output "$date : Connection dropped" | Out-File -FilePath $Log -Encoding ascii -Append
                 }
-                Else
-                {
-                    Write-Log "Path does not exist: $Path"
-                }
+                Start-Sleep -Seconds 1
+                $a++
             }
         }
         Catch
@@ -229,7 +233,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {
         Stop-log
     }
-
 }
 
 <#######</Body>#######>

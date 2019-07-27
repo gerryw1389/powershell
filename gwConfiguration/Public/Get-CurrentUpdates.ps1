@@ -1,34 +1,32 @@
-﻿<#######<Script>#######>
+<#######<Script>#######>
 <#######<Header>#######>
-# Name: Get-ExtractedEmailAddresses
+# Name: Get-CurrentUpdates
 <#######</Header>#######>
 <#######<Body>#######>
-Function Get-ExtractedEmailAddresses
+Function Get-CurrentUpdates
 {
     <#
 .Synopsis
-Gets email addresses from one or more text files.
+Gives a list of all Microsoft Updates sorted by KB number/HotfixID
 .Description
-Gets email addresses from one or more text files. Returns a seperate parsed file called ".\extracted.txt"
-To further clean up the results, I would run: Get-Content .\Extracted.Txt | Sort-Object | Select-Object -Unique | Out-File .\Sorted.Txt -Force
-.Parameter FilePath
-Mandatory file(s) to search for email regex.
+Gives a list of all Microsoft Updates sorted by KB number/HotfixID
 .Example
-Get-ExtractedEmailAddresses -FilePath c:\scripts\myfile.log
-Parses "c:\scripts\myfile.log" for any email addresses and returns a document called "extracted.txt" in the scripts running directory with the emails returned.
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
+Get-CurrentUpdates
+Gives a list of all Microsoft Updates sorted by KB number/HotfixID
+.Notes
+# By Tom Arbuthnot. Lyncdup.com
+# credit/thanks:
+# http://blogs.technet.com/b/tmintner/archive/2006/07/07/440729.aspx
+# http://www.gfi.com/blog/windows-powershell-extracting-strings-using-regular-expressions/
 #>
 
     [Cmdletbinding()]
     Param
     (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String[]]$FilePath
     )
     
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -192,32 +190,30 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         ####################</Default Begin Block>####################
         
-        $OutputFile = "$Psscriptroot\extracted.txt"
-        # Overwrite output file from previous run
-        New-Item $OutputFile -ItemType File -Force | Out-Null
-        
     }
-    
+
     Process
-    {   
+    {
         Try
         {
-            Foreach ( $Path in $FilePath )
+            $wu = new-object -com "Microsoft.Update.Searcher"
+            $totalupdates = $wu.GetTotalHistoryCount()
+            $all = $wu.QueryHistory(0, $totalupdates)
+            # Define a new array to gather output
+            $OutputCollection = @()
+            Foreach ($update in $all)
             {
-                If ( Test-Path $Path )
-                {
-                    $EmailRegex = '\b[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b'
-
-                    Select-String -Path $Path -Pattern $EmailRegex -AllMatches | 
-                        ForEach-Object { $_.Matches } | 
-                        ForEach-Object { $_.Value } |
-                        Out-File $OutputFile -Encoding ascii -Append
-                }
-                Else
-                {
-                    Write-Log "Path does not exist: $Path"
-                }
+                $string = $update.title
+                $Regex = "KB\d*"
+                $KB = $string | Select-String -Pattern $regex | Select-Object { $_.Matches }
+                $output = New-Object -TypeName PSobject
+                $output | add-member NoteProperty "HotFixID" -value $KB.' $_.Matches '.Value
+                $output | add-member NoteProperty "Title" -value $string
+                $OutputCollection += $output
             }
+            # Output the collection sorted and formatted:
+            $OutputCollection | Sort-Object HotFixID | Format-Table -AutoSize
+            Write-Output "$($OutputCollection.Count) Updates Found"
         }
         Catch
         {
@@ -229,7 +225,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {
         Stop-log
     }
-
 }
 
 <#######</Body>#######>

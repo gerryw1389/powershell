@@ -1,34 +1,29 @@
-﻿<#######<Script>#######>
+<#######<Script>#######>
 <#######<Header>#######>
-# Name: Get-ExtractedEmailAddresses
+# Name: Copy-Module
 <#######</Header>#######>
 <#######<Body>#######>
-Function Get-ExtractedEmailAddresses
+Function Get-ApprovedVerb
 {
     <#
 .Synopsis
-Gets email addresses from one or more text files.
+Returns a list of approved verbs you can use.
 .Description
-Gets email addresses from one or more text files. Returns a seperate parsed file called ".\extracted.txt"
-To further clean up the results, I would run: Get-Content .\Extracted.Txt | Sort-Object | Select-Object -Unique | Out-File .\Sorted.Txt -Force
-.Parameter FilePath
-Mandatory file(s) to search for email regex.
+Returns a list of approved verbs you can use.
+Has a pause in the end block because it is meant to be interactive
+.Parameter Like
+A way to filter the list of returned values.
 .Example
-Get-ExtractedEmailAddresses -FilePath c:\scripts\myfile.log
-Parses "c:\scripts\myfile.log" for any email addresses and returns a document called "extracted.txt" in the scripts running directory with the emails returned.
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
+Get-ApprovedVerb -Like wri*
+Returns "write"
 #>
-
     [Cmdletbinding()]
-    Param
-    (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String[]]$FilePath
+    Param (
+        [String]$Like = "*"
     )
-    
+
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -38,11 +33,32 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         
         Function Write-Log
         {
+            <#
+            .Synopsis
+            This writes objects to the logfile and to the screen with optional coloring.
+            .Parameter InputObject
+            This can be text or an object. The function will convert it to a string and verbose it out.
+            Since the main function forces verbose output, everything passed here will be displayed on the screen and to the logfile.
+            .Parameter Color
+            Optional coloring of the input object.
+            .Example
+            Write-Log "hello" -Color "yellow"
+            Will write the string "VERBOSE: YYYY-MM-DD HH: Hello" to the screen and the logfile.
+            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
+            .Example
+            Write-Log (cmd /c "ipconfig /all")
+            Will write the string "VERBOSE: YYYY-MM-DD HH: ****ipconfig output***" to the screen and the logfile.
+            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
+            .Notes
+            2018-06-24: Initial script
+            #>
+            
             Param
             (
                 [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
                 [PSObject]$InputObject,
                 
+                # I usually set this to = "Green" since I use a black and green theme console
                 [Parameter(Mandatory = $False, Position = 1)]
                 [Validateset("Black", "Blue", "Cyan", "Darkblue", "Darkcyan", "Darkgray", "Darkgreen", "Darkmagenta", "Darkred", `
                         "Darkyellow", "Gray", "Green", "Magenta", "Red", "White", "Yellow")]
@@ -67,6 +83,13 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         Function Start-Log
         {
+            <#
+            .Synopsis
+            Creates the log file and starts transcribing the session.
+            .Notes
+            2018-06-24: Initial script
+            #>
+            
             # Create transcript file if it doesn't exist
             If (!(Test-Path $Logfile))
             {
@@ -93,6 +116,13 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         
         Function Stop-Log
         {
+            <#
+            .Synopsis
+            Stops transcribing the session and cleans the transcript file by removing the fluff.
+            .Notes
+            2018-06-24: Initial script
+            #>
+            
             Write-Log "Function completed on $env:COMPUTERNAME"
             Write-Log "####################</Function>####################"
             Stop-Transcript
@@ -191,45 +221,118 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Set-Console
 
         ####################</Default Begin Block>####################
-        
-        $OutputFile = "$Psscriptroot\extracted.txt"
-        # Overwrite output file from previous run
-        New-Item $OutputFile -ItemType File -Force | Out-Null
-        
-    }
-    
-    Process
-    {   
-        Try
-        {
-            Foreach ( $Path in $FilePath )
-            {
-                If ( Test-Path $Path )
-                {
-                    $EmailRegex = '\b[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b'
 
-                    Select-String -Path $Path -Pattern $EmailRegex -AllMatches | 
-                        ForEach-Object { $_.Matches } | 
-                        ForEach-Object { $_.Value } |
-                        Out-File $OutputFile -Encoding ascii -Append
-                }
-                Else
-                {
-                    Write-Log "Path does not exist: $Path"
-                }
-            }
-        }
-        Catch
-        {
-            Write-Error $($_.Exception.Message)
-        }
+        $Verbs = @(
+            'Add',
+            'Approve',
+            'Assert',
+            'Backup',
+            'Block',
+            'Checkpoint',
+            'Clear',
+            'Close',
+            'Compare',
+            'Complete',
+            'Compress',
+            'Confirm',
+            'Connect',
+            'Convert',
+            'ConvertFrom',
+            'ConvertTo',
+            'Copy',
+            'Debug',
+            'Deny',
+            'Disable',
+            'Disconnect',
+            'Dismount',
+            'Edit',
+            'Enable',
+            'Enter',
+            'Exit',
+            'Expand',
+            'Export',
+            'Find',
+            'Format',
+            'Get',
+            'Grant',
+            'Group',
+            'Hide',
+            'Import',
+            'Initialize',
+            'Install',
+            'Invoke',
+            'Join',
+            'Limit',
+            'Lock',
+            'Measure',
+            'Merge',
+            'Mount',
+            'Move',
+            'New',
+            'Open',
+            'Optimize',
+            'Out',
+            'Ping',
+            'Pop',
+            'Protect',
+            'Publish',
+            'Push',
+            'Read',
+            'Receive',
+            'Redo',
+            'Register',
+            'Remove',
+            'Rename',
+            'Repair',
+            'Request',
+            'Reset',
+            'Resize',
+            'Resolve',
+            'Restart',
+            'Restore',
+            'Resume',
+            'Revoke',
+            'Save',
+            'Search',
+            'Select',
+            'Send',
+            'Set',
+            'Show',
+            'Skip',
+            'Split',
+            'Start',
+            'Step',
+            'Stop',
+            'Submit',
+            'Suspend',
+            'Switch',
+            'Sync',
+            'Test',
+            'Trace',
+            'Unblock',
+            'Undo',
+            'Uninstall',
+            'Unlock',
+            'Unprotect',
+            'Unpublish',
+            'Unregister',
+            'Update',
+            'Use',
+            'Wait',
+            'Watch',
+            'Write')
+    }
+
+    Process
+    {
+        $Verbs -like $Like
     }
 
     End
     {
         Stop-log
+		cmd /c Pause
     }
-
 }
 
 <#######</Body>#######>

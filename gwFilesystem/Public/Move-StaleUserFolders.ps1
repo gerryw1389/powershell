@@ -1,34 +1,44 @@
-﻿<#######<Script>#######>
+<#######<Script>#######>
 <#######<Header>#######>
-# Name: Get-ExtractedEmailAddresses
+# Name: Move-StaleUserFolders
 <#######</Header>#######>
 <#######<Body>#######>
-Function Get-ExtractedEmailAddresses
+Function Move-StaleUserFolders
 {
     <#
 .Synopsis
-Gets email addresses from one or more text files.
+This functions assumes you have a file server with $Path\SamAccountName\SomeFolder structure - for example e:\web\bob\my-docs
+And you want to test if 'bob' is still active in AD.
+If he is not, move the folder to $Destination but keeping the original file structure.
+For example: e:\files\bob\my-docs will check if user 'bob' exists in AD and if he does, do nothing. 
+If he doesn't, move e:\files\bob\my-docs to e:\tobedeleted\bob\my-docs.
 .Description
-Gets email addresses from one or more text files. Returns a seperate parsed file called ".\extracted.txt"
-To further clean up the results, I would run: Get-Content .\Extracted.Txt | Sort-Object | Select-Object -Unique | Out-File .\Sorted.Txt -Force
-.Parameter FilePath
-Mandatory file(s) to search for email regex.
+This functions assumes you have a file server with $Path\SamAccountName\SomeFolder structure - for example e:\web\bob\my-docs
+And you want to test if 'bob' is still active in AD.
+If he is not, move the folder to $Destination but keeping the original file structure.
+For example: e:\files\bob\my-docs will check if user 'bob' exists in AD and if he does, do nothing. 
+If he doesn't, move e:\files\bob\my-docs to e:\tobedeleted\bob\my-docs.
+NOTE: It would be fairly easy to tweak this to check if the account is enabled or not, but my organization deletes accounts after a set amount of time.
 .Example
-Get-ExtractedEmailAddresses -FilePath c:\scripts\myfile.log
-Parses "c:\scripts\myfile.log" for any email addresses and returns a document called "extracted.txt" in the scripts running directory with the emails returned.
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
+Move-StaleUserFolders -Path 'e:\web\test' -Destination 'e:\ToBeDeleted'
+Will go through all folders under 'e:\web\test' and query each folder (assuming they match a SamAccountName), 
+and move the folder to 'e:\tobedeleted' if the user account doesn't exist.
+.Notes
+2019-07-27: Modified
 #>
 
     [Cmdletbinding()]
     Param
     (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String[]]$FilePath
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 1)]
+        [string]$Destination
     )
     
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -192,32 +202,53 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         ####################</Default Begin Block>####################
         
-        $OutputFile = "$Psscriptroot\extracted.txt"
-        # Overwrite output file from previous run
-        New-Item $OutputFile -ItemType File -Force | Out-Null
-        
     }
-    
+
     Process
-    {   
+    {
         Try
         {
-            Foreach ( $Path in $FilePath )
-            {
-                If ( Test-Path $Path )
-                {
-                    $EmailRegex = '\b[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b'
+            # get a list of paths
+            $folders = Get-Childitem -Path "$Path\*" | Select-Object -ExpandProperty fullname
+            #$folders = Get-Childitem -Path "$Path\*\*" | Select-Object -ExpandProperty fullname
 
-                    Select-String -Path $Path -Pattern $EmailRegex -AllMatches | 
-                        ForEach-Object { $_.Matches } | 
-                        ForEach-Object { $_.Value } |
-                        Out-File $OutputFile -Encoding ascii -Append
+            #for each path, expand the path and check if the user exists in AD 
+            Foreach ($folder in $folders)
+            {
+                # get the name from the folder
+                $name = split-Path $folder -Leaf
+
+                # Check if user exists without AD commandlets
+                $user = (([adsisearcher]"(&(objectCategory=User)(samaccountname=$name))").findall()).properties
+    
+                If ($user.count -gt 0)
+                {
+                    Write-output "user exists in AD: $name"
                 }
                 Else
                 {
-                    Write-Log "Path does not exist: $Path"
+                    Write-output "could not find user in ad: $name"
+    
+                    # breakdown the path splitting on '\', grab the last two parts. AN\aa10101 for example
+                    $parts = $Folder -split '\\'
+                    $thirdpath = $parts[-2]
+                    $finalpath = $parts[-1]
+
+                    # Ensure that the third path exists - for example $Destination\williamsg
+                    If (Test-Path "$Destination\$thirdpath")
+                    {
+                        # Do nothing
+                    }
+                    Else
+                    {
+                        New-Item -itemtype Directory -Path "$Destination\$thirdpath" | Out-Null
+                    }
+                    # Now move the original folder to that folders path - Ex: move e:\web\wi\williamsg to e:\tobedeleted\wi\williamsg
+                    Move-item $Folder -destination $Destination\$thirdpath\$finalpath -Force -Verbose
                 }
             }
+
+
         }
         Catch
         {
@@ -229,7 +260,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {
         Stop-log
     }
-
 }
 
 <#######</Body>#######>

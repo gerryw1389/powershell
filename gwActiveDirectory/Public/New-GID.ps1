@@ -1,34 +1,30 @@
-﻿<#######<Script>#######>
+
+<#######<Script>#######>
 <#######<Header>#######>
-# Name: Get-ExtractedEmailAddresses
+# Name: New-Gid
 <#######</Header>#######>
 <#######<Body>#######>
-Function Get-ExtractedEmailAddresses
+Function New-Gid
 {
     <#
 .Synopsis
-Gets email addresses from one or more text files.
+Assigns a new gid to a server admin group. Has ReadHost so you will have to tweak if you want automated, meant to be interactive.
 .Description
-Gets email addresses from one or more text files. Returns a seperate parsed file called ".\extracted.txt"
-To further clean up the results, I would run: Get-Content .\Extracted.Txt | Sort-Object | Select-Object -Unique | Out-File .\Sorted.Txt -Force
-.Parameter FilePath
-Mandatory file(s) to search for email regex.
+Assigns a new gid to a server admin group. Has ReadHost so you will have to tweak if you want automated, meant to be interactive.
+This 'gidNumber' is an AD attribute for an Active Directory group commonly used in enterprises that use Linux and Windows.
+Modify line 200 for whichever OU you want to search - note that this will search recursively by default. 
 .Example
-Get-ExtractedEmailAddresses -FilePath c:\scripts\myfile.log
-Parses "c:\scripts\myfile.log" for any email addresses and returns a document called "extracted.txt" in the scripts running directory with the emails returned.
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
+New-Gid
+Assigns a new gid to a server admin group. Has ReadHost so you will have to tweak if you want automated, meant to be interactive.
 #>
 
     [Cmdletbinding()]
     Param
     (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String[]]$FilePath
     )
     
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -191,33 +187,45 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
         Set-Console
 
         ####################</Default Begin Block>####################
-        
-        $OutputFile = "$Psscriptroot\extracted.txt"
-        # Overwrite output file from previous run
-        New-Item $OutputFile -ItemType File -Force | Out-Null
-        
+         
     }
-    
+
     Process
-    {   
+    {
         Try
         {
-            Foreach ( $Path in $FilePath )
-            {
-                If ( Test-Path $Path )
-                {
-                    $EmailRegex = '\b[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b'
+            $groupname = Read-host "Please enter the groups samAccountName (usually display name)"
 
-                    Select-String -Path $Path -Pattern $EmailRegex -AllMatches | 
-                        ForEach-Object { $_.Matches } | 
-                        ForEach-Object { $_.Value } |
-                        Out-File $OutputFile -Encoding ascii -Append
-                }
-                Else
+            $properties = @{ 
+                'LDAPFilter' = "(&(objectCategory=group)(gidNumber=*))" 
+                'SearchBase' = 'OU=YourTargetedOU,DC=domain,DC=com' 
+                'Properties' = 'gidNumber' 
+            }
+            $groups = Get-ADObject @Properties| Select-Object @{Name = "DN"; Expression = {$_.DistinguishedName}}, @{Name = "gid"; Expression = {$_.gidNumber}}
+            $gids = $groups.gid
+            $new = [System.Collections.Generic.List[PSObject]]@()
+            Foreach ($gid in $gids)
+            {
+                If (($gid -gt 752356) -and ($gid -lt 9999999))
                 {
-                    Write-Log "Path does not exist: $Path"
+                    [void]$new.Add($gid)
                 }
             }
+            $new2 = [System.Collections.Generic.List[PSObject]]@()
+            $new2 = $new | Sort-Object
+            Write-Log "All gidNumbers in this OU and subOUs: $gids"
+            Write-Log "List of gidNumbers within the range we reserved: $new2 "
+            $newval = $new2[-1] + 1
+            Write-Log "New gidNumber: $newval"
+
+            Get-ADGroup $groupname | Set-ADGroup -Add @{ gidNumber = $newval } 
+            Write-Log "Action: Assigned group $groupname the gidnumber of $newval"
+
+            # To view the group GIDs 
+            # $groups = Get-ADObject @Properties| Select-Object @{Name="DN";Expression={$_.DistinguishedName}},@{Name="gid";Expression={$_.gidNumber}}
+            # export if needed
+            # $groups | export-csv -path c:\scripts\groups.csv -NoTypeInformation
+
         }
         Catch
         {
@@ -229,7 +237,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {
         Stop-log
     }
-
 }
 
 <#######</Body>#######>

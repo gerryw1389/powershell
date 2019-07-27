@@ -1,34 +1,36 @@
-﻿<#######<Script>#######>
+<#######<Script>#######>
 <#######<Header>#######>
-# Name: Get-ExtractedEmailAddresses
+# Name: Convert-DocxToHTML
 <#######</Header>#######>
 <#######<Body>#######>
-Function Get-ExtractedEmailAddresses
+Function Convert-DocxToHTML
 {
     <#
 .Synopsis
-Gets email addresses from one or more text files.
+Iterates through all docx files in sourcepath, converts them to html, and places them in the outputpath.
 .Description
-Gets email addresses from one or more text files. Returns a seperate parsed file called ".\extracted.txt"
-To further clean up the results, I would run: Get-Content .\Extracted.Txt | Sort-Object | Select-Object -Unique | Out-File .\Sorted.Txt -Force
-.Parameter FilePath
-Mandatory file(s) to search for email regex.
+Iterates through all docx files in sourcepath, converts them to html, and places them in the outputpath.
+.Parameter SourcePath
+A folder with docx files
+.Parameter OutputPath
+A folder you want to place html files
 .Example
-Get-ExtractedEmailAddresses -FilePath c:\scripts\myfile.log
-Parses "c:\scripts\myfile.log" for any email addresses and returns a document called "extracted.txt" in the scripts running directory with the emails returned.
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
+Convert-DocxToHTML -SourcePath 'c:\scripts\doc' -OutputPath 'c:\scripts\html'
+Iterates through all docx files in sourcepath, converts them to html, and places them in the outputpath.
 #>
 
     [Cmdletbinding()]
     Param
     (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String[]]$FilePath
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+        [string]$SourcePath,
+
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 1)]
+        [string]$OutputPath
     )
     
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -106,10 +108,10 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 			
             # Get all the matches for PS Headers and dump to a file
             $Transcript | 
-                Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
-                ForEach-Object {$_.Matches} | 
-                ForEach-Object {$_.Value} | 
-                Out-File -FilePath $TempFile -Append
+            Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
+            ForEach-Object { $_.Matches } | 
+            ForEach-Object { $_.Value } | 
+            Out-File -FilePath $TempFile -Append
 
             # Compare the two and put the differences in a third file
             $m1 = Get-Content -Path $Logfile
@@ -192,31 +194,30 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         ####################</Default Begin Block>####################
         
-        $OutputFile = "$Psscriptroot\extracted.txt"
-        # Overwrite output file from previous run
-        New-Item $OutputFile -ItemType File -Force | Out-Null
-        
     }
-    
+
     Process
-    {   
+    {
         Try
         {
-            Foreach ( $Path in $FilePath )
-            {
-                If ( Test-Path $Path )
-                {
-                    $EmailRegex = '\b[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b'
+            $srcfiles = Get-ChildItem $SourcePath -filter "*.docx"
 
-                    Select-String -Path $Path -Pattern $EmailRegex -AllMatches | 
-                        ForEach-Object { $_.Matches } | 
-                        ForEach-Object { $_.Value } |
-                        Out-File $OutputFile -Encoding ascii -Append
-                }
-                Else
-                {
-                    Write-Log "Path does not exist: $Path"
-                }
+            ForEach ($doc in $srcfiles)
+            {
+                $saveFormat = [Enum]::Parse([Microsoft.Office.Interop.Word.WdSaveFormat], "wdFormatFilteredHTML")
+                $word = new-object -comobject word.application
+                $word.Visible = $False
+
+                $curDoc = $($doc.FullName)
+                Write-Log "Processing : $curDoc" 
+                $opendoc = $word.documents.open($curDoc)
+                $opendoc.saveas("$OutputPath\$($doc.name).html", $saveFormat)
+                $opendoc.close()
+                $doc = $null
+                $word.quit()
+
+                Write-Log "Converted from docx to html: $doc"
+                Start-Sleep -Seconds 1
             }
         }
         Catch
@@ -229,7 +230,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {
         Stop-log
     }
-
 }
 
 <#######</Body>#######>
