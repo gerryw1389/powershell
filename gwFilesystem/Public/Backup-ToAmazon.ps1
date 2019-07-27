@@ -33,7 +33,7 @@ Function Backup-ToAmazon
     Param
     (
         [Parameter(Position = 0, Mandatory = $True)]
-        [String]$Source,
+        [String]$Path,
 
         [Parameter(Position = 1, Mandatory = $True)]
         [String]$Bucket,
@@ -271,17 +271,17 @@ Function Backup-ToAmazon
 
         Set-AWSCredentials -AccessKey $AKey -SecretKey $SKey
  
-        Set-Location $Source
-        $Source = Get-Childitem $Source | Where-Object { $_.PSisContainer }
+        Set-Location $Path
+        $Path = Get-Childitem $Path | Where-Object { $_.PSisContainer }
     }
     
     Process
     {    
-        ForEach ($S in $Source)
+        ForEach ($S in $Path)
         {
             $ItemName = $S.name
             Write-Log "Uploading $ItemName"
-            $Destination = $Source + "\" + "$ItemName.zip"
+            $Destination = $Path + "\" + "$ItemName.zip"
             Write-Zip -LiteralPath $S.fullname -OutputPath $Destination -Level 1
             Remove-Item $S.fullname -Recurse -Force
             Write-S3Object -BucketName $Bucket -File $Destination

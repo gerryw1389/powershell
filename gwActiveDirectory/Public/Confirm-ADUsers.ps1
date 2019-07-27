@@ -11,7 +11,7 @@ Given a list of SamAccountNames in a text file, this will output if users exist 
 .Description
 Given a list of SamAccountNames in a text file, this will output if users exist or not as "exist.txt" or "dontexist.txt" in the script directory.
 .Example
-Confirm-ADUsers -Inputfile "c:\scripts\accounts.txt"
+Confirm-ADUsers -FilePath "c:\scripts\accounts.txt"
 Goes through each account  in "c:\scripts\accounts.txt" and outputs two text files: "exist.txt" and "dontexist.txt" in the scripts directory.
 #>
 
@@ -19,7 +19,7 @@ Goes through each account  in "c:\scripts\accounts.txt" and outputs two text fil
     Param
     (
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-		[String]$InputFile
+		[String]$FilePath
     )
     
     Begin
@@ -198,7 +198,7 @@ Goes through each account  in "c:\scripts\accounts.txt" and outputs two text fil
     {
         Try
         {
-            $users = Get-Content $InputFile
+            $users = Get-Content $FilePath
             foreach ($u in $users)
             {
                 Try

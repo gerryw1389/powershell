@@ -29,7 +29,7 @@ Function Move-FilesToArchive
     Param
     (
         [Parameter(Position = 0, Mandatory = $true)]
-        [String]$Source,
+        [String]$Path,
     
         [Parameter(Position = 1, Mandatory = $true)]
         [String]$Destination,
@@ -243,8 +243,8 @@ Function Move-FilesToArchive
     
     Process
     {    
-        Write-Log "Moving all files under directory $Source to $Destination"
-        Get-Childitem $Source -Recurse |
+        Write-Log "Moving all files under directory $Path to $Destination"
+        Get-Childitem $Path -Recurse |
             Where-Object { $_.Lastwritetime -Lt (Get-Date).Adddays( - $Days) } | 
             Move-Item -Destination $Destination -Force
     }

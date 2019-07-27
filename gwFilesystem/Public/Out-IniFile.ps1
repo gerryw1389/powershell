@@ -1,87 +1,114 @@
 <#######<Script>#######>
 <#######<Header>#######>
-# Name: Set-FileTimeStamps
-# Copyright: Gerry Williams (https://www.gerrywilliams.net)
-# License: MIT License (https://opensource.org/licenses/mit)
-# Script Modified from: n/a
+# Name: Out-IniFile
 <#######</Header>#######>
 <#######<Body>#######>
-
-Function Set-FileTimeStamps
+Function Out-IniFile
 {
-    <#
-    .Synopsis
-    Sets the time stamps for all files in a given folder (and optionally, subfolders) to a specific date.
-    .Description
-    Sets the time stamps for all files in a given folder (and optionally, subfolders) to a specific date.
-    .Example
-    Set-FileTimeStamps -Source C:\scripts -Date 3/3/2015
-    Sets the time stamps for all files in a given folder to a specific date.
-    .Example
-    Set-FileTimeStamps -Path C:\scripts -Date 3/3/2015 -Recurse
-    Sets the time stamps for all files in a given folder and subfolders to a specific date.
-    #>  
+    <#  
+.Synopsis  
+Write hash content to INI file  
+.Description  
+Write hash content to INI file  
+.Notes  
+Author        : Oliver Lipkau <oliver@lipkau.net>  
+Blog        : http://oliver.lipkau.net/blog/  
+Source        : https://github.com/lipkau/PsIni 
+    http://gallery.technet.microsoft.com/scriptcenter/ea40c1ef-c856-434b-b8fb-ebd7a76e8d91 
+Version        : 1.0 - 2010/03/12 - Initial release  
+    1.1 - 2012/04/19 - Bugfix/Added example to help (Thx Ingmar Verheij)  
+    1.2 - 2014/12/11 - Improved handling for missing output file (Thx SLDR) 
+#Requires -Version 2.0  
+.Inputs  
+System.String  
+System.Collections.Hashtable  
+.Outputs  
+System.IO.FileSystemInfo  
+.Parameter Append  
+Adds the output to the end of an existing file, instead of replacing the file contents.  
+.Parameter InputObject  
+Specifies the Hashtable to be written to the file. Enter a variable that contains the objects or type a command or expression that gets the objects.  
+.Parameter FilePath  
+Specifies the path to the output file.  
+.Parameter Encoding  
+Specifies the type of character encoding used in the file. Valid values are "Unicode", "UTF7",  
+"UTF8", "UTF32", "ASCII", "BigEndianUnicode", "Default", and "OEM". "Unicode" is the default.  
+"Default" uses the encoding of the system's current ANSI code page.   
+"OEM" uses the current original equipment manufacturer code page identifier for the operating   
+system.  
+.Parameter Force  
+Allows the cmdlet to overwrite an existing read-only file. Even using the Force parameter, the cmdlet cannot override security restrictions.  
+.Parameter PassThru  
+Passes an object representing the location to the pipeline. By default, this cmdlet does not generate any output.  
+.Example  
+Out-IniFile $IniVar "C:\myinifile.ini"  
+-----------  
+Description  
+Saves the content of the $IniVar Hashtable to the INI File c:\myinifile.ini  
+.Example  
+$IniVar | Out-IniFile "C:\myinifile.ini" -Force  
+-----------  
+Description  
+Saves the content of the $IniVar Hashtable to the INI File c:\myinifile.ini and overwrites the file if it is already present  
+.Example  
+$file = Out-IniFile $IniVar "C:\myinifile.ini" -PassThru  
+-----------  
+Description  
+Saves the content of the $IniVar Hashtable to the INI File c:\myinifile.ini and saves the file into $file  
+.Example  
+$Category1 = @{“Key1”=”Value1”;”Key2”=”Value2”}  
+$Category2 = @{“Key1”=”Value1”;”Key2”=”Value2”}  
+$NewINIContent = @{“Category1”=$Category1;”Category2”=$Category2}  
+Out-IniFile -InputObject $NewINIContent -FilePath "C:\MyNewFile.INI"  
+-----------  
+Description  
+Creating a custom Hashtable and saving it to C:\MyNewFile.INI  
+.Link  
+Get-IniContent  
+#> 
 
-    [Cmdletbinding()]
+    [CmdletBinding()]  
+    Param(  
+        [switch]$Append,  
+        [ValidateSet("Unicode", "UTF7", "UTF8", "UTF32", "ASCII", "BigEndianUnicode", "Default", "OEM")]  
+        [Parameter()]  
+        [string]$Encoding = "Unicode",  
+        [ValidateNotNullOrEmpty()]  
+        [ValidatePattern('^([a-zA-Z]\:)?.+\.ini$')]  
+        [Parameter(Mandatory = $True)]  
+        [string]$FilePath,  
+        [switch]$Force,  
+        [ValidateNotNullOrEmpty()]  
+        [Parameter(ValueFromPipeline = $True, Mandatory = $True)]  
+        [Hashtable]$InputObject,  
+        [switch]$Passthru  
+    ) 
 
-    Param
-    (
-        [Parameter(Position = 0, Mandatory = $true)]
-        [String]$Path,
-    
-        [Parameter(Position = 1, Mandatory = $true)]
-        [DateTime]$Date,
-    
-        [Parameter(Position = 2)]
-        [Switch]$Recurse
-    )
 
-  
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
-        
+
         [String]$Logfile = $PSScriptRoot + '\PSLogs\' + (Get-Date -Format "yyyy-MM-dd") +
         "-" + $MyInvocation.MyCommand.Name + ".log"
-        
+
         Function Write-Log
         {
-            <#
-            .Synopsis
-            This writes objects to the logfile and to the screen with optional coloring.
-            .Parameter InputObject
-            This can be text or an object. The function will convert it to a string and verbose it out.
-            Since the main function forces verbose output, everything passed here will be displayed on the screen and to the logfile.
-            .Parameter Color
-            Optional coloring of the input object.
-            .Example
-            Write-Log "hello" -Color "yellow"
-            Will write the string "VERBOSE: YYYY-MM-DD HH: Hello" to the screen and the logfile.
-            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
-            .Example
-            Write-Log (cmd /c "ipconfig /all")
-            Will write the string "VERBOSE: YYYY-MM-DD HH: ****ipconfig output***" to the screen and the logfile.
-            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
-            .Notes
-            2018-06-24: Initial script
-            #>
-            
             Param
             (
                 [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
                 [PSObject]$InputObject,
-                
-                # I usually set this to = "Green" since I use a black and green theme console
+
                 [Parameter(Mandatory = $False, Position = 1)]
                 [Validateset("Black", "Blue", "Cyan", "Darkblue", "Darkcyan", "Darkgray", "Darkgreen", "Darkmagenta", "Darkred", `
                         "Darkyellow", "Gray", "Green", "Magenta", "Red", "White", "Yellow")]
                 [String]$Color = "Green"
             )
-            
+
             $ConvertToString = Out-String -InputObject $InputObject -Width 100
-            
+
             If ($($Color.Length -gt 0))
             {
                 $previousForegroundColor = $Host.PrivateData.VerboseForegroundColor
@@ -93,24 +120,17 @@ Function Set-FileTimeStamps
             {
                 Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
             }
-            
+
         }
 
         Function Start-Log
         {
-            <#
-            .Synopsis
-            Creates the log file and starts transcribing the session.
-            .Notes
-            2018-06-24: Initial script
-            #>
-            
             # Create transcript file if it doesn't exist
             If (!(Test-Path $Logfile))
             {
                 New-Item -Itemtype File -Path $Logfile -Force | Out-Null
             }
-        
+
             # Clear it if it is over 10 MB
             [Double]$Sizemax = 10485760
             $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
@@ -128,27 +148,20 @@ Function Set-FileTimeStamps
             Write-Log "Function started on $env:COMPUTERNAME"
 
         }
-        
+
         Function Stop-Log
         {
-            <#
-            .Synopsis
-            Stops transcribing the session and cleans the transcript file by removing the fluff.
-            .Notes
-            2018-06-24: Initial script
-            #>
-            
             Write-Log "Function completed on $env:COMPUTERNAME"
             Write-Log "####################</Function>####################"
             Stop-Transcript
-       
+
             # Now we will clean up the transcript file as it contains filler info that needs to be removed...
             $Transcript = Get-Content $Logfile -raw
 
             # Create a tempfile
             $TempFile = $PSScriptRoot + "\PSLogs\temp.txt"
             New-Item -Path $TempFile -ItemType File | Out-Null
-			
+
             # Get all the matches for PS Headers and dump to a file
             $Transcript | 
                 Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
@@ -171,36 +184,36 @@ Function Set-FileTimeStamps
             Remove-Item -Path $TempFile -Force
             # Finally, put the information we care about in the original file and discard the rest.
             $Array | Out-File $Logfile -Append -Encoding ASCII
-            
+
         }
-        
+
         Start-Log
 
         Function Set-Console
         {
             <# 
-        .Synopsis
-        Function to set console colors just for the session.
-        .Description
-        Function to set console colors just for the session.
-        This function sets background to black and foreground to green.
-        Verbose is DarkCyan which is what I use often with logging in scripts.
-        I mainly did this because darkgreen does not look too good on blue (Powershell defaults).
-        .Notes
-        2017-10-19: v1.0 Initial script 
-        #>
-        
+.Synopsis
+Function to set console colors just for the session.
+.Description
+Function to set console colors just for the session.
+This function sets background to black and foreground to green.
+Verbose is DarkCyan which is what I use often with logging in scripts.
+I mainly did this because darkgreen does not look too good on blue (Powershell defaults).
+.Notes
+2017-10-19: v1.0 Initial script 
+#>
+
             Function Test-IsAdmin
             {
                 <#
-                .Synopsis
-                Determines whether or not the user is a member of the local Administrators security group.
-                .Outputs
-                System.Bool
-                #>
+.Synopsis
+Determines whether or not the user is a member of the local Administrators security group.
+.Outputs
+System.Bool
+#>
 
                 [CmdletBinding()]
-    
+
                 $Identity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
                 $Principal = new-object System.Security.Principal.WindowsPrincipal(${Identity})
                 $IsAdmin = $Principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -236,39 +249,58 @@ Function Set-FileTimeStamps
         Set-Console
 
         ####################</Default Begin Block>####################
-
-            
-    }
-    
-    Process
-    {    
-        If ($Recurse)
-        {
-            Get-ChildItem -Path $Path -Recurse |
-                ForEach-Object {
-                $_.CreationTime = $Date
-                $_.LastAccessTime = $Date
-                $_.LastWriteTime = $Date }
-            Write-Log "All files in $Path successfully set to $Date"
-        }
-    
-        Else
-        {
-            Get-ChildItem -Path $Path |
-                ForEach-Object {
-                $_.CreationTime = $Date
-                $_.LastAccessTime = $Date
-                $_.LastWriteTime = $Date }
-            Write-Log "All files in $Path successfully set to $Date"
-        }
-    }
-
-    End
-    {
-        Stop-log
         
     }
 
+    Process
+    {
+        Try
+        {
+            Write-Verbose "$($MyInvocation.MyCommand.Name):: Writing to file: $Filepath"  
+            if ($append) {$outfile = Get-Item $FilePath}  
+            else {$outFile = New-Item -ItemType file -Path $Filepath -Force:$Force}  
+            if (!($outFile)) {Throw "Could not create File"}  
+            foreach ($i in $InputObject.keys)  
+            {  
+                if (!($($InputObject[$i].GetType().Name) -eq "Hashtable"))  
+                {  
+                    #No Sections  
+                    Write-Verbose "$($MyInvocation.MyCommand.Name):: Writing key: $i"  
+                    Add-Content -Path $outFile -Value "$i=$($InputObject[$i])" -Encoding $Encoding  
+                }
+                else
+                {  
+                    #Sections  
+                    Write-Verbose "$($MyInvocation.MyCommand.Name):: Writing Section: [$i]"  
+                    Add-Content -Path $outFile -Value "[$i]" -Encoding $Encoding  
+                    Foreach ($j in $($InputObject[$i].keys | Sort-Object))  
+                    {  
+                        if ($j -match "^Comment[\d]+")
+                        {  
+                            Write-Verbose "$($MyInvocation.MyCommand.Name):: Writing comment: $j"  
+                            Add-Content -Path $outFile -Value "$($InputObject[$i][$j])" -Encoding $Encoding  
+                        }
+                        else
+                        {  
+                            Write-Verbose "$($MyInvocation.MyCommand.Name):: Writing key: $j"  
+                            Add-Content -Path $outFile -Value "$j=$($InputObject[$i][$j])" -Encoding $Encoding  
+                        }  
+                    }  
+                    Add-Content -Path $outFile -Value "" -Encoding $Encoding  
+                }  
+            }  
+            Write-Verbose "$($MyInvocation.MyCommand.Name):: Finished Writing to file: $path"  
+            if ($PassThru) {Return $outFile}   
+        }
+        Catch
+        {
+            Write-Error $($_.Exception.Message) 
+        }
+    }
+    End
+    {
+        Stop-log
+    }
 }
 
 <#######</Body>#######>

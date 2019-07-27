@@ -13,12 +13,12 @@ Function Get-VideoFileInfo
     Given a source directory, this function will recursively get all the video files and display their resolutions.
     .Description
     Given a source directory, this function will recursively get all the video files and display their resolutions.
-    .Parameter Source
+    .Parameter Path
     Mandatory - The source folder where your video files reside.
     .Parameter OutputFile
     Mandatory - The destination file name csv.
     .Example
-    Get-VideoFileInfo -Source "E:\videos" -OutputFile "C:\temp\videos.csv"
+    Get-VideoFileInfo -Path "E:\videos" -OutputFile "C:\temp\videos.csv"
     Given a source directory, this function will recursively get all the video files and display their resolutions.
     .Notes
     Source info: https://gallery.technet.microsoft.com/scriptcenter/Retrieve-file-metadata-6814c8ba
@@ -29,7 +29,7 @@ Function Get-VideoFileInfo
     Param
     (
         [Parameter(Position = 0, Mandatory = $True)]
-        [String]$Source,
+        [String]$Path,
     
         [Parameter(Position = 1, Mandatory = $True)]
         [String]$OutputFile
@@ -246,7 +246,7 @@ Function Get-VideoFileInfo
         $Attrlist = @{} 
         $Details = ( "Frame Height", "Frame Width", "Frame Rate" ) 
  
-        $Objfolder = $Objshell.Namespace($Source) 
+        $Objfolder = $Objshell.Namespace($Path) 
         For ($Attr = 0 ; $Attr -Le 500; $Attr++) 
         { 
             $Attrname = $Objfolder.Getdetailsof($Objfolder.Items, $Attr) 
@@ -256,7 +256,7 @@ Function Get-VideoFileInfo
             } 
         } 
  
-        Get-ChildItem $Source -Recurse -Directory | Foreach-Object { 
+        Get-ChildItem $Path -Recurse -Directory | Foreach-Object { 
             $Objfolder = $Objshell.Namespace($_.Fullname) 
             Foreach ($File In $Objfolder.Items()) 
             {

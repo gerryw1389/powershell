@@ -13,7 +13,7 @@ Each CSV has the columns: 'Username,Full Name,Email'
 Creates a 3 CSV files for a list of usernames - enabled, disabled, or don't exist. 
 Each CSV has the columns: 'Username,Full Name,Email'
 .Example
-Confirm-ADAccountEnabledStatus -Inputfile "c:\scripts\accounts.txt"
+Confirm-ADAccountEnabledStatus -FilePath "c:\scripts\accounts.txt"
 Creates a 3 CSV files for a list of usernames - enabled, disabled, or don't exist. 
 Each CSV has the columns: 'Username,Full Name,Email'
 #>
@@ -22,7 +22,7 @@ Each CSV has the columns: 'Username,Full Name,Email'
     Param
     (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]   
-        [String]$InputFile
+        [String]$FilePath
     )
     
     Begin
@@ -205,7 +205,7 @@ Each CSV has the columns: 'Username,Full Name,Email'
     {
         Try
         {
-            $Users = Get-Content $InputFile 
+            $Users = Get-Content $FilePath 
             ForEach ($u in $users)
             {
                 Try

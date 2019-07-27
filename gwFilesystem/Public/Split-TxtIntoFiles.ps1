@@ -1,44 +1,45 @@
-<#######<Script>#######>
+﻿<#######<Script>#######>
 <#######<Header>#######>
-# Name: Set-FileTimeStamps
-# Copyright: Gerry Williams (https://www.gerrywilliams.net)
-# License: MIT License (https://opensource.org/licenses/mit)
-# Script Modified from: n/a
+# Name: Split-TxtIntoFiles
 <#######</Header>#######>
 <#######<Body>#######>
-
-Function Set-FileTimeStamps
+Function Split-TxtIntoFiles
 {
     <#
-    .Synopsis
-    Sets the time stamps for all files in a given folder (and optionally, subfolders) to a specific date.
-    .Description
-    Sets the time stamps for all files in a given folder (and optionally, subfolders) to a specific date.
-    .Example
-    Set-FileTimeStamps -Source C:\scripts -Date 3/3/2015
-    Sets the time stamps for all files in a given folder to a specific date.
-    .Example
-    Set-FileTimeStamps -Path C:\scripts -Date 3/3/2015 -Recurse
-    Sets the time stamps for all files in a given folder and subfolders to a specific date.
-    #>  
+.Synopsis
+Given a text file, this function will split the file into separate files based on a given number of lines.
+.Description
+Given a text file, this function will split the file into separate files based on a given number of lines.
+.Parameter FilePath
+The text file you want to split.
+.Parameter Count
+The number of lines for each file.
+.Parameter Destination
+The destination directory where you want the output files.
+.Example
+Split-TxtIntoFiles -Path c:\scripts\servers.txt -Count 25 -Destination c:\scripts
+If c:\scripts\servers.txt has 100 lines, this will split the file into four different files with 25 lines each:
+out_1.txt
+out_2.txt
+out_3.txt
+out_4.txt
+#>
 
     [Cmdletbinding()]
-
     Param
     (
-        [Parameter(Position = 0, Mandatory = $true)]
-        [String]$Path,
-    
-        [Parameter(Position = 1, Mandatory = $true)]
-        [DateTime]$Date,
-    
-        [Parameter(Position = 2)]
-        [Switch]$Recurse
-    )
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+        [string]$FilePath,
 
-  
+        [Parameter(Mandatory = $true, Position = 1)]
+        [int] $Count,
+
+        [Parameter(Mandatory = $true, Position = 2)]
+        [string]$Destination
+    )
+    
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -48,32 +49,11 @@ Function Set-FileTimeStamps
         
         Function Write-Log
         {
-            <#
-            .Synopsis
-            This writes objects to the logfile and to the screen with optional coloring.
-            .Parameter InputObject
-            This can be text or an object. The function will convert it to a string and verbose it out.
-            Since the main function forces verbose output, everything passed here will be displayed on the screen and to the logfile.
-            .Parameter Color
-            Optional coloring of the input object.
-            .Example
-            Write-Log "hello" -Color "yellow"
-            Will write the string "VERBOSE: YYYY-MM-DD HH: Hello" to the screen and the logfile.
-            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
-            .Example
-            Write-Log (cmd /c "ipconfig /all")
-            Will write the string "VERBOSE: YYYY-MM-DD HH: ****ipconfig output***" to the screen and the logfile.
-            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
-            .Notes
-            2018-06-24: Initial script
-            #>
-            
             Param
             (
                 [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
                 [PSObject]$InputObject,
                 
-                # I usually set this to = "Green" since I use a black and green theme console
                 [Parameter(Mandatory = $False, Position = 1)]
                 [Validateset("Black", "Blue", "Cyan", "Darkblue", "Darkcyan", "Darkgray", "Darkgreen", "Darkmagenta", "Darkred", `
                         "Darkyellow", "Gray", "Green", "Magenta", "Red", "White", "Yellow")]
@@ -98,13 +78,6 @@ Function Set-FileTimeStamps
 
         Function Start-Log
         {
-            <#
-            .Synopsis
-            Creates the log file and starts transcribing the session.
-            .Notes
-            2018-06-24: Initial script
-            #>
-            
             # Create transcript file if it doesn't exist
             If (!(Test-Path $Logfile))
             {
@@ -131,13 +104,6 @@ Function Set-FileTimeStamps
         
         Function Stop-Log
         {
-            <#
-            .Synopsis
-            Stops transcribing the session and cleans the transcript file by removing the fluff.
-            .Notes
-            2018-06-24: Initial script
-            #>
-            
             Write-Log "Function completed on $env:COMPUTERNAME"
             Write-Log "####################</Function>####################"
             Stop-Transcript
@@ -236,39 +202,39 @@ Function Set-FileTimeStamps
         Set-Console
 
         ####################</Default Begin Block>####################
-
-            
+        
     }
-    
+
     Process
-    {    
-        If ($Recurse)
+    {
+        Try
         {
-            Get-ChildItem -Path $Path -Recurse |
-                ForEach-Object {
-                $_.CreationTime = $Date
-                $_.LastAccessTime = $Date
-                $_.LastWriteTime = $Date }
-            Write-Log "All files in $Path successfully set to $Date"
+            if (-not $PSScriptRoot)
+            { 
+                $PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent 
+            }
+            $i = 0
+            $file = Get-Content $FilePath -ReadCount $count
+            foreach ($f in $file)
+            {
+                $i++
+                $filename = "$Destination\out_$i.txt"
+                out-file -InputObject $f -FilePath $filename
+                $content = [System.IO.File]::ReadAllText($filename)
+                $content = $content.Trim()
+                [System.IO.File]::WriteAllText($filename, $content)
+            }
         }
-    
-        Else
+        Catch
         {
-            Get-ChildItem -Path $Path |
-                ForEach-Object {
-                $_.CreationTime = $Date
-                $_.LastAccessTime = $Date
-                $_.LastWriteTime = $Date }
-            Write-Log "All files in $Path successfully set to $Date"
+            Write-Error $($_.Exception.Message)
         }
     }
 
     End
     {
         Stop-log
-        
     }
-
 }
 
 <#######</Body>#######>

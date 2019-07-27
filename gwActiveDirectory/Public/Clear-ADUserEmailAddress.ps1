@@ -17,7 +17,8 @@ Removes the 'emailAddress' property for AD Users 'gerryw' and 'billyb'
 
     [Cmdletbinding()]
     Param
-    ([Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]   
+    (
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]   
         [String[]]$Users
     )
     

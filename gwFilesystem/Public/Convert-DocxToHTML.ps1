@@ -10,7 +10,7 @@ Function Convert-DocxToHTML
 Iterates through all docx files in sourcepath, converts them to html, and places them in the outputpath.
 .Description
 Iterates through all docx files in sourcepath, converts them to html, and places them in the outputpath.
-.Parameter SourcePath
+.Parameter Path
 A folder with docx files
 .Parameter OutputPath
 A folder you want to place html files
@@ -23,7 +23,7 @@ Iterates through all docx files in sourcepath, converts them to html, and places
     Param
     (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
-        [string]$SourcePath,
+        [string]$Path,
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 1)]
         [string]$OutputPath
@@ -200,7 +200,7 @@ Iterates through all docx files in sourcepath, converts them to html, and places
     {
         Try
         {
-            $srcfiles = Get-ChildItem $SourcePath -filter "*.docx"
+            $srcfiles = Get-ChildItem $Path -filter "*.docx"
 
             ForEach ($doc in $srcfiles)
             {

@@ -26,7 +26,7 @@ Function Update-File
     Param
     (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
-        [String[]]$File
+        [String[]]$FilePath
     )
 
     Begin
@@ -235,12 +235,12 @@ Function Update-File
     
     Process
     { 
-        Foreach ($F In $File)
+        Foreach ($F In $FilePath)
         {
             If (Test-Path -Literalpath $F)
             {
                 # File Exists, Update Last Write Time To Now
-                Get-ChildItem -Path $Source |
+                Get-ChildItem -Path $F |
                 ForEach-Object {
                 $_.CreationTime = $Date
                 $_.LastAccessTime = $Date
