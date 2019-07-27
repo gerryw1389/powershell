@@ -223,24 +223,6 @@ The log will contain user to Email but output will just show emails.
 
         ####################</Default Begin Block>####################
         
-        Function Banner
-        {
-            Write-Host "  ##     ##   ################      ##" -Foreground Blue
-            Write-Host "  ##     ##          ##            ## ##   " -Foreground Blue
-            Write-Host "  ##     ##          ##           ##   ##  " -Foreground Blue
-            Write-Host "  ##     ##          ##          ## " -Foreground Blue -NoNewline
-            Write-Host "✯" -Foreground Yellow -NoNewline # Alt code = &#10031
-            Write-Host "  ## " -Foreground Blue
-            Write-Host "  ##     ##          ##         ########### " -Foreground Blue
-            Write-Host "  ##     ##          ##        ##         ## " -Foreground Blue
-            Write-Host "   #####             ##       ##           ## " -Foreground Blue
-            Write-Output "By using this script, you agree that any changes you make will be your responsiblity."
-            Write-Output "Please ensure all changes are documented in a change request."
-            Start-Sleep -Seconds 2
-			Clear-Host
-        }
-        Banner 
-
         Import-Module ActiveDirectory
     }
 
