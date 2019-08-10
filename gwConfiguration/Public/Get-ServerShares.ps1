@@ -1,34 +1,50 @@
-﻿<#######<Script>#######>
+<#######<Script>#######>
 <#######<Header>#######>
-# Name: Get-ExtractedEmailAddresses
+# Name: Get-ServerShares
 <#######</Header>#######>
 <#######<Body>#######>
-Function Get-ExtractedEmailAddresses
+Function Get-ServerShares
 {
     <#
 .Synopsis
-Gets email addresses from one or more text files.
+Gets the server name, share name, and share size for a group of servers.
 .Description
-Gets email addresses from one or more text files. Returns a seperate parsed file called ".\extracted.txt"
-To further clean up the results, I would run: Get-Content .\Extracted.Txt | Sort-Object | Select-Object -Unique | Out-File .\Sorted.Txt -Force
+Gets the server name, share name, and share size for a group of servers.
 .Parameter FilePath
-Mandatory file(s) to search for email regex.
+A text file containing a list of servers, one server per line.
 .Example
-Get-ExtractedEmailAddresses -FilePath c:\scripts\myfile.log
-Parses "c:\scripts\myfile.log" for any email addresses and returns a document called "extracted.txt" in the scripts running directory with the emails returned.
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
+Get-ServerShares -filepath c:\scripts\servers.txt
+Gets the server name, share name, and share size for a group of servers and writes it to the script's log.
+.Example
+Get-ServerShares -filepath c:\scripts\servers.txt -outfile c:\scripts\server-shares.csv
+Gets the server name, share name, and share size for a group of servers and exports to a csv.
 #>
 
     [Cmdletbinding()]
     Param
     (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String[]]$FilePath
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]   
+        [ValidateScript( {
+                if (-Not ($_ | Test-Path) )
+                {
+                    throw "File or folder does not exist"
+                }
+                if (-Not ($_ | Test-Path -PathType Leaf) )
+                {
+                    throw "The Path argument must be a file. Folder paths are not allowed."
+                }
+                if ($_ -notmatch "(\.txt)")
+                {
+                    throw "The file specified in the path argument must be a text file"
+                }})]
+        [String]$FilePath,
+
+        [Parameter(Mandatory = $false, Position = 1)]
+        [String]$OutFile
     )
     
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -192,31 +208,51 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
 
         ####################</Default Begin Block>####################
         
-        $OutFile = "$Psscriptroot\extracted.txt"
-        # Overwrite output file from previous run
-        New-Item $OutFile -ItemType File -Force | Out-Null
-        
     }
-    
+
     Process
-    {   
+    {
         Try
         {
-            Foreach ( $Path in $FilePath )
-            {
-                If ( Test-Path $Path )
-                {
-                    $EmailRegex = '\b[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b'
+            $servers = Get-Content $FilePath
+            $CSV = [System.Collections.Generic.List[PSObject]]@()
+            $Intro = 'Server,SharePath,ShareSize(inGB)' # Enter column names
+            [void]$CSV.Add($Intro)
 
-                    Select-String -Path $Path -Pattern $EmailRegex -AllMatches | 
-                        ForEach-Object { $_.Matches } | 
-                        ForEach-Object { $_.Value } |
-                        Out-File $OutFile -Encoding ascii -Append
-                }
-                Else
+            Foreach ($server in $Servers)
+            {
+                $Shares = Get-WMIObject -Class Win32_Share -ComputerName $server -Filter "Type = 0"
+                foreach ($s in $shares)
                 {
-                    Write-Log "Path does not exist: $Path"
+                    If ( $($s.path) -like "c:\windows*" )
+                    {
+                        # do nothing
+                    }
+                    ElseIf ( $($s.path) -eq 'print$' )
+                    {
+                        # do nothing
+                    }
+                    Else
+                    {
+                        $ShareNames = $($s.path) -split '\\'
+                        $SharePath = $ShareNames[-1]
+                        $ServerSharePath = '\\' + $Server + '\' + $SharePath
+                        $ShareSize = (Get-ChildItem $ServerSharePath -Recurse -ErrorAction SilentlyContinue | 
+                                Measure-Object -property length -sum)
+                        $ShareSizeInGB = ($ShareSize.sum / 1GB).Tostring("N2")
+                        [String]$CSVline = $Server + ',' + $ServerSharePath + ',' + $ShareSizeInGB
+                        [void]$CSV.Add($CSVLine)
+                    }
                 }
+            }
+
+            If ( $OutFile -ne '' )
+            {
+                $CSV | Out-File $Outfile -Encoding ascii
+            }
+            Else
+            {
+                $CSV
             }
         }
         Catch
@@ -229,7 +265,6 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     {
         Stop-log
     }
-
 }
 
 <#######</Body>#######>

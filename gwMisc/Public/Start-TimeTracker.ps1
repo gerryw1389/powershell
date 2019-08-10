@@ -20,14 +20,14 @@ Start at 9AM M-F, repeat task every hour for a duration of 8 hours.
     [Cmdletbinding()]
     Param
     (
-        [String]$OutputFile = "C:\scripts\timetracker.txt"
+        [String]$OutFile = "C:\scripts\timetracker.txt"
     )
 
     Begin
     {
-        If (-not(Test-Path $OutputFile))
+        If (-not(Test-Path $OutFile))
         {
-            New-Item -ItemType File -Path $OutputFile | Out-Null
+            New-Item -ItemType File -Path $OutFile | Out-Null
         }
     }
     Process
@@ -40,10 +40,10 @@ Start at 9AM M-F, repeat task every hour for a duration of 8 hours.
         
         If ( (Get-Date).Hour -eq 9 )
         {
-        Write-Output '##############################################' | Out-File $OutputFile -Encoding Ascii -Append
+        Write-Output '##############################################' | Out-File $OutFile -Encoding Ascii -Append
         }
 
-		Write-Output $Text | Out-File $OutputFile -Encoding Ascii -Append
+		Write-Output $Text | Out-File $OutFile -Encoding Ascii -Append
     }
 
     End

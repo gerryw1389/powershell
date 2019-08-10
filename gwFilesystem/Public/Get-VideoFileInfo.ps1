@@ -32,7 +32,7 @@ Function Get-VideoFileInfo
         [String]$Path,
     
         [Parameter(Position = 1, Mandatory = $True)]
-        [String]$OutputFile
+        [String]$OutFile
     )
 
     Begin
@@ -273,7 +273,7 @@ Function Get-VideoFileInfo
             } 
         } 
  
-        $Filelist | Export-Csv $Outputfile -Delimiter ',' 
+        $Filelist | Export-Csv $OutFile -Delimiter ',' 
         $Filelist | Format-Table
     }
 
