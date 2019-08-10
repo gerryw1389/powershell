@@ -317,7 +317,7 @@ Function Invoke-PasswordForm
 
                 #Generate Random Password
                 $Randomobj = New-Object System.Random
-                1..$Length | Foreach {$Password += ($Passwordset | Get-Random)}
+                1..$Length | ForEach-Object {$Password += ($Passwordset | Get-Random)}
             }
             #Generate Phrases
             Elseif ($Rdword.Checked -Eq $True)
@@ -357,7 +357,7 @@ Function Invoke-PasswordForm
                         $Uri = Invoke-Webrequest -Uri $Original
                     }
                     $Obj = Convertfrom-Json ($Uri.Content)
-                    $Data = $Obj.Data.Children.Data | Select Title
+                    $Data = $Obj.Data.Children.Data | Select-Object Title
                 }
                 Catch
                 {
@@ -382,7 +382,7 @@ Function Invoke-PasswordForm
     
                 #Filter Out Small Words And Duplicates
                 $Words = $Words | Where-Object {$_.Length -Ge 4}
-                $Words = $Words | Select -Uniq
+                $Words = $Words | Select-Object -Uniq
     
                 #Filter Out Common Words
                 $Excludedwordfile = "$Scriptpath\Excludedcommonwords.Txt"
@@ -402,7 +402,7 @@ Function Invoke-PasswordForm
                     {
                         Write-Warning "The Generated Word List Was Not Very Large ($Count), Which May Result In Limited Word Selection. Suggest You Try Another Subreddit."
                     }
-                    1..$Length | Foreach {$Password += ($Uncommonwords | Get-Random)}
+                    1..$Length | ForEach-Object {$Password += ($Uncommonwords | Get-Random)}
                 }
                 Else
                 {
@@ -413,7 +413,7 @@ Function Invoke-PasswordForm
                     {
                         Write-Warning "The Generated Word List Was Not Very Large ($Count), Which May Result In Limited Word Selection. Suggest You Try Another Subreddit."
                     }
-                    1..$Length | Foreach {$Password += ($Words | Get-Random)}
+                    1..$Length | Foreach-Object {$Password += ($Words | Get-Random)}
                 }
     
                 #Remove All Remaining Non A-Z Or A-Z Characters And Test Length Of Final Phrase
@@ -433,7 +433,7 @@ Function Invoke-PasswordForm
             #Update Text Display On Form
             If ($Cbmask.Checked -Eq $True)
             {
-                1..$Length | Foreach {$Stars += "*"}
+                1..$Length | Foreach-Object {$Stars += "*"}
                 $Txtresults.Text = $Stars
             }
             Else

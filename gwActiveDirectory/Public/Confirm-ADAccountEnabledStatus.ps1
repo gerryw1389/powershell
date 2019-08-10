@@ -34,7 +34,7 @@ Each CSV has the columns: 'Username,Full Name,Email'
                 if ($_ -notmatch "(\.txt)")
                 {
                     throw "The file specified in the path argument must be a text file"
-                })]
+                }})]
             [String]$FilePath
         )
     

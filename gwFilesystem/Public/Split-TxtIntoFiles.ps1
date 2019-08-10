@@ -41,7 +41,7 @@ out_4.txt
             if($_ -notmatch "(\.txt)")
 			{
                 throw "The file specified in the path argument must be a text file"
-            })]
+            }})]
         [string]$FilePath,
 
         [Parameter(Mandatory = $true, Position = 1)]

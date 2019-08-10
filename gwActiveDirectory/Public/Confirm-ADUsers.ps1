@@ -31,7 +31,7 @@ Goes through each account  in "c:\scripts\accounts.txt" and outputs two text fil
             if ($_ -notmatch "(\.txt)")
             {
                 throw "The file specified in the path argument must be a text file"
-            })]
+            }})]
         [String]$FilePath
     )
     

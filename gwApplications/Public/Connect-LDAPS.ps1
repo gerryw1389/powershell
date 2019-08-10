@@ -29,7 +29,7 @@ Function Connect-LDAPS
         [String]$ComputerName,
         
         [Parameter(Mandatory = $true, Position = 1)]
-        [int]$Port = 636,
+        [int]$Port,
         
         [Parameter(Mandatory = $true, Position = 2)]
         [String]$UserName,

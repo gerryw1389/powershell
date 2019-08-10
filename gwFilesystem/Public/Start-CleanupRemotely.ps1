@@ -38,7 +38,7 @@ Iterates through each server in c:\scripts\servers.txt, connects to them, and de
             if($_ -notmatch "(\.txt)")
 			{
                 throw "The file specified in the path argument must be a text file"
-            })]
+            }})]
         [string]$Filepath,
 
         [Parameter(Mandatory = $true, Position = 1)]

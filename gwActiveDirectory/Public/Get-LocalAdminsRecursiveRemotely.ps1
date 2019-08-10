@@ -45,7 +45,7 @@ Version history:
             if($_ -notmatch "(\.txt)")
 			{
                 throw "The file specified in the path argument must be a text file"
-            })]
+            }})]
         [String]$FilePath,
 
         [Parameter(Mandatory = $false, Position = 1)]
