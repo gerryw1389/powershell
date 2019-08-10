@@ -1,36 +1,55 @@
 <#######<Script>#######>
 <#######<Header>#######>
-# Name: Watch-ADReplicationStatus
-# Copyright: Gerry Williams (https://www.gerrywilliams.net)
-# License: MIT License (https://opensource.org/licenses/mit)
-# Script Modified from: n/a
+# Name: Start-CleanupRemotely
 <#######</Header>#######>
 <#######<Body>#######>
-
-Function Watch-ADReplicationStatus
+Function Start-CleanupRemotely
 {
-<#
+    <#
 .Synopsis
-This function is best placed a scheduled task to run every 5 minutes on the domain controller. 
-It will send an email if replication status fails.
+Given a text file of servers, this function will remove all files in a specific path on the servers remotely.
 .Description
-This function is best placed a scheduled task to run every 5 minutes on the domain controller. 
-It will send an email if replication status fails.
-You will need to setup the "from address, to address, smtp server, $logfile" variables.
+Given a text file of servers, this function will remove all files in a specific path on the servers remotely.
+Allows exclusions
+.Parameter Filepath
+The source text file to read servers from.
+.Parameter Path
+The path you want to clean up. Recursive.
+.Parameter Exclusions
+Optional argument to exclude a path
 .Example
-Watch-ADReplicationStatus
-Sends a report to the email you if replication status fails.
+Start-CleanupRemotely -Filepath c:\scripts\servers.txt -Path c:\scripts -Exclude pslogs
+Iterates through each server in c:\scripts\servers.txt, connects to them, and deletes all files under c:\scripts except for folder 'pslogs'
 #>
- 
-    [Cmdletbinding()]
 
+    [Cmdletbinding()]
     Param
     (
-        
-    )
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+        [ValidateScript({
+            if(-Not ($_ | Test-Path) )
+			{
+                throw "File or folder does not exist"
+            }
+            if(-Not ($_ | Test-Path -PathType Leaf) )
+			{
+                throw "The Path argument must be a file. Folder paths are not allowed."
+            }
+            if($_ -notmatch "(\.txt)")
+			{
+                throw "The file specified in the path argument must be a text file"
+            })]
+        [string]$Filepath,
 
+        [Parameter(Mandatory = $true, Position = 1)]
+        [String]$Path,
+
+        [Parameter(Position = 2)]
+        [String]$Exclude
+    )
+    
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -40,32 +59,11 @@ Sends a report to the email you if replication status fails.
         
         Function Write-Log
         {
-            <#
-            .Synopsis
-            This writes objects to the logfile and to the screen with optional coloring.
-            .Parameter InputObject
-            This can be text or an object. The function will convert it to a string and verbose it out.
-            Since the main function forces verbose output, everything passed here will be displayed on the screen and to the logfile.
-            .Parameter Color
-            Optional coloring of the input object.
-            .Example
-            Write-Log "hello" -Color "yellow"
-            Will write the string "VERBOSE: YYYY-MM-DD HH: Hello" to the screen and the logfile.
-            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
-            .Example
-            Write-Log (cmd /c "ipconfig /all")
-            Will write the string "VERBOSE: YYYY-MM-DD HH: ****ipconfig output***" to the screen and the logfile.
-            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
-            .Notes
-            2018-06-24: Initial script
-            #>
-            
             Param
             (
                 [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
                 [PSObject]$InputObject,
                 
-                # I usually set this to = "Green" since I use a black and green theme console
                 [Parameter(Mandatory = $False, Position = 1)]
                 [Validateset("Black", "Blue", "Cyan", "Darkblue", "Darkcyan", "Darkgray", "Darkgreen", "Darkmagenta", "Darkred", `
                         "Darkyellow", "Gray", "Green", "Magenta", "Red", "White", "Yellow")]
@@ -90,13 +88,6 @@ Sends a report to the email you if replication status fails.
 
         Function Start-Log
         {
-            <#
-            .Synopsis
-            Creates the log file and starts transcribing the session.
-            .Notes
-            2018-06-24: Initial script
-            #>
-            
             # Create transcript file if it doesn't exist
             If (!(Test-Path $Logfile))
             {
@@ -123,13 +114,6 @@ Sends a report to the email you if replication status fails.
         
         Function Stop-Log
         {
-            <#
-            .Synopsis
-            Stops transcribing the session and cleans the transcript file by removing the fluff.
-            .Notes
-            2018-06-24: Initial script
-            #>
-            
             Write-Log "Function completed on $env:COMPUTERNAME"
             Write-Log "####################</Function>####################"
             Stop-Transcript
@@ -228,47 +212,88 @@ Sends a report to the email you if replication status fails.
         Set-Console
 
         ####################</Default Begin Block>####################
-
         
-        Function Send-Email ([String]$Body)
-        {
-            $Mailmessage = New-Object System.Net.Mail.Mailmessage
-            $Mailmessage.From = "Email@Domain.Com"
-            $Mailmessage.To.Add("Administrator@Domain.Com")
-            $Mailmessage.Subject = "Ad Replication Error!"
-            $Mailmessage.Body = $Body
-            $Mailmessage.Priority = "High"
-            $Mailmessage.Isbodyhtml = $False
-            $Smtpclient = New-Object System.Net.Mail.Smtpclient
-            $Smtpclient.Host = "Smtp.Server.Int"
-            $Smtpclient.Send($Mailmessage)
-        }
-
+        $servers = Get-Content -Path $Filepath
     }
 
     Process
-    {    
-        $Result = Convertfrom-Csv -Inputobject (repadmin.exe /showrepl * /csv) | 
-            Where-Object { $_.Showrepl_Columns -Ne 'Showrepl_Info'} | Out-String
-
-        If ($Result -Ne "")
+    {
+        Try
         {
-            Send-Email $Result
-            Write-Log "Sending Email Due To Replication Issues!"
+            foreach ($server in $servers)
+            {
+                Write-Output "Testing connection to server: $server"
+                $a = Test-Connection -Count 2 -ComputerName $server -Quiet
+                If ($a)
+                {
+                    Try
+                    {
+                        Write-Output "Establishing a session: $server"
+                        $Session = New-PSSession -ComputerName $server -ErrorAction Stop
+                        Invoke-command -Session $session -ScriptBlock {
+                            If (Test-Path using:$Path)
+                            {
+                                If (using:$exclude)
+                                {
+                                    $files = Get-ChildItem -Path using:$Path -Exclude using:$exclude  | Get-ChildItem -Recurse
+                                    foreach ($file in $files)
+                                    {
+                                        Write-Output "removing file: $file"
+                                        Remove-Item $($file.fullname) -Force
+                                    }
+                                    $folders = Get-ChildItem -Path using:$Path -Exclude using:$exclude
+                                    foreach ($folder in $folders)
+                                    {
+                                        Write-Output "removing folder: $folder"
+                                        Remove-Item $($folder.fullname) -Force
+                                    }
+                                }
+                                Else
+                                {
+                                    $files = Get-ChildItem -Path using:$Path | Get-ChildItem -Recurse
+                                    foreach ($file in $files)
+                                    {
+                                        Write-Output "removing file: $file"
+                                        Remove-Item $($file.fullname) -Force
+                                    }
+                                    $folders = Get-ChildItem -Path using:$Path
+                                    foreach ($folder in $folders)
+                                    {
+                                        Write-Output "removing folder: $folder"
+                                        Remove-Item $($folder.fullname) -Force
+                                    }
+                                }
+                            }
+                            Else 
+                            {
+                                Write-Output "Path does not exist: $Path"
+                            }
+                        }
+                        $Session | Remove-PSSession
+                    }
+                    Catch
+                    {
+                        Write-Output "Unable to establish a remote connection: $server"
+                        Continue
+                    }
+                }
+                Else
+                {
+                    Write-output "connection to computer too slow: $server"
+                    Continue
+                }
+            }
         }
-        Else
+        Catch
         {
-            Write-Log "No Replication Issues At This Time"
+            Write-Error $($_.Exception.Message)
         }
-    
     }
 
     End
     {
         Stop-log
-        
     }
-
 }
 
 <#######</Body>#######>

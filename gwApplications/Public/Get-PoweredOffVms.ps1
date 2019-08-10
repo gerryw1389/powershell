@@ -24,7 +24,7 @@ Gets a list of powered off VM's in vCenter and exports them to "c:\scripts\power
     Param
     (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
-        [String] $Path
+        [String]$Path
     )
     
     Begin

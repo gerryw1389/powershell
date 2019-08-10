@@ -29,10 +29,10 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     Param
     (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
-        [String] $Path,
+        [String]$Path,
 
         [Parameter(Mandatory = $true, Position = 1)]
-        [String] $Filter
+        [String]$Filter
     )
     
     Begin

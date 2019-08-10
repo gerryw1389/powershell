@@ -224,8 +224,9 @@ Get-ADNestedGroupMembers "MyGroup" -indent
 
             param 
             ( 
-                [Parameter(ValuefromPipeline = $true, mandatory = $true)][String] $GroupName, 
-                [int] $nesting = -1, 
+                [Parameter(ValuefromPipeline = $true, mandatory = $true)]
+                [String]$GroupName, 
+                [int]$nesting = -1, 
                 [int]$circular = $null, 
                 [switch]$indent 
             ) 

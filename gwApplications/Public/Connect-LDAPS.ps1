@@ -1,36 +1,46 @@
 <#######<Script>#######>
 <#######<Header>#######>
-# Name: Watch-ADReplicationStatus
+# Name: Connect-LDAPS
 # Copyright: Gerry Williams (https://www.gerrywilliams.net)
 # License: MIT License (https://opensource.org/licenses/mit)
 # Script Modified from: n/a
 <#######</Header>#######>
 <#######<Body>#######>
-
-Function Watch-ADReplicationStatus
+Function Connect-LDAPS
 {
-<#
-.Synopsis
-This function is best placed a scheduled task to run every 5 minutes on the domain controller. 
-It will send an email if replication status fails.
-.Description
-This function is best placed a scheduled task to run every 5 minutes on the domain controller. 
-It will send an email if replication status fails.
-You will need to setup the "from address, to address, smtp server, $logfile" variables.
-.Example
-Watch-ADReplicationStatus
-Sends a report to the email you if replication status fails.
-#>
- 
-    [Cmdletbinding()]
+    <#
+    .Synopsis
+    Connects to an LDAPS server. Currenly ignores the cert (insecure) just because I was unable to connect any other way. 
+    .Description
+    Connects to an LDAPS server. Currenly ignores the cert (insecure) just because I was unable to connect any other way.
+    .Example
+    Connect-LDAPS -computername myserver.domain.com -Port 636 -Username 'cn=admin,ou=users,o=domain' -Password 'Pa$$word'
+    Connects to an LDAPS server. Currenly ignores the cert (insecure) just because I was unable to connect any other way.
+    .Notes
+    2019-08-08: Initial script
+    #>
 
+    [Cmdletbinding()]
+    
     Param
     (
-        
-    )
 
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+        [String]$ComputerName,
+        
+        [Parameter(Mandatory = $true, Position = 1)]
+        [int]$Port = 636,
+        
+        [Parameter(Mandatory = $true, Position = 2)]
+        [String]$UserName,
+        
+        [Parameter(Mandatory = $true, Position = 3)]
+        [String]$Password
+    )
+    
     Begin
     {       
+        
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -143,10 +153,10 @@ Sends a report to the email you if replication status fails.
 			
             # Get all the matches for PS Headers and dump to a file
             $Transcript | 
-                Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
-                ForEach-Object {$_.Matches} | 
-                ForEach-Object {$_.Value} | 
-                Out-File -FilePath $TempFile -Append
+            Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
+            ForEach-Object { $_.Matches } | 
+            ForEach-Object { $_.Value } | 
+            Out-File -FilePath $TempFile -Append
 
             # Compare the two and put the differences in a third file
             $m1 = Get-Content -Path $Logfile
@@ -229,46 +239,114 @@ Sends a report to the email you if replication status fails.
 
         ####################</Default Begin Block>####################
 
-        
-        Function Send-Email ([String]$Body)
-        {
-            $Mailmessage = New-Object System.Net.Mail.Mailmessage
-            $Mailmessage.From = "Email@Domain.Com"
-            $Mailmessage.To.Add("Administrator@Domain.Com")
-            $Mailmessage.Subject = "Ad Replication Error!"
-            $Mailmessage.Body = $Body
-            $Mailmessage.Priority = "High"
-            $Mailmessage.Isbodyhtml = $False
-            $Smtpclient = New-Object System.Net.Mail.Smtpclient
-            $Smtpclient.Host = "Smtp.Server.Int"
-            $Smtpclient.Send($Mailmessage)
-        }
-
     }
-
-    Process
-    {    
-        $Result = Convertfrom-Csv -Inputobject (repadmin.exe /showrepl * /csv) | 
-            Where-Object { $_.Showrepl_Columns -Ne 'Showrepl_Info'} | Out-String
-
-        If ($Result -Ne "")
-        {
-            Send-Email $Result
-            Write-Log "Sending Email Due To Replication Issues!"
-        }
-        Else
-        {
-            Write-Log "No Replication Issues At This Time"
-        }
     
+    Process
+    {   
+        Try
+        {
+            
+
+            <#
+# Get client cert
+$cert = @( Get-ChildItem -Path 'Cert:\LocalMachine\Root\' )
+foreach ($c in $cert)
+{
+    If ($c.Subject -match "CN=server.domain.com")
+    { 
+        $clientCert = $c
+    }
+    Else {}
+}
+[System.Security.Cryptography.X509Certificates.X509Certificate] $ClientAuthCert = $clientCert
+#>
+ 
+            #Load the assemblies 
+            [System.Reflection.Assembly]::LoadWithPartialName("System.DirectoryServices.Protocols") | Out-Null
+            [System.Reflection.Assembly]::LoadWithPartialName("System.Net") | Out-Null
+            if (-not ([System.Management.Automation.PSTypeName]'TrustAllCertsPolicy').Type)
+            {
+                add-type @"
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
+public class TrustAllCertsPolicy : ICertificatePolicy {
+    public bool CheckValidationResult(
+        ServicePoint srvPoint, X509Certificate certificate,
+        WebRequest request, int certificateProblem) {
+        return true;
+    }
+}
+"@
+            }
+            [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
+            [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+
+            # Setup connection
+            $dn = "$ComputerName" + ":" + "$Port" 
+            $connection = New-Object System.DirectoryServices.Protocols.LdapConnection "$dn" 
+            $connection.AuthType = [System.DirectoryServices.Protocols.AuthType]::Basic 
+            $credentials = new-object "System.Net.NetworkCredential" -ArgumentList $UserName, $Password 
+            $connection.Credential = $credentials
+
+            # set options
+            $options = $connection.SessionOptions
+            $options.SecureSocketLayer = $true 
+            $options.ProtocolVersion = 3 
+            # Write-Output 'SSL for encryption is enabled - SSL information:'
+            # Write-Output "cipher strength: $($options.SslInformation.CipherStrength)"
+            # Write-Output "exchange strength: $($options.SslInformation.ExchangeStrength)"
+            # Write-Output "protocol: $($options.SslInformation.Protocol)"
+            # Write-Output "hash strength: $($options.SslInformation.HashStrength)"
+            # Write-Output "algorithm: $($options.SslInformation.AlgorithmIdentifier)" 
+            $options.VerifyServerCertificate = { return $true } 
+
+            # connect
+            Try 
+            { 
+                $connection.Bind() 
+                # Write-host 'connected'
+            } 
+            catch 
+            { 
+                Write-host $_.Exception.Message 
+            }
+
+            # Send a query
+            [Timespan]$Timeout = (New-Object System.TimeSpan(0, 0, 120))
+            #$BaseDN = ""
+            #$attrlist = ""
+            $scope = [System.DirectoryServices.Protocols.SearchScope]::OneLevel
+            $Filter = "(objectClass=*)"
+
+            $rq = new-object System.DirectoryServices.Protocols.SearchRequest
+            $rq.Filter = $Filter
+            $rq.Scope = $scope
+
+            $rsp = $Connection.SendRequest($rq, $Timeout) -as [System.DirectoryServices.Protocols.SearchResponse]
+
+            # see results
+            # $rsp.entries
+
+            If ($rsp.ResultCode.ToString() -eq 'Success')
+            {
+                Write-Output "connected successfully"
+            }
+            Else
+            {
+                Write-Output "failed to connect"
+            }
+
+        }
+        Catch
+        {
+            Write-Error $($_.Exception.Message)
+        }
     }
 
     End
     {
         Stop-log
-        
     }
-
 }
 
 <#######</Body>#######>

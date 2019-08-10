@@ -187,8 +187,8 @@ This script queries AD and sends an email of the current domain admins.
         
         function Get-ADNestedGroupMembers { 
             param ( 
-            [Parameter(ValuefromPipeline=$true,mandatory=$true)][String] $GroupName, 
-            [int] $nesting = -1, 
+            [Parameter(ValuefromPipeline=$true,mandatory=$true)][String]$GroupName, 
+            [int]$nesting = -1, 
             [int]$circular = $null, 
             [switch]$indent 
             ) 

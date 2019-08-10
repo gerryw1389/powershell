@@ -207,7 +207,7 @@ Version History:
                 Write-Log "Groups: $groups"
                 foreach ($group in $groups)
                 {
-                    [string] $g = $($group.name.ToString())
+                    [string]$g = $($group.name.ToString())
                     Add-ADGroupMember -Identity $g -Members $AccountToAdd
                     Write-Log "Adding $AccountToAdd to $g"
                     Remove-Variable -Name g

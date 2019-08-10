@@ -26,10 +26,10 @@ Version History:
     Param
     (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
-        [String[]] $Identity,
+        [String[]]$Identity,
 
         [Parameter(Mandatory = $false, Position = 1)]
-        [String[]] $Except = 'Domain Users'
+        [String[]]$Except = 'Domain Users'
     )
     
     Begin

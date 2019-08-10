@@ -23,10 +23,23 @@ Gets the local admin accounts on each server and outputs to a CSV.
     Param
     (
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String] $FilePath,
+        [ValidateScript({
+            if(-Not ($_ | Test-Path) )
+			{
+                throw "File or folder does not exist"
+            }
+            if(-Not ($_ | Test-Path -PathType Leaf) )
+			{
+                throw "The Path argument must be a file. Folder paths are not allowed."
+            }
+            if($_ -notmatch "(\.txt)")
+			{
+                throw "The file specified in the path argument must be a text file"
+            })]
+        [String]$FilePath,
 
         [Parameter(Mandatory=$true,Position=1)]
-        [String] $OutputPath
+        [String]$OutputPath
     )
     
     Begin

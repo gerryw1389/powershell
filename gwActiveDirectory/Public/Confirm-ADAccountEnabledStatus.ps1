@@ -22,116 +22,129 @@ Each CSV has the columns: 'Username,Full Name,Email'
     Param
     (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]   
-        [String]$FilePath
-    )
+        [ValidateScript( {
+                if (-Not ($_ | Test-Path) )
+                {
+                    throw "File or folder does not exist"
+                }
+                if (-Not ($_ | Test-Path -PathType Leaf) )
+                {
+                    throw "The Path argument must be a file. Folder paths are not allowed."
+                }
+                if ($_ -notmatch "(\.txt)")
+                {
+                    throw "The file specified in the path argument must be a text file"
+                })]
+            [String]$FilePath
+        )
     
-    Begin
-    {
-        ####################<Default Begin Block>####################
-        # Force verbose because Write-Output doesn't look well in transcript files
-        $VerbosePreference = "Continue"
-        
-        [String]$Logfile = $PSScriptRoot + '\PSLogs\' + (Get-Date -Format "yyyy-MM-dd") +
-        "-" + $MyInvocation.MyCommand.Name + ".log"
-        
-        Function Write-Log
+        Begin
         {
-            Param
-            (
-                [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
-                [PSObject]$InputObject,
+            ####################<Default Begin Block>####################
+            # Force verbose because Write-Output doesn't look well in transcript files
+            $VerbosePreference = "Continue"
+        
+            [String]$Logfile = $PSScriptRoot + '\PSLogs\' + (Get-Date -Format "yyyy-MM-dd") +
+            "-" + $MyInvocation.MyCommand.Name + ".log"
+        
+            Function Write-Log
+            {
+                Param
+                (
+                    [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+                    [PSObject]$InputObject,
                 
-                [Parameter(Mandatory = $False, Position = 1)]
-                [Validateset("Black", "Blue", "Cyan", "Darkblue", "Darkcyan", "Darkgray", "Darkgreen", "Darkmagenta", "Darkred", `
-                        "Darkyellow", "Gray", "Green", "Magenta", "Red", "White", "Yellow")]
-                [String]$Color = "Green"
-            )
+                    [Parameter(Mandatory = $False, Position = 1)]
+                    [Validateset("Black", "Blue", "Cyan", "Darkblue", "Darkcyan", "Darkgray", "Darkgreen", "Darkmagenta", "Darkred", `
+                            "Darkyellow", "Gray", "Green", "Magenta", "Red", "White", "Yellow")]
+                    [String]$Color = "Green"
+                )
             
-            $ConvertToString = Out-String -InputObject $InputObject -Width 100
+                $ConvertToString = Out-String -InputObject $InputObject -Width 100
             
-            If ($($Color.Length -gt 0))
-            {
-                $previousForegroundColor = $Host.PrivateData.VerboseForegroundColor
-                $Host.PrivateData.VerboseForegroundColor = $Color
-                Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
-                $Host.PrivateData.VerboseForegroundColor = $previousForegroundColor
+                If ($($Color.Length -gt 0))
+                {
+                    $previousForegroundColor = $Host.PrivateData.VerboseForegroundColor
+                    $Host.PrivateData.VerboseForegroundColor = $Color
+                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+                    $Host.PrivateData.VerboseForegroundColor = $previousForegroundColor
+                }
+                Else
+                {
+                    Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
+                }
+            
             }
-            Else
-            {
-                Write-Verbose -Message "$(Get-Date -Format "yyyy-MM-dd hh:mm:ss tt"): $ConvertToString"
-            }
-            
-        }
 
-        Function Start-Log
-        {
-            # Create transcript file if it doesn't exist
-            If (!(Test-Path $Logfile))
+            Function Start-Log
             {
-                New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+                # Create transcript file if it doesn't exist
+                If (!(Test-Path $Logfile))
+                {
+                    New-Item -Itemtype File -Path $Logfile -Force | Out-Null
+                }
+        
+                # Clear it if it is over 10 MB
+                [Double]$Sizemax = 10485760
+                $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
+                If ($($Size.Sum -ge $SizeMax))
+                {
+                    Get-Childitem $Logfile | Clear-Content
+                    Write-Verbose "Logfile has been cleared due to size"
+                }
+                Else
+                {
+                    Write-Verbose "Logfile was less than 10 MB"   
+                }
+                Start-Transcript -Path $Logfile -Append 
+                Write-Log "####################<Function>####################"
+                Write-Log "Function started on $env:COMPUTERNAME"
+
             }
         
-            # Clear it if it is over 10 MB
-            [Double]$Sizemax = 10485760
-            $Size = (Get-Childitem $Logfile | Measure-Object -Property Length -Sum) 
-            If ($($Size.Sum -ge $SizeMax))
+            Function Stop-Log
             {
-                Get-Childitem $Logfile | Clear-Content
-                Write-Verbose "Logfile has been cleared due to size"
-            }
-            Else
-            {
-                Write-Verbose "Logfile was less than 10 MB"   
-            }
-            Start-Transcript -Path $Logfile -Append 
-            Write-Log "####################<Function>####################"
-            Write-Log "Function started on $env:COMPUTERNAME"
-
-        }
-        
-        Function Stop-Log
-        {
-            Write-Log "Function completed on $env:COMPUTERNAME"
-            Write-Log "####################</Function>####################"
-            Stop-Transcript
+                Write-Log "Function completed on $env:COMPUTERNAME"
+                Write-Log "####################</Function>####################"
+                Stop-Transcript
        
-            # Now we will clean up the transcript file as it contains filler info that needs to be removed...
-            $Transcript = Get-Content $Logfile -raw
+                # Now we will clean up the transcript file as it contains filler info that needs to be removed...
+                $Transcript = Get-Content $Logfile -raw
 
-            # Create a tempfile
-            $TempFile = $PSScriptRoot + "\PSLogs\temp.txt"
-            New-Item -Path $TempFile -ItemType File | Out-Null
+                # Create a tempfile
+                $TempFile = $PSScriptRoot + "\PSLogs\temp.txt"
+                New-Item -Path $TempFile -ItemType File | Out-Null
 			
-            # Get all the matches for PS Headers and dump to a file
-            $Transcript | 
-            Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
-            ForEach-Object { $_.Matches } | 
-            ForEach-Object { $_.Value } | 
-            Out-File -FilePath $TempFile -Append
+                # Get all the matches for PS Headers and dump to a file
+                $Transcript | 
+                Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
+                ForEach-Object { $_.Matches } | 
+                ForEach-Object { $_.Value } | 
+                Out-File -FilePath $TempFile -Append
 
-            # Compare the two and put the differences in a third file
-            $m1 = Get-Content -Path $Logfile
-            $m2 = Get-Content -Path $TempFile
-            $all = Compare-Object -ReferenceObject $m1 -DifferenceObject $m2 | Where-Object -Property Sideindicator -eq '<='
-            $Array = [System.Collections.Generic.List[PSObject]]@()
-            foreach ($a in $all)
-            {
-                [void]$Array.Add($($a.InputObject))
-            }
-            $Array = $Array -replace 'VERBOSE: ', ''
+                # Compare the two and put the differences in a third file
+                $m1 = Get-Content -Path $Logfile
+                $m2 = Get-Content -Path $TempFile
+                $all = Compare-Object -ReferenceObject $m1 -DifferenceObject $m2 | Where-Object -Property Sideindicator -eq '<='
+                $Array = [System.Collections.Generic.List[PSObject]]@()
+                foreach ($a in $all)
+                {
+                    [void]$Array.Add($($a.InputObject))
+                }
+                $Array = $Array -replace 'VERBOSE: ', ''
 
-            Remove-Item -Path $Logfile -Force
-            Remove-Item -Path $TempFile -Force
-            # Finally, put the information we care about in the original file and discard the rest.
-            $Array | Out-File $Logfile -Append -Encoding ASCII
+                Remove-Item -Path $Logfile -Force
+                Remove-Item -Path $TempFile -Force
+                # Finally, put the information we care about in the original file and discard the rest.
+                $Array | Out-File $Logfile -Append -Encoding ASCII
             
-        }
+            }
         
-        Start-Log
+            Start-Log
 
-        Function Set-Console
-        {
-            <# 
+            Function Set-Console
+            {
+                <# 
         .Synopsis
         Function to set console colors just for the session.
         .Description
@@ -143,127 +156,127 @@ Each CSV has the columns: 'Username,Full Name,Email'
         2017-10-19: v1.0 Initial script 
         #>
         
-            Function Test-IsAdmin
-            {
-                <#
+                Function Test-IsAdmin
+                {
+                    <#
                 .Synopsis
                 Determines whether or not the user is a member of the local Administrators security group.
                 .Outputs
                 System.Bool
                 #>
 
-                [CmdletBinding()]
+                    [CmdletBinding()]
     
-                $Identity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
-                $Principal = new-object System.Security.Principal.WindowsPrincipal(${Identity})
-                $IsAdmin = $Principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
-                Write-Output -InputObject $IsAdmin
-            }
+                    $Identity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+                    $Principal = new-object System.Security.Principal.WindowsPrincipal(${Identity})
+                    $IsAdmin = $Principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
+                    Write-Output -InputObject $IsAdmin
+                }
 
-            $console = $host.UI.RawUI
-            If (Test-IsAdmin)
-            {
-                $console.WindowTitle = "Administrator: Powershell"
+                $console = $host.UI.RawUI
+                If (Test-IsAdmin)
+                {
+                    $console.WindowTitle = "Administrator: Powershell"
+                }
+                Else
+                {
+                    $console.WindowTitle = "Powershell"
+                }
+                $Background = "Black"
+                $Foreground = "Green"
+                $Messages = "DarkCyan"
+                $Host.UI.RawUI.BackgroundColor = $Background
+                $Host.UI.RawUI.ForegroundColor = $Foreground
+                $Host.PrivateData.ErrorForegroundColor = $Messages
+                $Host.PrivateData.ErrorBackgroundColor = $Background
+                $Host.PrivateData.WarningForegroundColor = $Messages
+                $Host.PrivateData.WarningBackgroundColor = $Background
+                $Host.PrivateData.DebugForegroundColor = $Messages
+                $Host.PrivateData.DebugBackgroundColor = $Background
+                $Host.PrivateData.VerboseForegroundColor = $Messages
+                $Host.PrivateData.VerboseBackgroundColor = $Background
+                $Host.PrivateData.ProgressForegroundColor = $Messages
+                $Host.PrivateData.ProgressBackgroundColor = $Background
+                Clear-Host
             }
-            Else
-            {
-                $console.WindowTitle = "Powershell"
-            }
-            $Background = "Black"
-            $Foreground = "Green"
-            $Messages = "DarkCyan"
-            $Host.UI.RawUI.BackgroundColor = $Background
-            $Host.UI.RawUI.ForegroundColor = $Foreground
-            $Host.PrivateData.ErrorForegroundColor = $Messages
-            $Host.PrivateData.ErrorBackgroundColor = $Background
-            $Host.PrivateData.WarningForegroundColor = $Messages
-            $Host.PrivateData.WarningBackgroundColor = $Background
-            $Host.PrivateData.DebugForegroundColor = $Messages
-            $Host.PrivateData.DebugBackgroundColor = $Background
-            $Host.PrivateData.VerboseForegroundColor = $Messages
-            $Host.PrivateData.VerboseBackgroundColor = $Background
-            $Host.PrivateData.ProgressForegroundColor = $Messages
-            $Host.PrivateData.ProgressBackgroundColor = $Background
-            Clear-Host
-        }
-        Set-Console
+            Set-Console
 
-        ####################</Default Begin Block>####################
+            ####################</Default Begin Block>####################
         
-        Import-Module ActiveDirectory
+            Import-Module ActiveDirectory
 
-        $Enabled = [System.Collections.Generic.List[PSObject]]@()
-        $Disabled = [System.Collections.Generic.List[PSObject]]@()
-        $NoExist = [System.Collections.Generic.List[PSObject]]@()
-        $Intro = 'Username,Full Name,Email'
-        [void]$Enabled.Add($Intro)
-        [void]$Disabled.Add($Intro)
-        [void]$NoExist.Add($Intro)
-    }
+            $Enabled = [System.Collections.Generic.List[PSObject]]@()
+            $Disabled = [System.Collections.Generic.List[PSObject]]@()
+            $NoExist = [System.Collections.Generic.List[PSObject]]@()
+            $Intro = 'Username,Full Name,Email'
+            [void]$Enabled.Add($Intro)
+            [void]$Disabled.Add($Intro)
+            [void]$NoExist.Add($Intro)
+        }
 
-    Process
-    {
-        Try
+        Process
         {
-            $Users = Get-Content $FilePath 
-            ForEach ($u in $users)
+            Try
             {
-                Try
+                $Users = Get-Content $FilePath 
+                ForEach ($u in $users)
                 {
-                    $User = Get-ADUser -Identity $u -ErrorAction stop
+                    Try
+                    {
+                        $User = Get-ADUser -Identity $u -ErrorAction stop
 
-                    If ($($user.enabled))
-                    {
-                        Write-Log "user $($user.name) is enabled"
-                        $Username = $($User.Name)
-                        $First = $($User.GivenName)
-                        $Last = $($User.Surname)
-                        $Email = $($User.UserPrincipalName)
-                        $String = "$Username,$First $Last,$Email"
+                        If ($($user.enabled))
+                        {
+                            Write-Log "user $($user.name) is enabled"
+                            $Username = $($User.Name)
+                            $First = $($User.GivenName)
+                            $Last = $($User.Surname)
+                            $Email = $($User.UserPrincipalName)
+                            $String = "$Username,$First $Last,$Email"
                 
-                        [void]$Enabled.Add($string)
-                    }
-                    else
-                    {
-                        Write-Log "user $($user.name) is disabled"
-                        $Username = $($User.Name)
-                        $First = $($User.GivenName)
-                        $Last = $($User.Surname)
-                        $Email = $($User.UserPrincipalName)
-                        $String = "$Username,$First $Last,$Email"
+                            [void]$Enabled.Add($string)
+                        }
+                        else
+                        {
+                            Write-Log "user $($user.name) is disabled"
+                            $Username = $($User.Name)
+                            $First = $($User.GivenName)
+                            $Last = $($User.Surname)
+                            $Email = $($User.UserPrincipalName)
+                            $String = "$Username,$First $Last,$Email"
                 
-                        [void]$Disabled.Add($string)
+                            [void]$Disabled.Add($string)
+                        }
                     }
-                }
-                catch
-                {
-                    Write-Log "user $u doesnt exist"
-                    $Username = $u
-                    $First = "Null"
-                    $Last = "Null"
-                    $Email = "Null"
-                    $String = "$Username,$First $Last,$Email"
+                    catch
+                    {
+                        Write-Log "user $u doesnt exist"
+                        $Username = $u
+                        $First = "Null"
+                        $Last = "Null"
+                        $Email = "Null"
+                        $String = "$Username,$First $Last,$Email"
                     
-                    [void]$NoExist.Add($String)
-                }
+                        [void]$NoExist.Add($String)
+                    }
    
-                # Start-Sleep -Seconds 1
+                    # Start-Sleep -Seconds 1
+                }
+            }
+            Catch
+            {
+                Write-Error $($_.Exception.Message)
             }
         }
-        Catch
+
+        End
         {
-            Write-Error $($_.Exception.Message)
+            $NoExist | Out-File "$PSScriptRoot\noexist.csv"
+            $Disabled | Out-File "$PSScriptRoot\disabled.csv"
+            $Enabled | Out-File "$PSScriptRoot\enabled.csv"
+            Stop-log
         }
     }
 
-    End
-    {
-        $NoExist | Out-File "$PSScriptRoot\noexist.csv"
-        $Disabled | Out-File "$PSScriptRoot\disabled.csv"
-        $Enabled | Out-File "$PSScriptRoot\enabled.csv"
-        Stop-log
-    }
-}
-
-<#######</Body>#######>
-<#######</Script>#######>
+    <#######</Body>#######>
+    <#######</Script>#######>

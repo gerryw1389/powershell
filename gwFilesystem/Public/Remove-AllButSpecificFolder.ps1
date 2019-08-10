@@ -23,10 +23,10 @@ Deletes everything EXCEPT PSLogs in c:\scripts
     Param
     (
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [String] $Path,
+        [String]$Path,
 
         [Parameter(Mandatory=$true,Position=1)]
-        [String] $ExcludeFolder
+        [String]$ExcludeFolder
     )
     
     Begin

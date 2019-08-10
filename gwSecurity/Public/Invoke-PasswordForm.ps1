@@ -257,7 +257,7 @@ Function Invoke-PasswordForm
         #Generate Password Or Phrase
         Function Generatepassword
         {
-            [String] $Password = ""
+            [String]$Password = ""
             $Txtresults.Text = "<Generating Phrase...>"
     
             #Generate Passwords
@@ -506,7 +506,7 @@ Function Invoke-PasswordForm
 
             $Onloadform_Statecorrection = {
                 $Form1.Windowstate = $Initialformwindowstate
-                [Int] $Runcount = 0
+                [Int]$Runcount = 0
                 Generatepassword
             }
 

@@ -235,7 +235,7 @@ Function Install-ClickOnceApplication
             Param
             (
                 [Parameter(Mandatory = $True)]
-                [String] $Url,
+                [String]$Url,
                 [Switch] $Inforeground,
                 [Switch] $Fullscreen
             )

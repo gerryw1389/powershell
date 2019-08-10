@@ -1,36 +1,61 @@
 <#######<Script>#######>
 <#######<Header>#######>
-# Name: Watch-ADReplicationStatus
-# Copyright: Gerry Williams (https://www.gerrywilliams.net)
-# License: MIT License (https://opensource.org/licenses/mit)
-# Script Modified from: n/a
+# Name: Start-ScriptFromGitlabRemotely
 <#######</Header>#######>
 <#######<Body>#######>
-
-Function Watch-ADReplicationStatus
+Function Start-ScriptFromGitlabRemotely
 {
-<#
+    <#
 .Synopsis
-This function is best placed a scheduled task to run every 5 minutes on the domain controller. 
-It will send an email if replication status fails.
+Downloads a script from public Gitlab on a remote machine and runs it.
+No longer works since repo's are private now. Works fine for public repos
 .Description
-This function is best placed a scheduled task to run every 5 minutes on the domain controller. 
-It will send an email if replication status fails.
-You will need to setup the "from address, to address, smtp server, $logfile" variables.
+Downloads a script from public Gitlab on a remote machine and runs it.
+No longer works since repo's are private now. Works fine for public repos
+.Parameter Filepath
+The source text file to read servers from.
+.Parameter URI
+The URI of the resource you are wanting to download and run.
 .Example
-Watch-ADReplicationStatus
-Sends a report to the email you if replication status fails.
-#>
- 
-    [Cmdletbinding()]
+Start-ScriptFromGitlabRemotely -Filepath c:\scripts\servers.txt -URI 'https://something.domain.com/install-splunk.ps1'
+Downloads a script from public Gitlab on a remote machine and runs it.
+.Notes
+Haven't tested, but since it uses jobs, you are supposed to get the results from the jobs like so:
+PS>$j = Get-Job
+PS>$j | Format-List -Property *
+PS>$results = $j | Receive-Job
+PS>$results
+Job 1
+------
+Blah
 
+#>
+
+    [Cmdletbinding()]
     Param
     (
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+        [ValidateScript({
+            if(-Not ($_ | Test-Path) )
+			{
+                throw "File or folder does not exist"
+            }
+            if(-Not ($_ | Test-Path -PathType Leaf) )
+			{
+                throw "The Path argument must be a file. Folder paths are not allowed."
+            }
+            if($_ -notmatch "(\.txt)")
+			{
+                throw "The file specified in the path argument must be a text file"
+            })]
+        [string]$Filepath,
         
+        [Parameter(Mandatory = $true, Position = 1)]
+        [int]$Port
     )
-
+    
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -40,32 +65,11 @@ Sends a report to the email you if replication status fails.
         
         Function Write-Log
         {
-            <#
-            .Synopsis
-            This writes objects to the logfile and to the screen with optional coloring.
-            .Parameter InputObject
-            This can be text or an object. The function will convert it to a string and verbose it out.
-            Since the main function forces verbose output, everything passed here will be displayed on the screen and to the logfile.
-            .Parameter Color
-            Optional coloring of the input object.
-            .Example
-            Write-Log "hello" -Color "yellow"
-            Will write the string "VERBOSE: YYYY-MM-DD HH: Hello" to the screen and the logfile.
-            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
-            .Example
-            Write-Log (cmd /c "ipconfig /all")
-            Will write the string "VERBOSE: YYYY-MM-DD HH: ****ipconfig output***" to the screen and the logfile.
-            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
-            .Notes
-            2018-06-24: Initial script
-            #>
-            
             Param
             (
                 [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
                 [PSObject]$InputObject,
                 
-                # I usually set this to = "Green" since I use a black and green theme console
                 [Parameter(Mandatory = $False, Position = 1)]
                 [Validateset("Black", "Blue", "Cyan", "Darkblue", "Darkcyan", "Darkgray", "Darkgreen", "Darkmagenta", "Darkred", `
                         "Darkyellow", "Gray", "Green", "Magenta", "Red", "White", "Yellow")]
@@ -90,13 +94,6 @@ Sends a report to the email you if replication status fails.
 
         Function Start-Log
         {
-            <#
-            .Synopsis
-            Creates the log file and starts transcribing the session.
-            .Notes
-            2018-06-24: Initial script
-            #>
-            
             # Create transcript file if it doesn't exist
             If (!(Test-Path $Logfile))
             {
@@ -123,13 +120,6 @@ Sends a report to the email you if replication status fails.
         
         Function Stop-Log
         {
-            <#
-            .Synopsis
-            Stops transcribing the session and cleans the transcript file by removing the fluff.
-            .Notes
-            2018-06-24: Initial script
-            #>
-            
             Write-Log "Function completed on $env:COMPUTERNAME"
             Write-Log "####################</Function>####################"
             Stop-Transcript
@@ -228,47 +218,83 @@ Sends a report to the email you if replication status fails.
         Set-Console
 
         ####################</Default Begin Block>####################
-
         
-        Function Send-Email ([String]$Body)
-        {
-            $Mailmessage = New-Object System.Net.Mail.Mailmessage
-            $Mailmessage.From = "Email@Domain.Com"
-            $Mailmessage.To.Add("Administrator@Domain.Com")
-            $Mailmessage.Subject = "Ad Replication Error!"
-            $Mailmessage.Body = $Body
-            $Mailmessage.Priority = "High"
-            $Mailmessage.Isbodyhtml = $False
-            $Smtpclient = New-Object System.Net.Mail.Smtpclient
-            $Smtpclient.Host = "Smtp.Server.Int"
-            $Smtpclient.Send($Mailmessage)
-        }
-
+        $servers = Get-Content -Path $Filepath
     }
 
     Process
-    {    
-        $Result = Convertfrom-Csv -Inputobject (repadmin.exe /showrepl * /csv) | 
-            Where-Object { $_.Showrepl_Columns -Ne 'Showrepl_Info'} | Out-String
+    {
+        # split the URI and grab the last section
+        $parts = $URI -split '/'
+        $filename = $parts[-1]
+        
+        Try
+        {
+            foreach ($server in $servers)
+            {
+                Write-Output "Testing connection to server: $server"
+                $a = Test-Connection -Count 2 -ComputerName $server -Quiet
+                If ($a)
+                {
+                    Try
+                    {
+                        Write-Output "Establishing a session: $server"
+                        $Session = New-PSSession -ComputerName $server -ErrorAction Stop
+                        Invoke-Command -Session $session -ScriptBlock {
+                            # Download the script
+                            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                            $r = Invoke-WebRequest -UseBasicParsing $URI
+                            if (-not(test-path 'C:\scripts'))
+                            { 
+                                new-item -ItemType directory -Path 'c:\scripts' | out-null 
+                            }
+                            $Outfile = 'c:\scripts\' + $filename
+                            $r.Content | Out-File $Outfile
+                            Start-Sleep -Seconds 1
+                            
+                            <#
+                            # Script has been downloaded to the machine at this point. You may need to modify it for something.
 
-        If ($Result -Ne "")
-        {
-            Send-Email $Result
-            Write-Log "Sending Email Due To Replication Issues!"
+                            # For example, if it contains a generic password, you can replace the password by doing something like:
+                            
+                            (Get-Content "C:\scripts\Install-Splunk.ps1").replace('LookMeUp', 'pa$$word') | Set-Content "C:\scripts\Install-Splunk.ps1"
+                            
+                            # Or if the script is an advanced function like all of mine are, you can add the call of the function to the end of the file so that
+                            # it behaves like a script.
+
+                            Add-Content -Value 'Install-Splunk' -Path $Outfile
+                            
+                            # Where $Outfile is "c:\scripts\Install-Splunk.ps1"
+                            #>
+                            
+                            # Starts the script
+                            Start-Process "powershell.exe" -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File $Outfile -Verb RunAs' -Wait
+                        } -AsJob
+                        $Session | Remove-PSSession
+                    }
+                    Catch
+                    {
+                        Write-Output "Unable to establish a remote connection: $server"
+                        Continue
+                    }
+                }
+                Else
+                {
+                    Write-output "connection to computer too slow: $server"
+                    Continue
+                }
+            }
         }
-        Else
+        Catch
         {
-            Write-Log "No Replication Issues At This Time"
+            Write-Error $($_.Exception.Message)
         }
-    
     }
 
     End
     {
         Stop-log
-        
     }
-
 }
 
 <#######</Body>#######>

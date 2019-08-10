@@ -1,36 +1,42 @@
 <#######<Script>#######>
 <#######<Header>#######>
-# Name: Watch-ADReplicationStatus
-# Copyright: Gerry Williams (https://www.gerrywilliams.net)
-# License: MIT License (https://opensource.org/licenses/mit)
-# Script Modified from: n/a
+# Name: Search-SpecificString
 <#######</Header>#######>
 <#######<Body>#######>
-
-Function Watch-ADReplicationStatus
+Function Search-SpecificString
 {
-<#
+   <#
 .Synopsis
-This function is best placed a scheduled task to run every 5 minutes on the domain controller. 
-It will send an email if replication status fails.
+Searches a group of files for a specific string and sends the results to a text file.
 .Description
-This function is best placed a scheduled task to run every 5 minutes on the domain controller. 
-It will send an email if replication status fails.
-You will need to setup the "from address, to address, smtp server, $logfile" variables.
+Searches a group of files for a specific string and sends the results to a text file.
+.Parameter Pattern
+A string pattern to search for.
+.Parameter Path
+A path you want to scan with the files to search through. Not recursive.
+.Parameter OutFile
+A destination file to place your results.
 .Example
-Watch-ADReplicationStatus
-Sends a report to the email you if replication status fails.
+Search-SpecificString -Pattern 'Connection Dropped' -Path "\\server\share\*.txt" -OutFile "\\server\share\_connection-dropped.txt"
+Searches all txt files in \\server\share\*.txt for string 'Connection Dropped' and sends to "\\server\share\_connection-dropped.txt"
 #>
- 
-    [Cmdletbinding()]
 
+    [Cmdletbinding()]
     Param
     (
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+        [string]$Pattern,
+
+        [Parameter(Mandatory = $true, Position = 1)]
+        [String]$Path,
+
+        [Parameter(Mandatory = $true, Position = 2)]
+        [String]$OutFile
         
     )
-
+    
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -40,32 +46,11 @@ Sends a report to the email you if replication status fails.
         
         Function Write-Log
         {
-            <#
-            .Synopsis
-            This writes objects to the logfile and to the screen with optional coloring.
-            .Parameter InputObject
-            This can be text or an object. The function will convert it to a string and verbose it out.
-            Since the main function forces verbose output, everything passed here will be displayed on the screen and to the logfile.
-            .Parameter Color
-            Optional coloring of the input object.
-            .Example
-            Write-Log "hello" -Color "yellow"
-            Will write the string "VERBOSE: YYYY-MM-DD HH: Hello" to the screen and the logfile.
-            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
-            .Example
-            Write-Log (cmd /c "ipconfig /all")
-            Will write the string "VERBOSE: YYYY-MM-DD HH: ****ipconfig output***" to the screen and the logfile.
-            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
-            .Notes
-            2018-06-24: Initial script
-            #>
-            
             Param
             (
                 [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
                 [PSObject]$InputObject,
                 
-                # I usually set this to = "Green" since I use a black and green theme console
                 [Parameter(Mandatory = $False, Position = 1)]
                 [Validateset("Black", "Blue", "Cyan", "Darkblue", "Darkcyan", "Darkgray", "Darkgreen", "Darkmagenta", "Darkred", `
                         "Darkyellow", "Gray", "Green", "Magenta", "Red", "White", "Yellow")]
@@ -90,13 +75,6 @@ Sends a report to the email you if replication status fails.
 
         Function Start-Log
         {
-            <#
-            .Synopsis
-            Creates the log file and starts transcribing the session.
-            .Notes
-            2018-06-24: Initial script
-            #>
-            
             # Create transcript file if it doesn't exist
             If (!(Test-Path $Logfile))
             {
@@ -123,13 +101,6 @@ Sends a report to the email you if replication status fails.
         
         Function Stop-Log
         {
-            <#
-            .Synopsis
-            Stops transcribing the session and cleans the transcript file by removing the fluff.
-            .Notes
-            2018-06-24: Initial script
-            #>
-            
             Write-Log "Function completed on $env:COMPUTERNAME"
             Write-Log "####################</Function>####################"
             Stop-Transcript
@@ -228,47 +199,26 @@ Sends a report to the email you if replication status fails.
         Set-Console
 
         ####################</Default Begin Block>####################
-
         
-        Function Send-Email ([String]$Body)
-        {
-            $Mailmessage = New-Object System.Net.Mail.Mailmessage
-            $Mailmessage.From = "Email@Domain.Com"
-            $Mailmessage.To.Add("Administrator@Domain.Com")
-            $Mailmessage.Subject = "Ad Replication Error!"
-            $Mailmessage.Body = $Body
-            $Mailmessage.Priority = "High"
-            $Mailmessage.Isbodyhtml = $False
-            $Smtpclient = New-Object System.Net.Mail.Smtpclient
-            $Smtpclient.Host = "Smtp.Server.Int"
-            $Smtpclient.Send($Mailmessage)
-        }
-
     }
 
     Process
-    {    
-        $Result = Convertfrom-Csv -Inputobject (repadmin.exe /showrepl * /csv) | 
-            Where-Object { $_.Showrepl_Columns -Ne 'Showrepl_Info'} | Out-String
-
-        If ($Result -Ne "")
+    {
+        Try
         {
-            Send-Email $Result
-            Write-Log "Sending Email Due To Replication Issues!"
+            Select-String -Pattern $Pattern -Path $Path -AllMatches |
+                Out-File $OutFile -Force
         }
-        Else
+        Catch
         {
-            Write-Log "No Replication Issues At This Time"
+            Write-Error $($_.Exception.Message)
         }
-    
     }
 
     End
     {
         Stop-log
-        
     }
-
 }
 
 <#######</Body>#######>

@@ -1,36 +1,40 @@
 <#######<Script>#######>
 <#######<Header>#######>
-# Name: Watch-ADReplicationStatus
+# Name: Get-SSLServerCert
 # Copyright: Gerry Williams (https://www.gerrywilliams.net)
 # License: MIT License (https://opensource.org/licenses/mit)
 # Script Modified from: n/a
 <#######</Header>#######>
 <#######<Body>#######>
-
-Function Watch-ADReplicationStatus
+Function Get-SSLServerCert
 {
-<#
-.Synopsis
-This function is best placed a scheduled task to run every 5 minutes on the domain controller. 
-It will send an email if replication status fails.
-.Description
-This function is best placed a scheduled task to run every 5 minutes on the domain controller. 
-It will send an email if replication status fails.
-You will need to setup the "from address, to address, smtp server, $logfile" variables.
-.Example
-Watch-ADReplicationStatus
-Sends a report to the email you if replication status fails.
-#>
- 
-    [Cmdletbinding()]
+    <#
+    .Synopsis
+    Connects to a server using SSL and determines if the cert is valid.
+    .Description
+    Connects to a server using SSL and determines if the cert is valid.
+    .Example
+    Get-SSLServerCert -computer myserver.domain.com -port 443
+    Connects to myserver.domain.com using SSL and determines if the cert is valid.
+    .Notes
+    2019-08-08: Initial script
+    #>
 
+    [Cmdletbinding()]
+    
     Param
     (
-        
-    )
 
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+        [String]$ComputerName,
+        
+        [Parameter(Mandatory = $true, Position = 1)]
+        [int]$Port
+    )
+    
     Begin
     {       
+        
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -143,10 +147,10 @@ Sends a report to the email you if replication status fails.
 			
             # Get all the matches for PS Headers and dump to a file
             $Transcript | 
-                Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
-                ForEach-Object {$_.Matches} | 
-                ForEach-Object {$_.Value} | 
-                Out-File -FilePath $TempFile -Append
+            Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
+            ForEach-Object { $_.Matches } | 
+            ForEach-Object { $_.Value } | 
+            Out-File -FilePath $TempFile -Append
 
             # Compare the two and put the differences in a third file
             $m1 = Get-Content -Path $Logfile
@@ -229,46 +233,96 @@ Sends a report to the email you if replication status fails.
 
         ####################</Default Begin Block>####################
 
-        
-        Function Send-Email ([String]$Body)
-        {
-            $Mailmessage = New-Object System.Net.Mail.Mailmessage
-            $Mailmessage.From = "Email@Domain.Com"
-            $Mailmessage.To.Add("Administrator@Domain.Com")
-            $Mailmessage.Subject = "Ad Replication Error!"
-            $Mailmessage.Body = $Body
-            $Mailmessage.Priority = "High"
-            $Mailmessage.Isbodyhtml = $False
-            $Smtpclient = New-Object System.Net.Mail.Smtpclient
-            $Smtpclient.Host = "Smtp.Server.Int"
-            $Smtpclient.Send($Mailmessage)
-        }
-
     }
-
-    Process
-    {    
-        $Result = Convertfrom-Csv -Inputobject (repadmin.exe /showrepl * /csv) | 
-            Where-Object { $_.Showrepl_Columns -Ne 'Showrepl_Info'} | Out-String
-
-        If ($Result -Ne "")
-        {
-            Send-Email $Result
-            Write-Log "Sending Email Due To Replication Issues!"
-        }
-        Else
-        {
-            Write-Log "No Replication Issues At This Time"
-        }
     
+    Process
+    {   
+        Try
+        {
+            if (-not ([System.Management.Automation.PSTypeName]'MyNoValidate').Type)
+            {
+                Add-Type @'
+public class MyNoValidate {
+  private static System.Boolean bypassvalidation(
+    System.Object sender,
+    System.Security.Cryptography.X509Certificates.X509Certificate certificate,
+    System.Security.Cryptography.X509Certificates.X509Chain chain,
+    System.Net.Security.SslPolicyErrors sslPolicyErrors
+  ) {
+    return true;
+  }
+  
+  public static System.Net.Security.RemoteCertificateValidationCallback getcallback() {
+    System.Net.Security.RemoteCertificateValidationCallback cb;
+  
+    cb = new System.Net.Security.RemoteCertificateValidationCallback(
+      bypassvalidation
+    );
+  
+    return cb;
+  }
+}
+'@
+            }
+
+            # get TCP connection
+            [System.Net.Sockets.TcpClient]$TcpClient = $null
+            $TcpClient = New-Object "System.Net.Sockets.TcpClient"
+            try
+            {
+                $TcpClient.Connect( [System.String]$ComputerName, [System.Int32]$Port )
+            }
+            catch
+            {
+                Throw "TCP connection error: $_"
+            }
+
+            # get SSL stream from TCP connection
+            [System.Net.Security.SslStream]$SslStream = $null
+            [System.Net.Security.RemoteCertificateValidationCallback]$Callback = $null
+            $Callback = [MyNoValidate]::getcallback()
+            $SslStream = New-Object System.Net.Security.SslStream(
+                $TcpClient.GetStream(),
+                $True,
+                $Callback
+            )
+ 
+            # authenticate SSL stream
+            try
+            {
+                $SslStream.AuthenticateAsClient( $ComputerName )
+            }
+            catch
+            {
+                Throw "Failed to authenticate SSL stream: $_"
+            }
+ 
+            # get X509 certificate
+            [System.Security.Cryptography.X509Certificates.X509Certificate]$cert = $null
+            $cert = $SslStream.RemoteCertificate
+ 
+            # get X509 certificate with extra properties
+            [System.Security.Cryptography.X509Certificates.X509Certificate2]$cer2 = $null
+            $cer2 = New-Object "System.Security.Cryptography.X509Certificates.X509Certificate2" -ArgumentList $cert
+ 
+            # output expiry
+            $cer2.NotAfter
+ 
+            # close stream and connection
+            $SslStream.Close()
+            $TcpClient.Close()
+
+        }
+        Catch
+        {
+            Write-Error $($_.Exception.Message)
+        }
     }
 
     End
     {
         Stop-log
-        
     }
-
 }
 
 <#######</Body>#######>

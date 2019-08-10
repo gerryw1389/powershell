@@ -35,7 +35,7 @@ Sends a report to the email you specify of various dc diag tests that run will r
         {
             Param
             (
-                [String] $Body
+                [String]$Body
             )
         
             $Mailmessage = New-Object System.Net.Mail.Mailmessage
@@ -51,7 +51,7 @@ Sends a report to the email you specify of various dc diag tests that run will r
             $Smtpclient.Send($Mailmessage)
         }
 
-        Function Converttovertical ([String] $Testname)
+        Function Converttovertical ([String]$Testname)
         {
 
             $Stringlength = $Testname.Length

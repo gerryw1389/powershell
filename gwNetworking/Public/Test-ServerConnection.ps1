@@ -1,36 +1,44 @@
 <#######<Script>#######>
 <#######<Header>#######>
-# Name: Watch-ADReplicationStatus
-# Copyright: Gerry Williams (https://www.gerrywilliams.net)
-# License: MIT License (https://opensource.org/licenses/mit)
-# Script Modified from: n/a
+# Name: Test-ServerConnection
 <#######</Header>#######>
 <#######<Body>#######>
-
-Function Watch-ADReplicationStatus
+Function Test-ServerConnection
 {
-<#
+    <#
 .Synopsis
-This function is best placed a scheduled task to run every 5 minutes on the domain controller. 
-It will send an email if replication status fails.
+Tests a group of computers and tells you if they are online or not.
 .Description
-This function is best placed a scheduled task to run every 5 minutes on the domain controller. 
-It will send an email if replication status fails.
-You will need to setup the "from address, to address, smtp server, $logfile" variables.
+Tests a group of computers and tells you if they are online or not.
+.Parameter Filepath
+A text file containing a list of each server you want to test one server per line.
 .Example
-Watch-ADReplicationStatus
-Sends a report to the email you if replication status fails.
+Test-ServerConnection
+Given a list of servers to check, it will tell you if they are online or not.
 #>
- 
-    [Cmdletbinding()]
 
+    [Cmdletbinding()]
     Param
     (
-        
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+        [ValidateScript({
+            if(-Not ($_ | Test-Path) )
+			{
+                throw "File or folder does not exist"
+            }
+            if(-Not ($_ | Test-Path -PathType Leaf) )
+			{
+                throw "The Path argument must be a file. Folder paths are not allowed."
+            }
+            if($_ -notmatch "(\.txt)")
+			{
+                throw "The file specified in the path argument must be a text file"
+            })]
+        [String]$Filepath
     )
-
+    
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -40,32 +48,11 @@ Sends a report to the email you if replication status fails.
         
         Function Write-Log
         {
-            <#
-            .Synopsis
-            This writes objects to the logfile and to the screen with optional coloring.
-            .Parameter InputObject
-            This can be text or an object. The function will convert it to a string and verbose it out.
-            Since the main function forces verbose output, everything passed here will be displayed on the screen and to the logfile.
-            .Parameter Color
-            Optional coloring of the input object.
-            .Example
-            Write-Log "hello" -Color "yellow"
-            Will write the string "VERBOSE: YYYY-MM-DD HH: Hello" to the screen and the logfile.
-            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
-            .Example
-            Write-Log (cmd /c "ipconfig /all")
-            Will write the string "VERBOSE: YYYY-MM-DD HH: ****ipconfig output***" to the screen and the logfile.
-            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
-            .Notes
-            2018-06-24: Initial script
-            #>
-            
             Param
             (
                 [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
                 [PSObject]$InputObject,
                 
-                # I usually set this to = "Green" since I use a black and green theme console
                 [Parameter(Mandatory = $False, Position = 1)]
                 [Validateset("Black", "Blue", "Cyan", "Darkblue", "Darkcyan", "Darkgray", "Darkgreen", "Darkmagenta", "Darkred", `
                         "Darkyellow", "Gray", "Green", "Magenta", "Red", "White", "Yellow")]
@@ -90,13 +77,6 @@ Sends a report to the email you if replication status fails.
 
         Function Start-Log
         {
-            <#
-            .Synopsis
-            Creates the log file and starts transcribing the session.
-            .Notes
-            2018-06-24: Initial script
-            #>
-            
             # Create transcript file if it doesn't exist
             If (!(Test-Path $Logfile))
             {
@@ -123,13 +103,6 @@ Sends a report to the email you if replication status fails.
         
         Function Stop-Log
         {
-            <#
-            .Synopsis
-            Stops transcribing the session and cleans the transcript file by removing the fluff.
-            .Notes
-            2018-06-24: Initial script
-            #>
-            
             Write-Log "Function completed on $env:COMPUTERNAME"
             Write-Log "####################</Function>####################"
             Stop-Transcript
@@ -228,47 +201,48 @@ Sends a report to the email you if replication status fails.
         Set-Console
 
         ####################</Default Begin Block>####################
-
         
-        Function Send-Email ([String]$Body)
-        {
-            $Mailmessage = New-Object System.Net.Mail.Mailmessage
-            $Mailmessage.From = "Email@Domain.Com"
-            $Mailmessage.To.Add("Administrator@Domain.Com")
-            $Mailmessage.Subject = "Ad Replication Error!"
-            $Mailmessage.Body = $Body
-            $Mailmessage.Priority = "High"
-            $Mailmessage.Isbodyhtml = $False
-            $Smtpclient = New-Object System.Net.Mail.Smtpclient
-            $Smtpclient.Host = "Smtp.Server.Int"
-            $Smtpclient.Send($Mailmessage)
-        }
-
     }
 
     Process
-    {    
-        $Result = Convertfrom-Csv -Inputobject (repadmin.exe /showrepl * /csv) | 
-            Where-Object { $_.Showrepl_Columns -Ne 'Showrepl_Info'} | Out-String
+    {
+        Try
+        {
+            $servers = Get-Content -Path $Filepath
 
-        If ($Result -Ne "")
-        {
-            Send-Email $Result
-            Write-Log "Sending Email Due To Replication Issues!"
+            $Online = [System.Collections.Generic.List[PSObject]]@()
+            $NotOnline = [System.Collections.Generic.List[PSObject]]@()
+
+            foreach ($s in $servers)
+            {
+                $a = Test-Connection -ComputerName $s -Quiet
+                if ($a -eq 'True')
+                {
+                    Write-Log "$s is online"
+                    [void]$Online.add($s)
+                }
+                Else
+                {
+                    Write-Log "$s is NOT online"
+                    [void]$NotOnline.add($s)
+                }
+ 
+            }
         }
-        Else
+        Catch
         {
-            Write-Log "No Replication Issues At This Time"
+            Write-Error $($_.Exception.Message)
         }
-    
     }
 
     End
     {
+        Write-Output "====================Online========================="
+        Write-Output $Online
+        Write-Output "====================Not Online====================="
+        Write-Output $NotOnline
         Stop-log
-        
     }
-
 }
 
 <#######</Body>#######>

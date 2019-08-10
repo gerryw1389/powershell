@@ -1,36 +1,25 @@
 <#######<Script>#######>
 <#######<Header>#######>
-# Name: Watch-ADReplicationStatus
-# Copyright: Gerry Williams (https://www.gerrywilliams.net)
-# License: MIT License (https://opensource.org/licenses/mit)
-# Script Modified from: n/a
+# Name: New-LockScreenScheduledTask
 <#######</Header>#######>
 <#######<Body>#######>
-
-Function Watch-ADReplicationStatus
+Function New-LockScreenScheduledTask
 {
-<#
+    <#
 .Synopsis
-This function is best placed a scheduled task to run every 5 minutes on the domain controller. 
-It will send an email if replication status fails.
+Creates a scheduled task to lock your screen after 5 minutes of inactivity.
 .Description
-This function is best placed a scheduled task to run every 5 minutes on the domain controller. 
-It will send an email if replication status fails.
-You will need to setup the "from address, to address, smtp server, $logfile" variables.
+Creates a scheduled task to lock your screen after 5 minutes of inactivity.
 .Example
-Watch-ADReplicationStatus
-Sends a report to the email you if replication status fails.
+New-LockScreenScheduledTask
+Creates a scheduled task to lock your screen after 5 minutes of inactivity.
 #>
- 
     [Cmdletbinding()]
-
-    Param
-    (
-        
+    Param(  
     )
 
     Begin
-    {       
+    {
         ####################<Default Begin Block>####################
         # Force verbose because Write-Output doesn't look well in transcript files
         $VerbosePreference = "Continue"
@@ -229,47 +218,36 @@ Sends a report to the email you if replication status fails.
 
         ####################</Default Begin Block>####################
 
-        
-        Function Send-Email ([String]$Body)
-        {
-            $Mailmessage = New-Object System.Net.Mail.Mailmessage
-            $Mailmessage.From = "Email@Domain.Com"
-            $Mailmessage.To.Add("Administrator@Domain.Com")
-            $Mailmessage.Subject = "Ad Replication Error!"
-            $Mailmessage.Body = $Body
-            $Mailmessage.Priority = "High"
-            $Mailmessage.Isbodyhtml = $False
-            $Smtpclient = New-Object System.Net.Mail.Smtpclient
-            $Smtpclient.Host = "Smtp.Server.Int"
-            $Smtpclient.Send($Mailmessage)
-        }
-
     }
-
     Process
-    {    
-        $Result = Convertfrom-Csv -Inputobject (repadmin.exe /showrepl * /csv) | 
-            Where-Object { $_.Showrepl_Columns -Ne 'Showrepl_Info'} | Out-String
-
-        If ($Result -Ne "")
-        {
-            Send-Email $Result
-            Write-Log "Sending Email Due To Replication Issues!"
-        }
-        Else
-        {
-            Write-Log "No Replication Issues At This Time"
-        }
-    
+    {
+        $TaskName = "LockScreen"
+        $service = New-Object -ComObject("Schedule.Service")
+        $service.Connect()
+        $rootFolder = $service.GetFolder("")
+        $taskdef = $service.NewTask(0)
+        $sets = $taskdef.Settings
+        $sets.AllowDemandStart = $true
+        $sets.Compatibility = 2
+        $sets.Enabled = $true
+        $sets.RunOnlyIfIdle = $true
+        $sets.IdleSettings.IdleDuration = "PT05M"
+        $sets.IdleSettings.WaitTimeout = "PT60M"
+        $sets.IdleSettings.StopOnIdleEnd = $true
+        $trg = $taskdef.Triggers.Create(6)
+        $act = $taskdef.Actions.Create(0)
+        $act.Path = "C:\Windows\system32\rundll32.exe"
+        $act.Arguments = "user32.dll,LockWorkStation"
+        $username = "$env:userdomain" + "\" + "$env:username"
+        $user = "$username"
+        $rootFolder.RegisterTaskDefinition($TaskName, $taskdef, 6, $user, $null, 3) | Out-Null
+        
     }
 
     End
     {
         Stop-log
-        
     }
-
 }
-
 <#######</Body>#######>
 <#######</Script>#######>

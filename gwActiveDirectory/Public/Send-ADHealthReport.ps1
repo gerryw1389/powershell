@@ -229,7 +229,7 @@ Sends a report to the email you specify of ad health check tests that run will r
         ####################</Default Begin Block>####################
 
         
-        Function Send-Email ([String] $Body)
+        Function Send-Email ([String]$Body)
         {
             $Mailmessage = New-Object System.Net.Mail.Mailmessage
             $Mailmessage.From = "Email@Domain.Com"

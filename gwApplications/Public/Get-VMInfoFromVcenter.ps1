@@ -23,7 +23,7 @@ For most information, you can just run: Get-VM | Export-CSV -Path $Path -NoTypeI
     Param
     (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
-        [String] $Path
+        [String]$Path
     )
     
     Begin
