@@ -7,7 +7,7 @@ Function Get-ExtractedEmailAddresses
 {
     <#
 .Synopsis
-Gets email addresses from one or more text files.
+Gets email addresses from one or more text/log files.
 .Description
 Gets email addresses from one or more text files. Returns a seperate parsed file called ".\extracted.txt"
 To further clean up the results, I would run: Get-Content .\Extracted.Txt | Sort-Object | Select-Object -Unique | Out-File .\Sorted.Txt -Force
@@ -24,6 +24,7 @@ Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-mult
     Param
     (
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
+        [ValidateScript( {(Test-Path $_) -and ( ((Get-Item $_).Extension -eq ".txt") -or ((Get-Item $_).Extension -eq ".log"))})] 
         [String[]]$FilePath
     )
     

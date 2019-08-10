@@ -14,7 +14,7 @@ Imports a SSL Cert. If the server has IIS installed, it binds it to the default 
 .Description
 Imports a SSL Cert. If the server has IIS installed, it binds it to the default site automatically.
 Uncomment out stop-script and show-cert if you want it to be interactive.
-.Parameter Path
+.Parameter FilePath
 The file system path to the certificate to import.
 .Example
 Import-Cert -filepath c:\scripts\mycert.crt
@@ -28,19 +28,7 @@ Version History:
     Param
     (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
-        [ValidateScript( {
-                if (-Not ($_ | Test-Path) )
-                {
-                    throw "File or folder does not exist"
-                }
-                if (-Not ($_ | Test-Path -PathType Leaf) )
-                {
-                    throw "The Path argument must be a file. Folder paths are not allowed."
-                }
-                if ($_ -notmatch "(\.crt)")
-                {
-                    throw "The file specified in the path argument must be a crt file"
-                } })]
+        [ValidateScript( {(Test-Path $_) -and ((Get-Item $_).Extension -eq ".crt")})]
         [String]$FilePath
     )
 

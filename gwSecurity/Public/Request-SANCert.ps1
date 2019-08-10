@@ -23,8 +23,8 @@ Version History:
 #>  
 
     [Cmdletbinding()]
-    Param(
-    
+    Param
+    (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
         $SAN
     )

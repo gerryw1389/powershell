@@ -18,7 +18,10 @@ Request-NewCert
 Places a completed request for SSL cert at c:\scripts
 #>
     [Cmdletbinding()]
-    Param()
+    Param
+    (
+        
+    )
     Begin
     {
         ####################<Default Begin Block>####################

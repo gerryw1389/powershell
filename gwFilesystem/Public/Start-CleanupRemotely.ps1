@@ -26,19 +26,7 @@ Iterates through each server in c:\scripts\servers.txt, connects to them, and de
     Param
     (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
-        [ValidateScript({
-            if(-Not ($_ | Test-Path) )
-			{
-                throw "File or folder does not exist"
-            }
-            if(-Not ($_ | Test-Path -PathType Leaf) )
-			{
-                throw "The Path argument must be a file. Folder paths are not allowed."
-            }
-            if($_ -notmatch "(\.txt)")
-			{
-                throw "The file specified in the path argument must be a text file"
-            }})]
+        [ValidateScript( {(Test-Path $_) -and ((Get-Item $_).Extension -eq ".txt")})]
         [string]$Filepath,
 
         [Parameter(Mandatory = $true, Position = 1)]
