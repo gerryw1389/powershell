@@ -1,40 +1,23 @@
 <#######<Script>#######>
 <#######<Header>#######>
-# Name: Test-ServerConnection
+# Name: Read-MultiLineInputBox
 <#######</Header>#######>
 <#######<Body>#######>
-Function Test-ServerConnection
+Function Read-MultiLineInputBox
 {
     <#
 .Synopsis
-Tests a group of computers and tells you if they are online or not.
+This function is here for proof of concept, it doesn't actually do anything. It shows how to use a multi-line input box to parse json and returns a json object.
 .Description
-Tests a group of computers and tells you if they are online or not.
-.Parameter Filepath
-A text file containing a list of each server you want to test one server per line.
-.Example
-Test-ServerConnection -filepath c:\scripts\servers.txt
-Given a list of servers to check, it will tell you if they are online or not.
+This function is here for proof of concept, it doesn't actually do anything. It shows how to use a multi-line input box to parse json and returns a json object.
+.Notes
+Version history:
+2018-11-01: version 1
 #>
 
     [Cmdletbinding()]
     Param
     (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
-        [ValidateScript({
-            if(-Not ($_ | Test-Path) )
-			{
-                throw "File or folder does not exist"
-            }
-            if(-Not ($_ | Test-Path -PathType Leaf) )
-			{
-                throw "The Path argument must be a file. Folder paths are not allowed."
-            }
-            if($_ -notmatch "(\.txt)")
-			{
-                throw "The file specified in the path argument must be a text file"
-            }})]
-        [String]$Filepath
     )
     
     Begin
@@ -202,48 +185,106 @@ Given a list of servers to check, it will tell you if they are online or not.
 
         ####################</Default Begin Block>####################
         
+        function Read-MultiLineInputBoxDialog
+        (
+            [string]$Message, 
+            [string]$WindowTitle, 
+            [string]$DefaultText
+        )
+        {
+            Add-Type -AssemblyName System.Drawing
+            Add-Type -AssemblyName System.Windows.Forms
+    
+            # Create the Label.
+            $label = New-Object System.Windows.Forms.Label
+            $label.Location = New-Object System.Drawing.Size(10, 10) 
+            $label.Size = New-Object System.Drawing.Size(280, 20)
+            $label.AutoSize = $true
+            $label.Text = $Message
+    
+            # Create the TextBox used to capture the user's text.
+            $textBox = New-Object System.Windows.Forms.TextBox 
+            $textBox.Location = New-Object System.Drawing.Size(10, 40) 
+            $textBox.Size = New-Object System.Drawing.Size(575, 200)
+            $textBox.AcceptsReturn = $true
+            $textBox.AcceptsTab = $false
+            $textBox.Multiline = $true
+            $textBox.ScrollBars = 'Both'
+            $textBox.Text = $DefaultText
+    
+            # Create the OK button.
+            $okButton = New-Object System.Windows.Forms.Button
+            $okButton.Location = New-Object System.Drawing.Size(415, 250)
+            $okButton.Size = New-Object System.Drawing.Size(75, 25)
+            $okButton.Text = "OK"
+            $okButton.Add_Click( { $form.Tag = $textBox.Text; $form.Close() })
+    
+            # Create the Cancel button.
+            $cancelButton = New-Object System.Windows.Forms.Button
+            $cancelButton.Location = New-Object System.Drawing.Size(510, 250)
+            $cancelButton.Size = New-Object System.Drawing.Size(75, 25)
+            $cancelButton.Text = "Cancel"
+            $cancelButton.Add_Click( { $form.Tag = $null; $form.Close() })
+    
+            # Create the form.
+            $form = New-Object System.Windows.Forms.Form 
+            $form.Text = $WindowTitle
+            $form.Size = New-Object System.Drawing.Size(610, 320)
+            $form.FormBorderStyle = 'FixedSingle'
+            $form.StartPosition = "CenterScreen"
+            $form.AutoSizeMode = 'GrowAndShrink'
+            $form.Topmost = $True
+            $form.AcceptButton = $okButton
+            $form.CancelButton = $cancelButton
+            $form.ShowInTaskbar = $true
+    
+            # Add all of the controls to the form.
+            $form.Controls.Add($label)
+            $form.Controls.Add($textBox)
+            $form.Controls.Add($okButton)
+            $form.Controls.Add($cancelButton)
+    
+            # Initialize and show the form.
+            $form.Add_Shown( {$form.Activate()})
+            $form.ShowDialog() > $null   # Trash the text of the button that was clicked.
+    
+            # Return the text that the user entered.
+            return $form.Tag
+        }
     }
-
+    
     Process
     {
         Try
         {
-            $servers = Get-Content -Path $Filepath
+            <#
+        $multiLineText = Read-MultiLineInputBoxDialog -Message "Please enter some text. It can be multiple lines" -WindowTitle "Please enter json from email" -DefaultText "Paste the text here, don't worry if it includes the open bracket..."
 
-            $Online = [System.Collections.Generic.List[PSObject]]@()
-            $NotOnline = [System.Collections.Generic.List[PSObject]]@()
+            $CleanMultilineText = $multiLineText.trim()
 
-            foreach ($s in $servers)
+            if ( $CleanMultilineText.StartsWith('[') )
             {
-                $a = Test-Connection -ComputerName $s -Quiet
-                if ($a -eq 'True')
-                {
-                    Write-Log "$s is online"
-                    [void]$Online.add($s)
-                }
-                Else
-                {
-                    Write-Log "$s is NOT online"
-                    [void]$NotOnline.add($s)
-                }
- 
+                $CleanMultilineText = $CleanMultilineText.TrimStart('[')  
             }
+            else
+            {
+                continue
+            }
+
+            # Convert json to object  
+            $json = $CleanMultilineText | convertfrom-json
+        #>
+            
         }
         Catch
         {
             Write-Error $($_.Exception.Message)
         }
     }
-
     End
     {
-        Write-Output "====================Online========================="
-        Write-Output $Online
-        Write-Output "====================Not Online====================="
-        Write-Output $NotOnline
-        Stop-log
+        Stop-Log
     }
 }
-
 <#######</Body>#######>
 <#######</Script>#######>

@@ -1,20 +1,25 @@
 <#######<Script>#######>
 <#######<Header>#######>
-# Name: Test-ServerConnection
+# Name: Test-PSRemoting
 <#######</Header>#######>
 <#######<Body>#######>
-Function Test-ServerConnection
+Function Test-PSRemoting
 {
     <#
 .Synopsis
-Tests a group of computers and tells you if they are online or not.
+Given a text file with a list of servers, this will see if remoting is PS remoting with SSL is enabled.
 .Description
-Tests a group of computers and tells you if they are online or not.
-.Parameter Filepath
-A text file containing a list of each server you want to test one server per line.
+Given a text file with a list of servers, this will see if remoting is PS remoting with SSL is enabled.
+.Parameter FilePath
+Required parameter which is a text file listing servers one per line.
+.Parameter OutFile
+An optional CSV to export the results to. If not, they will be in the log file.
 .Example
-Test-ServerConnection -filepath c:\scripts\servers.txt
-Given a list of servers to check, it will tell you if they are online or not.
+Test-PSRemoting -FilePath c:\oitadmins\servers.txt
+Given a text file with a list of servers, this will see if remoting is PS remoting with SSL is enabled.
+.Notes
+Version history:
+2018-11-01: version 1
 #>
 
     [Cmdletbinding()]
@@ -34,7 +39,10 @@ Given a list of servers to check, it will tell you if they are online or not.
 			{
                 throw "The file specified in the path argument must be a text file"
             }})]
-        [String]$Filepath
+        [String]$FilePath,
+
+        [Parameter(Mandatory = $false, Position = 1)]
+        [String]$OutFile
     )
     
     Begin
@@ -202,31 +210,70 @@ Given a list of servers to check, it will tell you if they are online or not.
 
         ####################</Default Begin Block>####################
         
-    }
+        $servers = Get-Content -Path $FilePath
 
+        $csv = [System.Collections.Generic.List[PSObject]]@()
+        #$csv_header = "ServerName,ICMPTest,TCPTest,WinRMTest"
+        $csv_header = '"ServerName","ICMPTest","TCPTest","WinRMTest"'
+        [void]$csv.Add($csv_header)
+    }
+    
     Process
     {
         Try
         {
-            $servers = Get-Content -Path $Filepath
-
-            $Online = [System.Collections.Generic.List[PSObject]]@()
-            $NotOnline = [System.Collections.Generic.List[PSObject]]@()
-
-            foreach ($s in $servers)
+            Foreach ($server in $servers)
             {
-                $a = Test-Connection -ComputerName $s -Quiet
-                if ($a -eq 'True')
+                
+                $Global:WarningPreference = 'SilentlyContinue'         
+                $Global:ProgressPreference = 'SilentlyContinue'
+                $a = test-netconnection $server -port 5986
+                
+                If ($a.PingSucceeded -eq $false)
                 {
-                    Write-Log "$s is online"
-                    [void]$Online.add($s)
+                    $Ping = 'False'
                 }
                 Else
                 {
-                    Write-Log "$s is NOT online"
-                    [void]$NotOnline.add($s)
+                    $Ping = 'True'
                 }
- 
+                
+                If ($a.TcpTestSucceeded -eq $false)
+                {
+                    $Tcp = 'False'
+                }
+                Else
+                {
+                    $Tcp = 'True'
+                }
+                
+                Try
+                {
+                    $Params = @{
+                        'ComputerName' = $Server
+                        'UseSSL'       = $true
+                        'ErrorAction'  = 'Stop'
+                    }
+                    [void](Invoke-Command @Params -ScriptBlock { Write-Output $env:COMPUTERNAME })
+                    $WinRM = 'True'
+                }
+                Catch
+                {
+                    $WinRM = 'False'
+                }
+
+                $ThisServer = [ordered] @{
+                    'ServerName: ' = $server
+                    'ICMP Test: '  = $Ping
+                    'TCP Test: '   = $Tcp
+                    'WinRM Test: ' = $WinRM
+                }
+                $ThisServer
+                $string = '"' + $server +'","' + $Ping +'","' + $Tcp +'","' + $WinRM + '"'
+                #$string = $server,$Ping,$Tcp,$WinRM
+                [void]$csv.add($string)
+
+                Clear-Variable -Name server,ping,tcp,winrm
             }
         }
         Catch
@@ -234,16 +281,41 @@ Given a list of servers to check, it will tell you if they are online or not.
             Write-Error $($_.Exception.Message)
         }
     }
-
     End
     {
-        Write-Output "====================Online========================="
-        Write-Output $Online
-        Write-Output "====================Not Online====================="
-        Write-Output $NotOnline
+        $Global:WarningPreference = 'Continue'         
+        $Global:ProgressPreference = 'Continue'
+                
+        Write-Log "Summary"
+        Write-Log "==========================="
+        $csv
+        
+        If ($Outfile -ne '')
+        {
+            $csv | Out-File -FilePath $OutFile -Force
+        }
+
         Stop-log
+        
+        <#
+        Another way:
+        $jobs = Invoke-Command -Computername $servers -ScriptBlock { 
+                (Get-Process | Sort-Object -Property ws -Descending | Select-Object -First 1 | Select-Object -Property processname).processname
+            } -AsJob
+
+        foreach ($j in $($jobs.childjobs))
+        {
+            $JobName = $j.Name
+            $server = $j.Location
+            $result = Receive-Job -Name $JobName -Keep
+            If ($Result -ne '')
+            {
+                Write-output "Successful PS Remoting on : $server"
+            }
+        }
+        #>
+    
     }
 }
-
 <#######</Body>#######>
 <#######</Script>#######>

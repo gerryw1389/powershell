@@ -1,40 +1,27 @@
 <#######<Script>#######>
 <#######<Header>#######>
-# Name: Test-ServerConnection
+# Name: Install-UpdatesViaSCCM
 <#######</Header>#######>
 <#######<Body>#######>
-Function Test-ServerConnection
+Function Install-UpdatesViaSCCM
 {
     <#
 .Synopsis
-Tests a group of computers and tells you if they are online or not.
+Given a list of computer names, this function will go to each server and start updates.
+NOTE: Haven't tested, but should work.
 .Description
-Tests a group of computers and tells you if they are online or not.
-.Parameter Filepath
-A text file containing a list of each server you want to test one server per line.
+Given a list of computer names, this function will go to each server and start updates.
+NOTE: Haven't tested, but should work.
 .Example
-Test-ServerConnection -filepath c:\scripts\servers.txt
-Given a list of servers to check, it will tell you if they are online or not.
+Install-UpdatesViaSCCM
+Given a list of computer names, this function will go to each server and start updates.
+NOTE: Haven't tested, but should work.
 #>
 
     [Cmdletbinding()]
     Param
     (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
-        [ValidateScript({
-            if(-Not ($_ | Test-Path) )
-			{
-                throw "File or folder does not exist"
-            }
-            if(-Not ($_ | Test-Path -PathType Leaf) )
-			{
-                throw "The Path argument must be a file. Folder paths are not allowed."
-            }
-            if($_ -notmatch "(\.txt)")
-			{
-                throw "The file specified in the path argument must be a text file"
-            }})]
-        [String]$Filepath
+        [String[]]$ComputerName
     )
     
     Begin
@@ -202,31 +189,49 @@ Given a list of servers to check, it will tell you if they are online or not.
 
         ####################</Default Begin Block>####################
         
+        function Install-Updates
+        {
+            Param
+            (
+                [String][Parameter(Mandatory = $True, Position = 1)]
+                $Computer,
+                [String][Parameter(Mandatory = $True, Position = 2)]
+                $SupName
+            )
+            Begin
+            {
+                $AppEvalState0 = "0"
+                $AppEvalState1 = "1"
+                $ApplicationClass = [WmiClass]"root\ccm\clientSDK:CCM_SoftwareUpdatesManager"
+            }
+            Process
+            {
+                If ($SupName -Like "All" -or $SupName -like "all")
+                {
+                    $Application = (Get-WmiObject -Namespace "root\ccm\clientSDK" -Class CCM_SoftwareUpdate -ComputerName $Computer | 
+                            Where-Object { $_.EvaluationState -like "*$($AppEvalState0)*" -or $_.EvaluationState -like "*$($AppEvalState1)*"})
+                    Invoke-WmiMethod -Class CCM_SoftwareUpdatesManager -Name InstallUpdates -ArgumentList (, $Application) -Namespace root\ccm\clientsdk -ComputerName $Computer
+                }
+                Else
+                {
+                    $Application = (Get-WmiObject -Namespace "root\ccm\clientSDK" -Class CCM_SoftwareUpdate -ComputerName $Computer |
+                            Where-Object { $_.EvaluationState -like "*$($AppEvalState)*" -and $_.Name -like "*$($SupName)*"})
+                    Invoke-WmiMethod -Class CCM_SoftwareUpdatesManager -Name InstallUpdates -ArgumentList (, $Application) -Namespace root\ccm\clientsdk -ComputerName $Computer
+                }
+            }
+            End 
+            {
+            }
+        }
     }
 
     Process
     {
         Try
         {
-            $servers = Get-Content -Path $Filepath
-
-            $Online = [System.Collections.Generic.List[PSObject]]@()
-            $NotOnline = [System.Collections.Generic.List[PSObject]]@()
-
-            foreach ($s in $servers)
+            Foreach ($Computer in $ComputerName)
             {
-                $a = Test-Connection -ComputerName $s -Quiet
-                if ($a -eq 'True')
-                {
-                    Write-Log "$s is online"
-                    [void]$Online.add($s)
-                }
-                Else
-                {
-                    Write-Log "$s is NOT online"
-                    [void]$NotOnline.add($s)
-                }
- 
+                Install-Updates -Computer $Computer -SupName All
             }
         }
         Catch
@@ -237,10 +242,6 @@ Given a list of servers to check, it will tell you if they are online or not.
 
     End
     {
-        Write-Output "====================Online========================="
-        Write-Output $Online
-        Write-Output "====================Not Online====================="
-        Write-Output $NotOnline
         Stop-log
     }
 }

@@ -1,40 +1,43 @@
 <#######<Script>#######>
 <#######<Header>#######>
-# Name: Test-ServerConnection
+# Name: Add-NewPortOpening
 <#######</Header>#######>
 <#######<Body>#######>
-Function Test-ServerConnection
+Function Add-NewPortOpening
 {
     <#
 .Synopsis
-Tests a group of computers and tells you if they are online or not.
+Adds a rule to the Windows firewall to allow inbound on a specific port.
 .Description
-Tests a group of computers and tells you if they are online or not.
-.Parameter Filepath
-A text file containing a list of each server you want to test one server per line.
+Adds a rule to the Windows firewall to allow inbound on a specific port.
+.Parameter Port
+The port number you want to allow inbound
+.Parameter RemoteAddress
+Optional parameter to scope the rule to only allow from a particular IP or subnet. 
+See https://docs.microsoft.com/en-us/powershell/module/netsecurity/new-netfirewallrule?view=winserver2012-ps
 .Example
-Test-ServerConnection -filepath c:\scripts\servers.txt
-Given a list of servers to check, it will tell you if they are online or not.
+Add-NewPortOpening -Port 5986
+Adds a rule to the Windows firewall to allow inbound for port 5986.
+.Example
+Add-NewPortOpening -Port 5986 -RemoteAddress 10.0.0.0/8
+Adds a rule to the Windows firewall to allow inbound for port 5986 only from hosts on the 10.0.0.0/8 network.
+.Example
+Add-NewPortOpening -Port 5986 -RemoteAddress 10.0.0.0/8, 192.168.0.0/16
+Adds a rule to the Windows firewall to allow inbound for port 5986 only from hosts on the 10.0.0.0/8 network or the 192.168.0.0/16 network.
+.Notes
+Version History:
+2019-05-05: Initial
 #>
 
     [Cmdletbinding()]
     Param
     (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
-        [ValidateScript({
-            if(-Not ($_ | Test-Path) )
-			{
-                throw "File or folder does not exist"
-            }
-            if(-Not ($_ | Test-Path -PathType Leaf) )
-			{
-                throw "The Path argument must be a file. Folder paths are not allowed."
-            }
-            if($_ -notmatch "(\.txt)")
-			{
-                throw "The file specified in the path argument must be a text file"
-            }})]
-        [String]$Filepath
+        [Parameter(Mandatory = $True, Position = 0)]   
+        [ValidateRange(1, 65535)]
+        [int]$Port,
+
+        [Parameter(Mandatory = $False, Position = 0)]   
+        [String[]]$RemoteAddress
     )
     
     Begin
@@ -116,10 +119,10 @@ Given a list of servers to check, it will tell you if they are online or not.
 			
             # Get all the matches for PS Headers and dump to a file
             $Transcript | 
-                Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
-                ForEach-Object {$_.Matches} | 
-                ForEach-Object {$_.Value} | 
-                Out-File -FilePath $TempFile -Append
+            Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
+            ForEach-Object { $_.Matches } | 
+            ForEach-Object { $_.Value } | 
+            Out-File -FilePath $TempFile -Append
 
             # Compare the two and put the differences in a third file
             $m1 = Get-Content -Path $Logfile
@@ -208,25 +211,36 @@ Given a list of servers to check, it will tell you if they are online or not.
     {
         Try
         {
-            $servers = Get-Content -Path $Filepath
-
-            $Online = [System.Collections.Generic.List[PSObject]]@()
-            $NotOnline = [System.Collections.Generic.List[PSObject]]@()
-
-            foreach ($s in $servers)
+            If ( $RemoteAddress -eq '')
             {
-                $a = Test-Connection -ComputerName $s -Quiet
-                if ($a -eq 'True')
-                {
-                    Write-Log "$s is online"
-                    [void]$Online.add($s)
+                [string]$Port = $Port.ToString()
+                $Params = @{
+                    'DisplayName' = "Allow " + $Port + " In"
+                    'Description' = "Allow " + $Port + " In"
+                    'Profile'     = "Any"
+                    'Direction'   = "Inbound"
+                    'LocalPort'   = $Port
+                    'Protocol'    = "TCP"
+                    'Action'      = "Allow"
+                    'Enabled'     = "True"
                 }
-                Else
-                {
-                    Write-Log "$s is NOT online"
-                    [void]$NotOnline.add($s)
+                New-NetFirewallRule @Params | Out-Null
+            }
+            Else
+            {
+                [string]$Port = $Port.ToString()
+                $Params = @{
+                    'DisplayName'   = "Allow " + $Port + " In"
+                    'Description'   = "Allow " + $Port + " In"
+                    'Profile'       = "Any"
+                    'Direction'     = "Inbound"
+                    'LocalPort'     = $Port
+                    'Protocol'      = "TCP"
+                    'Action'        = "Allow"
+                    'Enabled'       = "True"
+                    'RemoteAddress' = $RemoteAddress
                 }
- 
+                New-NetFirewallRule @Params | Out-Null 
             }
         }
         Catch
@@ -237,10 +251,6 @@ Given a list of servers to check, it will tell you if they are online or not.
 
     End
     {
-        Write-Output "====================Online========================="
-        Write-Output $Online
-        Write-Output "====================Not Online====================="
-        Write-Output $NotOnline
         Stop-log
     }
 }

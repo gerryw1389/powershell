@@ -1,40 +1,28 @@
 <#######<Script>#######>
 <#######<Header>#######>
-# Name: Test-ServerConnection
+# Name: Get-BackupsSize
 <#######</Header>#######>
 <#######<Body>#######>
-Function Test-ServerConnection
+Function Get-BackupsSize
 {
-    <#
+   <#
 .Synopsis
-Tests a group of computers and tells you if they are online or not.
+Gets the current size of all of our backups.
 .Description
-Tests a group of computers and tells you if they are online or not.
-.Parameter Filepath
-A text file containing a list of each server you want to test one server per line.
+Gets the current size of all of our backups.
+Must be ran on the Veeam Server.
+.Parameter Outfile
+A path for the CSV to export to.
 .Example
-Test-ServerConnection -filepath c:\scripts\servers.txt
-Given a list of servers to check, it will tell you if they are online or not.
+Get-BackupsSize
+Gets the current size of all of our backups.
 #>
 
     [Cmdletbinding()]
     Param
     (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
-        [ValidateScript({
-            if(-Not ($_ | Test-Path) )
-			{
-                throw "File or folder does not exist"
-            }
-            if(-Not ($_ | Test-Path -PathType Leaf) )
-			{
-                throw "The Path argument must be a file. Folder paths are not allowed."
-            }
-            if($_ -notmatch "(\.txt)")
-			{
-                throw "The file specified in the path argument must be a text file"
-            }})]
-        [String]$Filepath
+        [Parameter(Mandatory = $true, Position = 1)]
+        [String]$OutFile
     )
     
     Begin
@@ -202,32 +190,77 @@ Given a list of servers to check, it will tell you if they are online or not.
 
         ####################</Default Begin Block>####################
         
+        if ((Get-PSSnapin -Name VeeamPSSnapIn -ErrorAction SilentlyContinue) -eq $null)
+        {
+            Add-PsSnapin -Name VeeamPSSnapIn
+        }
+
+        $Objects = [System.Collections.Generic.List[PSObject]]@()
+        $Intro = 'Jobname,BackupSize,DataSize' # Enter column names
+        [void]$Objects.Add($Intro)
     }
 
     Process
     {
         Try
         {
-            $servers = Get-Content -Path $Filepath
+            $VeeamVersion = ((Get-PSSnapin VeeamPSSnapin).Version.Major)
+        $backupJobs = Get-VBRBackup
 
-            $Online = [System.Collections.Generic.List[PSObject]]@()
-            $NotOnline = [System.Collections.Generic.List[PSObject]]@()
-
-            foreach ($s in $servers)
+        foreach ($job in $backupJobs)
+        {
+            # get all restore points inside this backup job - use different function for Veeam B&R 9+
+            if ($VeeamVersion -ge 9)
             {
-                $a = Test-Connection -ComputerName $s -Quiet
-                if ($a -eq 'True')
-                {
-                    Write-Log "$s is online"
-                    [void]$Online.add($s)
-                }
-                Else
-                {
-                    Write-Log "$s is NOT online"
-                    [void]$NotOnline.add($s)
-                }
- 
+                $restorePoints = $job.GetAllStorages() | sort CreationTime -descending
             }
+            else
+            {
+                $restorePoints = $job.GetStorages() | sort CreationTime -descending
+            }
+
+            $jobBackupSize = 0
+            $jobDataSize = 0
+
+            $jobName = ($job | Select-Object -ExpandProperty JobName)
+
+            Write-Output "Processing backup job: $jobName"
+
+            # get list of VMs associated with this backup job
+            $vmList = ($job | Select-Object @{n = "vm"; e = {$_.GetObjectOibsAll() | ForEach-Object {@($_.name, "")}}} | Select-Object -ExpandProperty vm)
+            $amountVMs = 0
+            $vms = ""
+            foreach ($vmName in $vmList)
+            {
+                if ([string]::IsNullOrEmpty($vmName))
+                {
+                    continue
+                }
+                $vms += "$vmName,"
+                $amountVMs = $amountVMs + 1
+            }
+
+            # cut last ,
+            if (![string]::IsNullOrEmpty($vmName))
+            {
+                $vms = $vms.Substring(0, $vms.Length - 1)
+            }
+
+            # go through restore points and add up the backup and data sizes
+            foreach ($point in $restorePoints)
+            {
+                $jobBackupSize += [long]($point | Select-Object -ExpandProperty stats | Select-Object -ExpandProperty BackupSize)
+                $jobDataSize += [long]($point | Select-Object -ExpandProperty stats | Select-Object -ExpandProperty DataSize)
+            }
+
+            # convert to GB
+            $jobBackupSize = [math]::Round(($jobBackupSize / 1024 / 1024 / 1024), 2)
+            $jobDataSize = [math]::Round(($jobDataSize / 1024 / 1024 / 1024), 2)
+
+            $String = "$($Jobname.ToString()),$($jobBackupSize.Tostring()),$($jobDataSize.Tostring())"
+            [void]$Objects.Add($String)
+        
+        }
         }
         Catch
         {
@@ -237,10 +270,7 @@ Given a list of servers to check, it will tell you if they are online or not.
 
     End
     {
-        Write-Output "====================Online========================="
-        Write-Output $Online
-        Write-Output "====================Not Online====================="
-        Write-Output $NotOnline
+        $Objects | Out-File $Outfile -Encoding ascii
         Stop-log
     }
 }

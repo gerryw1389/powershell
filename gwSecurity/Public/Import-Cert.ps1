@@ -10,21 +10,38 @@ Function Import-Cert
 {
     <#
 .Synopsis
-Imports a SSL Cert.
+Imports a SSL Cert. If the server has IIS installed, it binds it to the default site automatically.
 .Description
 Imports a SSL Cert. If the server has IIS installed, it binds it to the default site automatically.
-Works on Server 2012R2+.
+Uncomment out stop-script and show-cert if you want it to be interactive.
 .Parameter Path
 The file system path to the certificate to import.
 .Example
-Import-Cert
-Imports the cert and opens the MMC Console for Computer Certificates automatically.
+Import-Cert -filepath c:\scripts\mycert.crt
+Imports a SSL Cert. If the server has IIS installed, it binds it to the default site automatically.
+.Notes
+Version History:
+2019-05-05: Initial
 #>
     [Cmdletbinding()]
 
     Param
     (
-        $Path = 'c:\scripts\' + $Env:computername + '_domain_com.crt'
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+        [ValidateScript( {
+                if (-Not ($_ | Test-Path) )
+                {
+                    throw "File or folder does not exist"
+                }
+                if (-Not ($_ | Test-Path -PathType Leaf) )
+                {
+                    throw "The Path argument must be a file. Folder paths are not allowed."
+                }
+                if ($_ -notmatch "(\.crt)")
+                {
+                    throw "The file specified in the path argument must be a crt file"
+                } })]
+        [String]$FilePath
     )
 
     Begin
@@ -141,10 +158,10 @@ Imports the cert and opens the MMC Console for Computer Certificates automatical
 			
             # Get all the matches for PS Headers and dump to a file
             $Transcript | 
-                Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
-                ForEach-Object {$_.Matches} | 
-                ForEach-Object {$_.Value} | 
-                Out-File -FilePath $TempFile -Append
+            Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
+            ForEach-Object { $_.Matches } | 
+            ForEach-Object { $_.Value } | 
+            Out-File -FilePath $TempFile -Append
 
             # Compare the two and put the differences in a third file
             $m1 = Get-Content -Path $Logfile
@@ -229,14 +246,14 @@ Imports the cert and opens the MMC Console for Computer Certificates automatical
         
         Function Stop-Script 
         {
-        Write-Output "Press Any Key To Continue ..."
-        $Host.Ui.Rawui.Readkey("Noecho,Includekeydown") | Out-Null
+            Write-Output "Press Any Key To Continue ..."
+            $Host.Ui.Rawui.Readkey("Noecho,Includekeydown") | Out-Null
         }
 
         Function Show-ComputerCerts
         {
-        $XML = 
-        @'
+            $XML = 
+            @'
 <?xml version="1.0"?><MMC_ConsoleFile ConsoleVersion="3.0" ProgramMode="Author">
   <ConsoleFileID>{CFB778A6-2983-439B-9F85-48207592AF95}</ConsoleFileID>
   <FrameState ShowStatusBar="true">
@@ -1108,8 +1125,8 @@ AQAAABQAAAAAAAAAAwAAAP////8=
   </BinaryStorage>
 </MMC_ConsoleFile>
 '@
-        $XML | Out-File -FilePath "$env:USERPROFILE\Desktop\console.msc"
-        Invoke-Item "$env:USERPROFILE\Desktop\console.msc"
+            $XML | Out-File -FilePath "$env:USERPROFILE\Desktop\console.msc"
+            Invoke-Item "$env:USERPROFILE\Desktop\console.msc"
         }
     }
     Process
@@ -1122,7 +1139,7 @@ AQAAABQAAAAAAAAAAwAAAP////8=
         { 
             
             Set-Location "Cert:\LocalMachine\My\"
-			Import-Certificate -Filepath $Path
+            Import-Certificate -Filepath $Path
             Import-Module WebAdministration
             $Servername = $env:computername.tolower() + '.' + $env:USERDNSDOMAIN.tolower()
             
@@ -1137,24 +1154,24 @@ AQAAABQAAAAAAAAAAwAAAP////8=
             
             Write-Output "Please verify that the cert imported"
             Get-ChildItem 'Cert:\LocalMachine\My\' | Format-Table Subject, FriendlyName, Thumbprint, NotBefore, NotAfter
-            Stop-Script
-            Show-ComputerCerts  
+            # Stop-Script
+            # Show-ComputerCerts - you can also run 'certlm.msc' from run command to view  
         }
         Else
         {
-        Set-Location "Cert:\LocalMachine\My\"
-		Import-Certificate -Filepath $Path
-        Write-Output "Please verify that the cert imported"
-        Get-ChildItem 'Cert:\LocalMachine\My\' | Format-Table Subject, FriendlyName, Thumbprint, NotBefore, NotAfter
-        Stop-Script
-        Show-ComputerCerts
+            Set-Location "Cert:\LocalMachine\My\"
+            Import-Certificate -Filepath $Path
+            Write-Output "Please verify that the cert imported"
+            Get-ChildItem 'Cert:\LocalMachine\My\' | Format-Table Subject, FriendlyName, Thumbprint, NotBefore, NotAfter
+            # Stop-Script
+            # Show-ComputerCerts - you can also run 'certlm.msc' from run command to view
         }
 
     }
 
     End
     {
-      Stop-log
+        Stop-log
     }
 
 }

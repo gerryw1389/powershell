@@ -1,42 +1,33 @@
 <#######<Script>#######>
 <#######<Header>#######>
-# Name: Test-ServerConnection
+# Name: Request-SANCert
+# Copyright: Gerry Williams (https://www.gerrywilliams.net)
+# License: MIT License (https://opensource.org/licenses/mit)
+# Script Modified from: n/a
 <#######</Header>#######>
 <#######<Body>#######>
-Function Test-ServerConnection
+
+Function Request-SANCert
 {
     <#
 .Synopsis
-Tests a group of computers and tells you if they are online or not.
+Generates a CSR for a SAN Cert.
 .Description
-Tests a group of computers and tells you if they are online or not.
-.Parameter Filepath
-A text file containing a list of each server you want to test one server per line.
+Generates a CSR for a SAN Cert. Replace info on subject line before running script.
 .Example
-Test-ServerConnection -filepath c:\scripts\servers.txt
-Given a list of servers to check, it will tell you if they are online or not.
-#>
+Request-SANCert
+Places a completed request for SSL cert at c:\scripts
+.Notes
+Version History:
+2019-05-05: Initial
+#>  
 
     [Cmdletbinding()]
-    Param
-    (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
-        [ValidateScript({
-            if(-Not ($_ | Test-Path) )
-			{
-                throw "File or folder does not exist"
-            }
-            if(-Not ($_ | Test-Path -PathType Leaf) )
-			{
-                throw "The Path argument must be a file. Folder paths are not allowed."
-            }
-            if($_ -notmatch "(\.txt)")
-			{
-                throw "The file specified in the path argument must be a text file"
-            }})]
-        [String]$Filepath
-    )
+    Param(
     
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+        $SAN
+    )
     Begin
     {
         ####################<Default Begin Block>####################
@@ -48,11 +39,32 @@ Given a list of servers to check, it will tell you if they are online or not.
         
         Function Write-Log
         {
+            <#
+            .Synopsis
+            This writes objects to the logfile and to the screen with optional coloring.
+            .Parameter InputObject
+            This can be text or an object. The function will convert it to a string and verbose it out.
+            Since the main function forces verbose output, everything passed here will be displayed on the screen and to the logfile.
+            .Parameter Color
+            Optional coloring of the input object.
+            .Example
+            Write-Log "hello" -Color "yellow"
+            Will write the string "VERBOSE: YYYY-MM-DD HH: Hello" to the screen and the logfile.
+            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
+            .Example
+            Write-Log (cmd /c "ipconfig /all")
+            Will write the string "VERBOSE: YYYY-MM-DD HH: ****ipconfig output***" to the screen and the logfile.
+            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
+            .Notes
+            2018-06-24: Initial script
+            #>
+            
             Param
             (
                 [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
                 [PSObject]$InputObject,
                 
+                # I usually set this to = "Green" since I use a black and green theme console
                 [Parameter(Mandatory = $False, Position = 1)]
                 [Validateset("Black", "Blue", "Cyan", "Darkblue", "Darkcyan", "Darkgray", "Darkgreen", "Darkmagenta", "Darkred", `
                         "Darkyellow", "Gray", "Green", "Magenta", "Red", "White", "Yellow")]
@@ -77,6 +89,13 @@ Given a list of servers to check, it will tell you if they are online or not.
 
         Function Start-Log
         {
+            <#
+            .Synopsis
+            Creates the log file and starts transcribing the session.
+            .Notes
+            2018-06-24: Initial script
+            #>
+            
             # Create transcript file if it doesn't exist
             If (!(Test-Path $Logfile))
             {
@@ -103,6 +122,13 @@ Given a list of servers to check, it will tell you if they are online or not.
         
         Function Stop-Log
         {
+            <#
+            .Synopsis
+            Stops transcribing the session and cleans the transcript file by removing the fluff.
+            .Notes
+            2018-06-24: Initial script
+            #>
+            
             Write-Log "Function completed on $env:COMPUTERNAME"
             Write-Log "####################</Function>####################"
             Stop-Transcript
@@ -116,10 +142,10 @@ Given a list of servers to check, it will tell you if they are online or not.
 			
             # Get all the matches for PS Headers and dump to a file
             $Transcript | 
-                Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
-                ForEach-Object {$_.Matches} | 
-                ForEach-Object {$_.Value} | 
-                Out-File -FilePath $TempFile -Append
+            Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
+            ForEach-Object { $_.Matches } | 
+            ForEach-Object { $_.Value } | 
+            Out-File -FilePath $TempFile -Append
 
             # Compare the two and put the differences in a third file
             $m1 = Get-Content -Path $Logfile
@@ -201,47 +227,58 @@ Given a list of servers to check, it will tell you if they are online or not.
         Set-Console
 
         ####################</Default Begin Block>####################
-        
-    }
 
+    }
     Process
     {
-        Try
-        {
-            $servers = Get-Content -Path $Filepath
 
-            $Online = [System.Collections.Generic.List[PSObject]]@()
-            $NotOnline = [System.Collections.Generic.List[PSObject]]@()
+        $ServerName = $env:computername.tolower() + '.' + $env:USERDNSDOMAIN.tolower()
+        $TrimmedName = $env:computername.tolower()
 
-            foreach ($s in $servers)
-            {
-                $a = Test-Connection -ComputerName $s -Quiet
-                if ($a -eq 'True')
-                {
-                    Write-Log "$s is online"
-                    [void]$Online.add($s)
-                }
-                Else
-                {
-                    Write-Log "$s is NOT online"
-                    [void]$NotOnline.add($s)
-                }
- 
-            }
-        }
-        Catch
+        If ( -not ( Test-Path 'C:\scripts'))
         {
-            Write-Error $($_.Exception.Message)
+            New-Item -ItemType Directory -Path 'c:\scripts' -Force | Out-Null
         }
+        $INFPath = "c:\scripts\" + $TrimmedName + ".inf"
+        $CSRPath = "c:\scripts\" + $TrimmedName + ".csr"
+        $Signature = '$Windows NT$'		
+		
+        $INF = @"
+;----------------- here.domain.com.inf -----------------
+
+[Version]
+Signature="$Signature"
+
+[NewRequest]
+;Change to your,country code, company name and common name
+Subject = "C=US, S=SomeState, L=SomeCity, O=SomeOrg, OU=SomeOrg, CN="$ServerName"
+KeySpec = 1
+KeyLength = 2048
+Exportable = TRUE
+MachineKeySet = TRUE
+SMIME = False
+PrivateKeyArchive = FALSE
+UserProtected = FALSE
+UseExistingKeySet = FALSE
+ProviderName = "Microsoft RSA SChannel Cryptographic Provider"
+ProviderType = 12
+RequestType = PKCS10
+KeyUsage = 0xa0
+
+[EnhancedKeyUsageExtension]
+OID=1.3.6.1.5.5.7.3.1 ; this is for Server Authentication / Token Signing
+
+[RequestAttributes]
+CertificateTemplate=WebServer
+SAN="dns=$SAN"
+;-----------------------------------------------
+"@
+        $INF | Out-File -Filepath $INFPath -Force
+        certreq.exe -new $INFPath $CSRPath
     }
-
-    End
+    End 
     {
-        Write-Output "====================Online========================="
-        Write-Output $Online
-        Write-Output "====================Not Online====================="
-        Write-Output $NotOnline
-        Stop-log
+	    Stop-log
     }
 }
 
