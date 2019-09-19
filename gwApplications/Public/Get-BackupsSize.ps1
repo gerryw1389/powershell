@@ -5,7 +5,7 @@
 <#######<Body>#######>
 Function Get-BackupsSize
 {
-   <#
+    <#
 .Synopsis
 Gets the current size of all of our backups.
 .Description
@@ -104,10 +104,10 @@ Gets the current size of all of our backups.
 			
             # Get all the matches for PS Headers and dump to a file
             $Transcript | 
-                Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
-                ForEach-Object {$_.Matches} | 
-                ForEach-Object {$_.Value} | 
-                Out-File -FilePath $TempFile -Append
+            Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
+            ForEach-Object { $_.Matches } | 
+            ForEach-Object { $_.Value } | 
+            Out-File -FilePath $TempFile -Append
 
             # Compare the two and put the differences in a third file
             $m1 = Get-Content -Path $Logfile
@@ -205,62 +205,62 @@ Gets the current size of all of our backups.
         Try
         {
             $VeeamVersion = ((Get-PSSnapin VeeamPSSnapin).Version.Major)
-        $backupJobs = Get-VBRBackup
+            $backupJobs = Get-VBRBackup
 
-        foreach ($job in $backupJobs)
-        {
-            # get all restore points inside this backup job - use different function for Veeam B&R 9+
-            if ($VeeamVersion -ge 9)
+            foreach ($job in $backupJobs)
             {
-                $restorePoints = $job.GetAllStorages() | sort CreationTime -descending
-            }
-            else
-            {
-                $restorePoints = $job.GetStorages() | sort CreationTime -descending
-            }
-
-            $jobBackupSize = 0
-            $jobDataSize = 0
-
-            $jobName = ($job | Select-Object -ExpandProperty JobName)
-
-            Write-Output "Processing backup job: $jobName"
-
-            # get list of VMs associated with this backup job
-            $vmList = ($job | Select-Object @{n = "vm"; e = {$_.GetObjectOibsAll() | ForEach-Object {@($_.name, "")}}} | Select-Object -ExpandProperty vm)
-            $amountVMs = 0
-            $vms = ""
-            foreach ($vmName in $vmList)
-            {
-                if ([string]::IsNullOrEmpty($vmName))
+                # get all restore points inside this backup job - use different function for Veeam B&R 9+
+                if ($VeeamVersion -ge 9)
                 {
-                    continue
+                    $restorePoints = $job.GetAllStorages() | sort CreationTime -descending
                 }
-                $vms += "$vmName,"
-                $amountVMs = $amountVMs + 1
-            }
+                else
+                {
+                    $restorePoints = $job.GetStorages() | sort CreationTime -descending
+                }
 
-            # cut last ,
-            if (![string]::IsNullOrEmpty($vmName))
-            {
-                $vms = $vms.Substring(0, $vms.Length - 1)
-            }
+                $jobBackupSize = 0
+                $jobDataSize = 0
 
-            # go through restore points and add up the backup and data sizes
-            foreach ($point in $restorePoints)
-            {
-                $jobBackupSize += [long]($point | Select-Object -ExpandProperty stats | Select-Object -ExpandProperty BackupSize)
-                $jobDataSize += [long]($point | Select-Object -ExpandProperty stats | Select-Object -ExpandProperty DataSize)
-            }
+                $jobName = ($job | Select-Object -ExpandProperty JobName)
 
-            # convert to GB
-            $jobBackupSize = [math]::Round(($jobBackupSize / 1024 / 1024 / 1024), 2)
-            $jobDataSize = [math]::Round(($jobDataSize / 1024 / 1024 / 1024), 2)
+                Write-Output "Processing backup job: $jobName"
 
-            $String = "$($Jobname.ToString()),$($jobBackupSize.Tostring()),$($jobDataSize.Tostring())"
-            [void]$Objects.Add($String)
+                # get list of VMs associated with this backup job
+                $vmList = ($job | Select-Object @{name = "vm"; expression = { $_.GetObjectOibsAll() | ForEach-Object { @($_.name, "") } } } | Select-Object -ExpandProperty vm)
+                $amountVMs = 0
+                $vms = ""
+                foreach ($vmName in $vmList)
+                {
+                    if ([string]::IsNullOrEmpty($vmName))
+                    {
+                        continue
+                    }
+                    $vms += "$vmName,"
+                    $amountVMs = $amountVMs + 1
+                }
+
+                # cut last ,
+                if (![string]::IsNullOrEmpty($vmName))
+                {
+                    $vms = $vms.Substring(0, $vms.Length - 1)
+                }
+
+                # go through restore points and add up the backup and data sizes
+                foreach ($point in $restorePoints)
+                {
+                    $jobBackupSize += [long]($point | Select-Object -ExpandProperty stats | Select-Object -ExpandProperty BackupSize)
+                    $jobDataSize += [long]($point | Select-Object -ExpandProperty stats | Select-Object -ExpandProperty DataSize)
+                }
+
+                # convert to GB
+                $jobBackupSize = [math]::Round(($jobBackupSize / 1024 / 1024 / 1024), 2)
+                $jobDataSize = [math]::Round(($jobDataSize / 1024 / 1024 / 1024), 2)
+
+                $String = "$($Jobname.ToString()),$($jobBackupSize.Tostring()),$($jobDataSize.Tostring())"
+                [void]$Objects.Add($String)
         
-        }
+            }
         }
         Catch
         {
