@@ -234,7 +234,7 @@ and move the folder to 'e:\tobedeleted' if the user account doesn't exist.
                     $thirdpath = $parts[-2]
                     $finalpath = $parts[-1]
 
-                    # Ensure that the third path exists - for example $Destination\williamsg
+                    # Ensure that the third path exists - for example $Destination\gerry
                     If (Test-Path "$Destination\$thirdpath")
                     {
                         # Do nothing
@@ -243,7 +243,7 @@ and move the folder to 'e:\tobedeleted' if the user account doesn't exist.
                     {
                         New-Item -itemtype Directory -Path "$Destination\$thirdpath" | Out-Null
                     }
-                    # Now move the original folder to that folders path - Ex: move e:\web\wi\williamsg to e:\tobedeleted\wi\williamsg
+                    # Now move the original folder to that folders path - Ex: move e:\web\wi\gerry to e:\tobedeleted\wi\gerry
                     Move-item $Folder -destination $Destination\$thirdpath\$finalpath -Force -Verbose
                 }
             }

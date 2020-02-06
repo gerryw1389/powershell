@@ -1,36 +1,23 @@
 <#######<Script>#######>
 <#######<Header>#######>
-# Name: Test-PSRemoting
+# Name: Set-FileViaSFTP
 <#######</Header>#######>
 <#######<Body>#######>
-Function Test-PSRemoting
+Function Set-FileViaSFTP
 {
     <#
 .Synopsis
-Given a text file with a list of servers, this will see if remoting is PS remoting with SSL is enabled.
+Uploads a CSV file via SFTP to a remote host.
 .Description
-Given a text file with a list of servers, this will see if remoting is PS remoting with SSL is enabled.
-.Parameter FilePath
-Required parameter which is a text file listing servers one per line.
-.Parameter OutFile
-An optional CSV to export the results to. If not, they will be in the log file.
+Uploads a CSV file via SFTP to a remote host. Requires multiple things: "WinSCPnet.dll" and "private.ppk" need to reside in the same directory as this script for it to work. In addition, you need to fill in your user name, the remote SFTP server, and the SshHostKeyFingerprint variables below.
 .Example
-Test-PSRemoting -FilePath c:\scripts\servers.txt
-Given a text file with a list of servers, this will see if remoting is PS remoting with SSL is enabled.
-.Notes
-Version history:
-2018-11-01: version 1
+Set-FileViaSFTP
+Sends a file in E:\SomeSoftware\files to SomeSoftware using WinSCP and private keyfile in the scripts running directory
 #>
 
     [Cmdletbinding()]
     Param
     (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
-        [ValidateScript( {(Test-Path $_) -and ((Get-Item $_).Extension -eq ".txt")})]
-        [String]$FilePath,
-
-        [Parameter(Mandatory = $false, Position = 1)]
-        [String]$OutFile
     )
     
     Begin
@@ -44,11 +31,32 @@ Version history:
         
         Function Write-Log
         {
+            <#
+            .Synopsis
+            This writes objects to the logfile and to the screen with optional coloring.
+            .Parameter InputObject
+            This can be text or an object. The function will convert it to a string and verbose it out.
+            Since the main function forces verbose output, everything passed here will be displayed on the screen and to the logfile.
+            .Parameter Color
+            Optional coloring of the input object.
+            .Example
+            Write-Log "hello" -Color "yellow"
+            Will write the string "VERBOSE: YYYY-MM-DD HH: Hello" to the screen and the logfile.
+            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
+            .Example
+            Write-Log (cmd /c "ipconfig /all")
+            Will write the string "VERBOSE: YYYY-MM-DD HH: ****ipconfig output***" to the screen and the logfile.
+            NOTE that Stop-Log will then remove the string 'VERBOSE :' from the logfile for simplicity.
+            .Notes
+            2018-06-24: Initial script
+            #>
+            
             Param
             (
                 [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
                 [PSObject]$InputObject,
                 
+                # I usually set this to = "Green" since I use a black and green theme console
                 [Parameter(Mandatory = $False, Position = 1)]
                 [Validateset("Black", "Blue", "Cyan", "Darkblue", "Darkcyan", "Darkgray", "Darkgreen", "Darkmagenta", "Darkred", `
                         "Darkyellow", "Gray", "Green", "Magenta", "Red", "White", "Yellow")]
@@ -73,6 +81,13 @@ Version history:
 
         Function Start-Log
         {
+            <#
+            .Synopsis
+            Creates the log file and starts transcribing the session.
+            .Notes
+            2018-06-24: Initial script
+            #>
+            
             # Create transcript file if it doesn't exist
             If (!(Test-Path $Logfile))
             {
@@ -99,6 +114,13 @@ Version history:
         
         Function Stop-Log
         {
+            <#
+            .Synopsis
+            Stops transcribing the session and cleans the transcript file by removing the fluff.
+            .Notes
+            2018-06-24: Initial script
+            #>
+            
             Write-Log "Function completed on $env:COMPUTERNAME"
             Write-Log "####################</Function>####################"
             Stop-Transcript
@@ -112,10 +134,10 @@ Version history:
 			
             # Get all the matches for PS Headers and dump to a file
             $Transcript | 
-                Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
-                ForEach-Object {$_.Matches} | 
-                ForEach-Object {$_.Value} | 
-                Out-File -FilePath $TempFile -Append
+            Select-String '(?smi)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*([\S\s]*?)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*' -AllMatches | 
+            ForEach-Object { $_.Matches } | 
+            ForEach-Object { $_.Value } | 
+            Out-File -FilePath $TempFile -Append
 
             # Compare the two and put the differences in a third file
             $m1 = Get-Content -Path $Logfile
@@ -198,70 +220,67 @@ Version history:
 
         ####################</Default Begin Block>####################
         
-        $servers = Get-Content -Path $FilePath
-
-        $csv = [System.Collections.Generic.List[PSObject]]@()
-        #$csv_header = "ServerName,ICMPTest,TCPTest,WinRMTest"
-        $csv_header = '"ServerName","ICMPTest","TCPTest","WinRMTest"'
-        [void]$csv.Add($csv_header)
+        
     }
-    
+
     Process
     {
         Try
         {
-            Foreach ($server in $servers)
+            # Load WinSCP .NET assembly
+            Add-Type -Path "$PSScriptRoot\WinSCPnet.dll"
+
+            # Set up session options
+            $sessionOptions = New-Object WinSCP.SessionOptions -Property @{
+                Protocol              = [WinSCP.Protocol]::Sftp
+                HostName              = "remote-sftp.domain.com"
+                UserName              = "myUser"
+                SshHostKeyFingerprint = "ssh-ed25519 256 someFingerPrint"
+                SshPrivateKeyPath     = "$PSScriptRoot\private.ppk"
+            }
+
+            $session = New-Object WinSCP.Session
+
+            try
             {
+                # Connect
+                $session.Open($sessionOptions)
+
+                # Transfer files
+
+                $files = Get-Childitem -Path "E:\SomeSoftware\Files"
                 
-                $Global:WarningPreference = 'SilentlyContinue'         
-                $Global:ProgressPreference = 'SilentlyContinue'
-                $a = test-netconnection $server -port 5986
-                
-                If ($a.PingSucceeded -eq $false)
+                If ($($files.count) -gt 1)
                 {
-                    $Ping = 'False'
-                }
-                Else
-                {
-                    $Ping = 'True'
-                }
-                
-                If ($a.TcpTestSucceeded -eq $false)
-                {
-                    $Tcp = 'False'
-                }
-                Else
-                {
-                    $Tcp = 'True'
-                }
-                
-                Try
-                {
+
                     $Params = @{
-                        'ComputerName' = $Server
-                        'UseSSL'       = $true
-                        'ErrorAction'  = 'Stop'
+                        'UseSSL'     = $True
+                        'From'       = 'svc_user@domain.com'
+                        'To'         = 'team@domain.com'
+                        'Cc'         = @('manager@domain.com', 'manager2@domain.com')
+                        'Subject'    = "Action Required - More than one CSV"
+                        'BodyAsHTML' = $True
+                        'Body'       = "make sure only one CSV is there."
+                        'SmtpServer' = "server.domain.com"
+                        'Port'       = "25"
                     }
-                    [void](Invoke-Command @Params -ScriptBlock { Write-Output $env:COMPUTERNAME })
-                    $WinRM = 'True'
+                    Send-MailMessage @Params
+                    Write-error "More than one CSV exists, exiting"
+
                 }
-                Catch
+                Else
                 {
-                    $WinRM = 'False'
+                    $file = (Get-Item "E:\SomeSoftware\Files\*.csv").fullname
+                    $filename = (Get-Item "E:\SomeSoftware\Files\*.csv").name
+                    
+                    # upload to SomeSoftware
+                    $session.PutFiles($file, "/csv/*").Check()
                 }
-
-                $ThisServer = [ordered] @{
-                    'ServerName: ' = $server
-                    'ICMP Test: '  = $Ping
-                    'TCP Test: '   = $Tcp
-                    'WinRM Test: ' = $WinRM
-                }
-                $ThisServer
-                $string = '"' + $server +'","' + $Ping +'","' + $Tcp +'","' + $WinRM + '"'
-                #$string = $server,$Ping,$Tcp,$WinRM
-                [void]$csv.add($string)
-
-                Clear-Variable -Name server,ping,tcp,winrm
+                
+            }
+            finally
+            {
+                $session.Dispose()
             }
         }
         Catch
@@ -269,41 +288,25 @@ Version history:
             Write-Error $($_.Exception.Message)
         }
     }
+
     End
     {
-        $Global:WarningPreference = 'Continue'         
-        $Global:ProgressPreference = 'Continue'
-                
-        Write-Log "Summary"
-        Write-Log "==========================="
-        $csv
-        
-        If ($Outfile -ne '')
+        # move the original file
+        $newName = "E:\SomeSoftware\Uploaded\uploaded_" + $filename
+        Move-item -path $file -Destination $newName
+
+        If ( Test-Path $newName )
         {
-            $csv | Out-File -FilePath $OutFile -Force
+            Write-log "File moved successfully: $newName" 
+        }
+        Else
+        {
+            Write-log "File did NOT move successfully: $newName"
         }
 
         Stop-log
-        
-        <#
-        Another way:
-        $jobs = Invoke-Command -Computername $servers -ScriptBlock { 
-                (Get-Process | Sort-Object -Property ws -Descending | Select-Object -First 1 | Select-Object -Property processname).processname
-            } -AsJob
-
-        foreach ($j in $($jobs.childjobs))
-        {
-            $JobName = $j.Name
-            $server = $j.Location
-            $result = Receive-Job -Name $JobName -Keep
-            If ($Result -ne '')
-            {
-                Write-output "Successful PS Remoting on : $server"
-            }
-        }
-        #>
-    
     }
 }
+
 <#######</Body>#######>
 <#######</Script>#######>
