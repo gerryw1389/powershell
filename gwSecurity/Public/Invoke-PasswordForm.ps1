@@ -1,7 +1,7 @@
 ﻿<#######<Script>#######>
 <#######<Header>#######>
 # Name: Invoke-PasswordForm
-# Copyright: Gerry Williams (https://www.gerrywilliams.net)
+# Copyright: Gerry Williams (https://automationadmin.com)
 # License: MIT License (https://opensource.org/licenses/mit)
 # Script Modified from: http://www.theagreeablecow.com/2014/08/password-and-phrase-generator-using.html
 <#######</Header>#######>

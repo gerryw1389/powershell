@@ -1,7 +1,7 @@
 <#######<Script>#######>
 <#######<Header>#######>
 # Name: Convert-ScriptToExe
-# Copyright: Gerry Williams (https://www.gerrywilliams.net)
+# Copyright: Gerry Williams (https://automationadmin.com)
 # License: MIT License (https://opensource.org/licenses/mit)
 # Script Modified from: Ingo Karstein (http://blog.karstein-consulting.com) PS2EXE
 <#######</Header>#######>

@@ -1,7 +1,7 @@
 <#######<Script>#######>
 <#######<Header>#######>
 # Name: Invoke-RandomPIN
-# Copyright: Gerry Williams (https://www.gerrywilliams.net)
+# Copyright: Gerry Williams (https://automationadmin.com)
 # License: MIT License (https://opensource.org/licenses/mit)
 # Script Modified from:  https://github.com/BornToBeRoot/PowerShell/blob/master/Documentation/Function/Get-RandomPIN.README.md
 <#######</Header>#######>
