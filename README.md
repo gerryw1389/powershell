@@ -17,4 +17,4 @@ You may be wondering, *"What is with all these 'gw' prefixes?"*
 Well the reason I do this is because 'ActiveDirectory' is a pretty generic name for a module. Also, Mr. Powershell, Don Jones, and many others taught me early on to put prefixes in names and it just kinda stuck with me.
 
 If you have any questions, comments, or concerns please send me a message and thanks for stopping by.
-DISCLAIMER: Please do not use these scripts in a production environment without reading them over first. Please see the MIT license for more information.
+DISCLAIMER: Please do not use these scripts in a production environment without reading them over first. Please see the MIT [license](./LICENSE) for more information.
