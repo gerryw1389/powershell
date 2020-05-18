@@ -40,7 +40,7 @@ This repo contains multiple modules for Powershell scripts I have written over t
 
 2. The problem was that other admins I worked with preferred single `.ps1` scripts since it's much easier to copy a single file than a zip/extract/import-module setup. I plan to bring this back in the future with some kind of Nuget repo with a CI/CD pipeline release per [this reddit post](https://www.reddit.com/r/PowerShell/comments/gl28tc/building_a_pipeline_for_scripts/) but I have lots to learn first!
 
-3. In addition, I have been through many changes in logging itself like trying to make it [optional](https://github.com/gerryw1389/powershell/blob/master/Other/templates/old-template-w-logging-optional.ps1) or writing to the [Windows Event Log](https://github.com/gerryw1389/powershell/blob/master/Other/templates/old-helpers-w-eventlog.psm1). Eventually I just stuck with the `create PSLogs folder in same directory with yyyy-MM-dd-function-name.log`.
+3. In addition, I have been through many changes in logging itself like trying to make it [optional](https://github.com/gerryw1389/powershell/blob/master/Other/templates/old-template-w-logging-optional.ps1) or writing to the [Windows Event Log](https://github.com/gerryw1389/powershell/blob/master/Other/templates/old-helpers-w-eventlog.psm1). Eventually I just stuck with the `create PSLogs folder in same directory with yyyy-MM-dd-function-name.log` paradigm, see [my post on it](https://automationadmin.com/2017/09/ps-why-I-use-my-template-for-logging/)
 
 
 ### DISCLAIMER 
