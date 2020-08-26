@@ -14,7 +14,7 @@ Function Connect-LDAPS
     .Description
     Connects to an LDAPS server. Currenly ignores the cert (insecure) just because I was unable to connect any other way.
     .Example
-    Connect-LDAPS -computername myserver.domain.com -Port 636 -Username 'cn=admin,ou=users,o=domain' -Password 'Pa$$word'
+    Connect-LDAPS -computername myserver.domain.com -Port 636 -Username 'cn=admin,ou=users,o=domain' -Password 'hunter2'
     Connects to an LDAPS server. Currenly ignores the cert (insecure) just because I was unable to connect any other way.
     .Notes
     2019-08-08: Initial script

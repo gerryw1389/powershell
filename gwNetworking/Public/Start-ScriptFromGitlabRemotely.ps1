@@ -245,7 +245,7 @@ Blah
 
                             # For example, if it contains a generic password, you can replace the password by doing something like:
                             
-                            (Get-Content "C:\scripts\Install-Splunk.ps1").replace('LookMeUp', 'pa$$word') | Set-Content "C:\scripts\Install-Splunk.ps1"
+                            (Get-Content "C:\scripts\Install-Splunk.ps1").replace('LookMeUp', 'hunter2') | Set-Content "C:\scripts\Install-Splunk.ps1"
                             
                             # Or if the script is an advanced function like all of mine are, you can add the call of the function to the end of the file so that
                             # it behaves like a script.
