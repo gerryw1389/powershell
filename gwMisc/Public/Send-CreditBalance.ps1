@@ -246,16 +246,63 @@ Function Send-CreditBalance
       #############################
       # Sensitive Info - Get these from keyfile, Azure Key Vault, ect.
       # https://automationadmin.com/2016/05/using-passwords-with-powershell/
-      $clientId = "312628475357-m60affgncf6n6metjv42tf5qkbhipuu5.apps.googleusercontent.com"
-      $clientSecret = "RRQuq0rPDzUUGWjbn2s983ak"
-      $refreshToken = '1//04dniS7-UZUZoCgYIARAAGAQSNQF-L9Ir-7hmXdf_HVhCOf4iEMisleNs6N2eZ8KpbgiImODrDd6uMu4qGmrN4GdT9DXqtu2S'
+      
+      # Removed even though the credentials were already fake - GitGaurdian alert
+      #
+      #
 
       # Creds for sending email
-      $username = "me@gmail.com"
-      $password = "hunter2"
+      # $username = "me@gmail.com"
+      # $password = "hunter2"
+      # $pw = ConvertTo-SecureString -String $password -AsPlainText -Force
+      # $Creds= New-Object -Typename System.Management.Automation.PSCredential -Argumentlist $username, $pw
+      # #############################
+      # Sensitive Info
+      
+      # Using the same account on the same machine method from https://automationadmin.com/2016/05/using-passwords-with-powershell/
+
+      # Encryption - do one time
+      # $credpath = "C:\scripts\clientId.xml"
+      # New-Object System.Management.Automation.PSCredential("mycomputer\gerry", (ConvertTo-SecureString -AsPlainText -Force "312628475357-m60aff5.apps.googleusercontent.com")) | 
+      # Export-CliXml $credpath
+
+      # $credpath = "C:\scripts\clientSecret.xml"
+      # New-Object System.Management.Automation.PSCredential("mycomputer\gerry", (ConvertTo-SecureString -AsPlainText -Force "RR3ak")) | 
+      # Export-CliXml $credpath
+
+      # $credpath = "C:\scripts\refreshToken.xml"
+      # New-Object System.Management.Automation.PSCredential("mycomputer\gerry", (ConvertTo-SecureString -AsPlainText -Force "1//u2S")) | 
+      # Export-CliXml $credpath
+
+      # $credpath = "C:\scripts\username.xml"
+      # New-Object System.Management.Automation.PSCredential("mycomputer\gerry", (ConvertTo-SecureString -AsPlainText -Force "gerrywtech@gmail.com")) | 
+      # Export-CliXml $credpath
+
+      # $credpath = "C:\scripts\password.xml"
+      # New-Object System.Management.Automation.PSCredential("mycomputer\gerry", (ConvertTo-SecureString -AsPlainText -Force "hunter2")) | 
+      # Export-CliXml $credpath
+
+      $clientIdXML = Import-Clixml -Path "$PSScriptRoot\clientId.xml"
+      $clientId = $clientIdXML.GetNetworkCredential().Password
+      
+      $clientSecretXML = Import-Clixml -Path "$PSScriptRoot\clientSecret.xml"
+      $clientSecret = $clientSecretXML.GetNetworkCredential().Password
+      
+      $refreshTokenXML = Import-Clixml -Path "$PSScriptRoot\refreshToken.xml"
+      $refreshToken = $refreshTokenXML.GetNetworkCredential().Password
+      
+      $usernameXML = Import-Clixml -Path "$PSScriptRoot\username.xml"
+      $username = $usernameXML.GetNetworkCredential().Password
+      
+      $passwordXML = Import-Clixml -Path "$PSScriptRoot\password.xml"
+      $password = $passwordXML.GetNetworkCredential().Password
+      
+      # Creds for sending email
       $pw = ConvertTo-SecureString -String $password -AsPlainText -Force
       $Creds= New-Object -Typename System.Management.Automation.PSCredential -Argumentlist $username, $pw
-      #############################
+
+      ############################################################################
+
       
       $headers = @{ 
          "Content-Type" = "application/x-www-form-urlencoded" 
