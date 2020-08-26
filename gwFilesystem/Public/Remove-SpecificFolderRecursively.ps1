@@ -20,8 +20,6 @@ Removes all files under a specific folder recursively. I use this all the time f
 The top folder you want to search recursively.
 .Parameter Filter
 The name of the folder you want to delete all files under.
-.Notes
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
 #>
 
     [Cmdletbinding()]

@@ -20,7 +20,6 @@ NOTE: See below for logging options.
 Set-Template
 Usually same as synopsis.
 .Notes
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
 Main code usually starts around line 261ish.
 2018-08-30: v1.2 Updated template.
 2018-06-17: v1.1 Updated template.

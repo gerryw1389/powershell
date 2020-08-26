@@ -18,8 +18,6 @@ Function Start-ServiceIfStopped
     .Example
     Start-ServiceIfStopped -Service "wuapp"
     Will start the "wuapp" service if it is stopped.
-    .Notes
-    Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
     #>
 
     [Cmdletbinding()]

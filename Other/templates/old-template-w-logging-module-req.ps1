@@ -20,8 +20,6 @@ Set-Template
 Usually same as synopsis.
 .Notes
 2017-09-08: v1.0 Initial script 
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
 #>
 
     [Cmdletbinding()]

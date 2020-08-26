@@ -13,8 +13,6 @@ Gets the status of the Windows Firewall and the "Remote Desktop Services" servic
 .Example
 Get-FirewallNServiceStatus
 Displays the status of the RDS Service and the firewall status.
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
 #>
 
     [Cmdletbinding()]

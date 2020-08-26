@@ -21,8 +21,6 @@ New-Runspace
 Creates a runspace so that the script can run jobs asynchronously.
 .Notes
 2017-09-08: v1.0 Initial script 
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
 #>
 
    [Cmdletbinding()]

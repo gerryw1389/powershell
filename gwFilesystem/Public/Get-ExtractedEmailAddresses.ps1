@@ -16,8 +16,6 @@ Mandatory file(s) to search for email regex.
 .Example
 Get-ExtractedEmailAddresses -FilePath c:\scripts\myfile.log
 Parses "c:\scripts\myfile.log" for any email addresses and returns a document called "extracted.txt" in the scripts running directory with the emails returned.
-.Functionality
-Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
 #>
 
     [Cmdletbinding()]

@@ -16,8 +16,6 @@ Function Set-SystemEnvVar
     .Example
     Set-SystemEnvVar
     Run this after setting whatever variables you want. Will parameterize this later.
-    .Notes
-    Please see https://www.gerrywilliams.net/2017/09/running-ps-scripts-against-multiple-computers/ on how to run against multiple computers.
     #>
 
    [Cmdletbinding()]
