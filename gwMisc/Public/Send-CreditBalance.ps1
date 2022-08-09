@@ -13,7 +13,7 @@ Function Send-CreditBalance
     Function to send credit card balance by text message daily based on email alerts from bank.
     .Description
     Function to send credit card balance by text message daily based on email alerts from bank.
-    See https://www.gerrywilliams.net/2018/02/ps-send-me-my-credit-balance/ to see an overview.
+    See https://www.automationadmin.com/2018/02/ps-send-me-my-credit-balance/ to see an overview.
     Line(s) you will need to edit:
     194 - Client ID
     195 - Secret
@@ -473,7 +473,7 @@ Function Send-CreditBalance
         
         #>
     
-      # Section 3: Add in recurring bills. See https://www.gerrywilliams.net/2018/02/ps-send-me-my-credit-balance/ for a description.
+      # Section 3: Add in recurring bills. See https://www.automationadmin.com/2018/02/ps-send-me-my-credit-balance/ for a description.
       $DayofMonth = $($(Get-Date).Day)
       $UpcomingBills = [System.Collections.ArrayList]@()
       # Credit cards paid off monthly on the fifth and next bill isn't until 6th, so no charge here.

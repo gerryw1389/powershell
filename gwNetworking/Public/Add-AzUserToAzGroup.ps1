@@ -9,7 +9,7 @@ Function Add-AzUserToAzGroup
 .SYNOPSIS
 Given an email address of a user, it will add the user to one of the pre-defined groups in the function (modify lines 291+ to add as many groups as you want).
 .DESCRIPTION
-Given an email address of a user, it will add the user to one of the pre-defined groups in the function (modify lines 291+ to add as many groups as you want). I mainly wrote this function to be ran from a linux host that has the open source version of powershell so that I wouldn't have to do any importing of modules and could just use pure REST API. Requires that you setup an an application in your Azure tenant first - https://gerrywilliams.net/2020/01/azure-create-ps-app/
+Given an email address of a user, it will add the user to one of the pre-defined groups in the function (modify lines 291+ to add as many groups as you want). I mainly wrote this function to be ran from a linux host that has the open source version of powershell so that I wouldn't have to do any importing of modules and could just use pure REST API. Requires that you setup an an application in your Azure tenant first - https://automationadmin.com/2020/01/azure-create-ps-app/
 .PARAMETER UserEmail
 Email address of a valid user.
 .PARAMETER GroupName
